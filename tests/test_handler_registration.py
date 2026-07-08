@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Any, ClassVar
 
 import pytest
+from pydantic import BaseModel, field_serializer
 
 from dr_serialize import (
     ConversionContext,
@@ -42,6 +44,23 @@ def wrapper_handler(x: Any, ctx: ConversionContext) -> JsonableHandle:
     if isinstance(x, Wrapper):
         return True, {"inner": ctx.convert(x.inner, "inner")}
     return False, None
+
+
+def test_handler_intercepts_value_inside_model_dump() -> None:
+    class MarkerFieldModel(BaseModel):
+        name: str
+
+        @field_serializer("name")
+        def wrap_name(self, value: str) -> Any:
+            return Marker(value)
+
+    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(marker_handler,))
+    with warnings.catch_warnings():
+        # Pydantic warns that Marker is not JSON-serializable in json mode;
+        # a dump emitting a non-JSON object is exactly the case under test.
+        warnings.simplefilter("ignore")
+        result = serializer.to_jsonable(MarkerFieldModel(name="t"))
+    assert result == {"name": {"marker": "t"}}
 
 
 def test_handler_intercepts_before_fallbacks() -> None:

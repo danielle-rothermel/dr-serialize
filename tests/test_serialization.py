@@ -14,7 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from dr_serialize import (
     POSTGRES_JSONB_MAX_BYTES,
@@ -144,6 +144,14 @@ class TestBuiltinTransforms:
 
 
 class TestGuardrails:
+    def test_max_depth_enforced_inside_model_dump(self) -> None:
+        class PayloadModel(BaseModel):
+            data: Any
+
+        limits = SerializationLimits(max_depth=3, max_bytes=1_000_000)
+        with pytest.raises(MaxDepthExceededError):
+            to_jsonable(PayloadModel(data=nested_list(10)), limits=limits)
+
     def test_max_depth_exceeded(self) -> None:
         with pytest.raises(MaxDepthExceededError) as exc_info:
             to_jsonable(nested_list(101), limits=DEFAULT_LIMITS)

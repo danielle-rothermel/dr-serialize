@@ -216,7 +216,7 @@ def _jsonable_pydantic_model(
 ) -> JsonableHandle:
     if isinstance(x, pydantic.BaseModel):
         try:
-            return True, x.model_dump(mode="json")
+            dumped = x.model_dump(mode="json")
         except Exception as error:
             raise ModelDumpError(
                 path=ctx.path,
@@ -224,6 +224,11 @@ def _jsonable_pydantic_model(
                 value_preview=preview_repr(x),
                 detail=detail_repr(x),
             ) from error
+        # Dumps are not guaranteed JSON-safe (custom field serializers can
+        # emit arbitrary objects) and would otherwise bypass depth limits;
+        # re-converting outside the try keeps SerializationErrors raised
+        # during recursion from being relabeled as ModelDumpError.
+        return True, _convert_node(ctx.serializer, dumped, ctx.depth, ctx.path)
     return False, None
 
 
