@@ -1,15 +1,13 @@
 """Canonical hashing and JSON-safe serialization.
 
 Public surface: canonical JSON + digests (:mod:`dr_serialize.hashing`),
-the conversion engine with pluggable handlers
+the instance-based conversion engine with pluggable handlers
 (:mod:`dr_serialize.serialization`), explicit limits presets
 (:mod:`dr_serialize.limits`), and the typed error taxonomy
 (:mod:`dr_serialize.errors`).
 """
 
 from dr_serialize.errors import (
-    DEBUG_DETAIL_LIMIT,
-    MESSAGE_PREVIEW,
     JsonEncodeError,
     JsonPath,
     MaxDepthExceededError,
@@ -21,11 +19,7 @@ from dr_serialize.errors import (
     detail_repr,
     preview_repr,
 )
-from dr_serialize.hashing import (
-    SHA256_HEX_DIGEST_LENGTH,
-    canonical_json,
-    sha256_json_digest,
-)
+from dr_serialize.hashing import canonical_json, sha256_json_digest
 from dr_serialize.limits import (
     POSTGRES_JSONB_MAX_BYTES,
     POSTGRES_JSONB_PAYLOAD_MAX_BYTES,
@@ -33,22 +27,16 @@ from dr_serialize.limits import (
     postgres_jsonb_limits,
 )
 from dr_serialize.serialization import (
+    ConversionContext,
     JsonableHandle,
     JsonableHandler,
-    clear_registered_handlers,
-    convert_value,
-    register_handler,
-    registered_handlers,
-    to_jsonable,
-    to_metadata_dict,
+    Serializer,
 )
 
 __all__ = [
-    "DEBUG_DETAIL_LIMIT",
-    "MESSAGE_PREVIEW",
     "POSTGRES_JSONB_MAX_BYTES",
     "POSTGRES_JSONB_PAYLOAD_MAX_BYTES",
-    "SHA256_HEX_DIGEST_LENGTH",
+    "ConversionContext",
     "JsonEncodeError",
     "JsonPath",
     "JsonableHandle",
@@ -59,16 +47,11 @@ __all__ = [
     "PayloadTooLargeError",
     "SerializationError",
     "SerializationLimits",
+    "Serializer",
     "ValueTransformError",
     "canonical_json",
-    "clear_registered_handlers",
-    "convert_value",
     "detail_repr",
     "postgres_jsonb_limits",
     "preview_repr",
-    "register_handler",
-    "registered_handlers",
     "sha256_json_digest",
-    "to_jsonable",
-    "to_metadata_dict",
 ]

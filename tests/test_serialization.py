@@ -26,9 +26,6 @@ from dr_serialize import (
     SerializationError,
     SerializationLimits,
     postgres_jsonb_limits,
-    serialization,
-    to_jsonable,
-    to_metadata_dict,
 )
 from tests.support import (
     BadModel,
@@ -40,6 +37,7 @@ from tests.support import (
     large_payload,
     nested_list,
     ok_pydantic_model,
+    to_jsonable,
 )
 
 DEFAULT_LIMITS = postgres_jsonb_limits()
@@ -236,23 +234,17 @@ class TestStructuredErrors:
             {"path", "detail", "value_preview", "underlying"},
         )
 
-    def test_object_vars_serialization_error(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        target = SimpleObject()
-        original = serialization.convert_value
-
-        def patched(
-            x: Any,
-            depth: int = 0,
-            path: tuple[str | int, ...] = (),
-        ) -> Any:
-            if path == ("label",):
+    def test_object_vars_serialization_error(self) -> None:
+        class BrokenVars(dict[str, Any]):
+            def items(self) -> Any:
                 raise RuntimeError("vars walk failed")
-            return original(x, depth, path)
 
-        monkeypatch.setattr(serialization, "convert_value", patched)
+        class BrokenObject:
+            @property
+            def __dict__(self) -> BrokenVars:  # type: ignore[override]
+                return BrokenVars(label="test")
+
+        target = BrokenObject()
         with pytest.raises(ObjectVarsSerializationError) as exc_info:
             to_jsonable(target, limits=DEFAULT_LIMITS)
         assert_diagnostics(
@@ -293,20 +285,6 @@ class TestStructuredErrors:
 
 
 class TestMetadataAndEdgePaths:
-    def test_to_metadata_dict_passthrough_dict_on_serialization_error(
-        self,
-    ) -> None:
-        payload = {"bad": nested_list(101)}
-        metadata = to_metadata_dict(payload)
-
-        assert metadata == payload
-
-    def test_to_metadata_dict_returns_empty_for_non_dict_failure(self) -> None:
-        assert to_metadata_dict(nested_list(101)) == {}
-
-    def test_to_metadata_dict_wraps_scalar_success(self) -> None:
-        assert to_metadata_dict("hello") == {"response": "hello"}
-
     def test_json_encode_error_reports_nested_path(self) -> None:
         with pytest.raises(JsonEncodeError) as exc_info:
             to_jsonable({"a": [{"b": object()}]}, limits=DEFAULT_LIMITS)

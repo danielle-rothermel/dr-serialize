@@ -1,25 +1,21 @@
-"""Contract tests for the consumer handler registration API."""
+"""Contract tests for the consumer handler API."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 import pytest
 
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
 from dr_serialize import (
-    JsonPath,
+    ConversionContext,
+    JsonableHandle,
+    MaxDepthExceededError,
+    SerializationLimits,
+    Serializer,
     ValueTransformError,
-    clear_registered_handlers,
-    convert_value,
     detail_repr,
     postgres_jsonb_limits,
     preview_repr,
-    register_handler,
-    registered_handlers,
-    to_jsonable,
 )
 
 DEFAULT_LIMITS = postgres_jsonb_limits()
@@ -30,87 +26,92 @@ class Marker:
         self.tag = tag
 
 
-def marker_handler(x: Any, depth: int, path: JsonPath) -> tuple[bool, Any]:
-    del depth, path
+class Wrapper:
+    def __init__(self, inner: Any) -> None:
+        self.inner = inner
+
+
+def marker_handler(x: Any, ctx: ConversionContext) -> JsonableHandle:
+    del ctx
     if isinstance(x, Marker):
         return True, {"marker": x.tag}
     return False, None
 
 
-@pytest.fixture(autouse=True)
-def isolated_registry() -> Iterator[None]:
-    clear_registered_handlers()
-    yield
-    clear_registered_handlers()
+def wrapper_handler(x: Any, ctx: ConversionContext) -> JsonableHandle:
+    if isinstance(x, Wrapper):
+        return True, {"inner": ctx.convert(x.inner, "inner")}
+    return False, None
 
 
-def test_registered_handler_intercepts_before_fallbacks() -> None:
-    # Without registration, Marker falls through to the __dict__ walk.
-    assert to_jsonable(Marker("t"), limits=DEFAULT_LIMITS) == {"tag": "t"}
+def test_handler_intercepts_before_fallbacks() -> None:
+    # Without the handler, Marker falls through to the __dict__ walk.
+    plain = Serializer(limits=DEFAULT_LIMITS)
+    assert plain.to_jsonable(Marker("t")) == {"tag": "t"}
 
-    register_handler(marker_handler)
-    assert to_jsonable(Marker("t"), limits=DEFAULT_LIMITS) == {"marker": "t"}
-
-
-def test_registration_is_idempotent() -> None:
-    register_handler(marker_handler)
-    register_handler(marker_handler)
-    assert registered_handlers().count(marker_handler) == 1
+    with_handler = Serializer(
+        limits=DEFAULT_LIMITS, handlers=(marker_handler,)
+    )
+    assert with_handler.to_jsonable(Marker("t")) == {"marker": "t"}
 
 
-def test_scalars_bypass_registered_handlers() -> None:
-    def greedy(x: Any, depth: int, path: JsonPath) -> tuple[bool, Any]:
-        del depth, path
+def test_serializers_do_not_share_handlers() -> None:
+    with_handler = Serializer(
+        limits=DEFAULT_LIMITS, handlers=(marker_handler,)
+    )
+    plain = Serializer(limits=DEFAULT_LIMITS)
+    assert with_handler.to_jsonable(Marker("t")) == {"marker": "t"}
+    assert plain.to_jsonable(Marker("t")) == {"tag": "t"}
+
+
+def test_scalars_bypass_consumer_handlers() -> None:
+    def greedy(x: Any, ctx: ConversionContext) -> JsonableHandle:
+        del ctx
         return True, f"intercepted {x!r}"
 
-    register_handler(greedy)
-    assert to_jsonable(42, limits=DEFAULT_LIMITS) == 42
-    assert to_jsonable([1, 2], limits=DEFAULT_LIMITS) == [1, 2]
+    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(greedy,))
+    assert serializer.to_jsonable(42) == 42
+    assert serializer.to_jsonable([1, 2]) == [1, 2]
 
 
-def test_handler_can_recurse_via_convert_value() -> None:
-    class Wrapper:
-        def __init__(self, inner: Any) -> None:
-            self.inner = inner
-
-    def wrapper_handler(
-        x: Any, depth: int, path: JsonPath
-    ) -> tuple[bool, Any]:
-        if isinstance(x, Wrapper):
-            return True, {
-                "inner": convert_value(x.inner, depth + 1, (*path, "inner"))
-            }
-        return False, None
-
-    register_handler(wrapper_handler)
-    result = to_jsonable(
-        Wrapper(Marker("deep")),
-        limits=DEFAULT_LIMITS,
+def test_handler_recurses_via_ctx_convert() -> None:
+    serializer = Serializer(
+        limits=DEFAULT_LIMITS, handlers=(wrapper_handler,)
     )
+    result = serializer.to_jsonable(Wrapper(Marker("deep")))
     assert result == {"inner": {"tag": "deep"}}
+
+
+def test_ctx_convert_enforces_max_depth() -> None:
+    value: Any = "leaf"
+    for _ in range(5):
+        value = Wrapper(value)
+    limits = SerializationLimits(max_depth=3, max_bytes=1_000_000)
+    serializer = Serializer(limits=limits, handlers=(wrapper_handler,))
+    with pytest.raises(MaxDepthExceededError):
+        serializer.to_jsonable(value)
 
 
 def test_value_transform_error_subclass_carries_prefix_and_shape() -> None:
     class CustomTransformError(ValueTransformError):
         message_prefix: ClassVar[str] = "custom transform failed"
 
-    def failing_handler(
-        x: Any, depth: int, path: JsonPath
-    ) -> tuple[bool, Any]:
-        del depth
+    def failing_handler(x: Any, ctx: ConversionContext) -> JsonableHandle:
         if isinstance(x, Marker):
             underlying = RuntimeError("boom")
             raise CustomTransformError(
-                path=path,
+                path=ctx.path,
                 underlying=underlying,
                 value_preview=preview_repr(x),
                 detail=detail_repr(x),
             )
         return False, None
 
-    register_handler(failing_handler)
+    serializer = Serializer(
+        limits=DEFAULT_LIMITS, handlers=(failing_handler,)
+    )
     with pytest.raises(CustomTransformError) as exc_info:
-        to_jsonable({"k": Marker("t")}, limits=DEFAULT_LIMITS)
+        serializer.to_jsonable({"k": Marker("t")})
     exc = exc_info.value
     assert str(exc) == "custom transform failed at path ('k',)"
     assert set(exc.diagnostics()) == {

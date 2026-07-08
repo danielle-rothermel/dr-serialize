@@ -4,8 +4,9 @@ import hashlib
 import json
 from typing import Any
 
+from dr_serialize._encoding import TEXT_ENCODING
+
 SHA256_HEX_DIGEST_LENGTH = 64
-TEXT_ENCODING = "utf-8"
 
 
 def canonical_json(value: Any) -> str:

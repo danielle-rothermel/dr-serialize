@@ -14,10 +14,10 @@ from typing import Any
 import pytest
 
 from dr_serialize import (
-    SHA256_HEX_DIGEST_LENGTH,
     canonical_json,
     sha256_json_digest,
 )
+from dr_serialize.hashing import SHA256_HEX_DIGEST_LENGTH
 
 GOLDEN_FIXTURE = Path(__file__).parent / "fixtures" / "hashing_golden.json"
 GOLDEN_TRUNCATED_LENGTH = 16
