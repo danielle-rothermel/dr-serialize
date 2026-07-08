@@ -10,8 +10,8 @@ import pydantic
 from dr_serialize import (
     SerializationError,
     SerializationLimits,
+    Serializer,
     postgres_jsonb_limits,
-    to_jsonable,
 )
 
 _JSON_TYPES = (type(None), bool, int, float, str, list, dict)
@@ -39,6 +39,11 @@ def assert_only_json_types(value: Any) -> None:
         return
     msg = f"non-JSON type: {type(value).__name__}"
     raise AssertionError(msg)
+
+
+def to_jsonable(value: Any, *, limits: SerializationLimits) -> Any:
+    """Function-style adapter over Serializer for terse test call sites."""
+    return Serializer(limits=limits).to_jsonable(value)
 
 
 def assert_to_jsonable(

@@ -14,9 +14,9 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from pydantic import BaseModel, ValidationError
 
 from dr_serialize import (
-    DEFAULT_MAX_DEPTH,
     POSTGRES_JSONB_MAX_BYTES,
     JsonEncodeError,
     MaxDepthExceededError,
@@ -24,10 +24,8 @@ from dr_serialize import (
     ObjectVarsSerializationError,
     PayloadTooLargeError,
     SerializationError,
+    SerializationLimits,
     postgres_jsonb_limits,
-    serialization,
-    to_jsonable,
-    to_metadata_dict,
 )
 from tests.support import (
     BadModel,
@@ -39,9 +37,11 @@ from tests.support import (
     large_payload,
     nested_list,
     ok_pydantic_model,
+    to_jsonable,
 )
 
 DEFAULT_LIMITS = postgres_jsonb_limits()
+DEFAULT_MAX_DEPTH = DEFAULT_LIMITS.max_depth
 
 
 class TestToJsonableInvariants:
@@ -144,6 +144,14 @@ class TestBuiltinTransforms:
 
 
 class TestGuardrails:
+    def test_max_depth_enforced_inside_model_dump(self) -> None:
+        class PayloadModel(BaseModel):
+            data: Any
+
+        limits = SerializationLimits(max_depth=3, max_bytes=1_000_000)
+        with pytest.raises(MaxDepthExceededError):
+            to_jsonable(PayloadModel(data=nested_list(10)), limits=limits)
+
     def test_max_depth_exceeded(self) -> None:
         with pytest.raises(MaxDepthExceededError) as exc_info:
             to_jsonable(nested_list(101), limits=DEFAULT_LIMITS)
@@ -200,12 +208,16 @@ class TestGuardrails:
         )
 
     def test_hard_max_bytes_defaults_to_max_bytes(self) -> None:
-        from dr_serialize import SerializationLimits
-
         limits = SerializationLimits(max_bytes=100)
         with pytest.raises(PayloadTooLargeError) as exc_info:
             to_jsonable(large_payload(500), limits=limits)
         assert exc_info.value.postgres_max_bytes == 100
+
+    def test_serialization_limits_are_frozen(self) -> None:
+        limits = SerializationLimits(max_bytes=100)
+
+        with pytest.raises(ValidationError, match="frozen"):
+            limits.max_bytes = 200
 
     def test_json_encode_error(self) -> None:
         with pytest.raises(JsonEncodeError) as exc_info:
@@ -230,23 +242,17 @@ class TestStructuredErrors:
             {"path", "detail", "value_preview", "underlying"},
         )
 
-    def test_object_vars_serialization_error(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        target = SimpleObject()
-        original = serialization.convert_value
-
-        def patched(
-            x: Any,
-            depth: int = 0,
-            path: tuple[str | int, ...] = (),
-        ) -> Any:
-            if path == ("label",):
+    def test_object_vars_serialization_error(self) -> None:
+        class BrokenVars(dict[str, Any]):
+            def items(self) -> Any:
                 raise RuntimeError("vars walk failed")
-            return original(x, depth, path)
 
-        monkeypatch.setattr(serialization, "convert_value", patched)
+        class BrokenObject:
+            @property
+            def __dict__(self) -> BrokenVars:  # type: ignore[override]
+                return BrokenVars(label="test")
+
+        target = BrokenObject()
         with pytest.raises(ObjectVarsSerializationError) as exc_info:
             to_jsonable(target, limits=DEFAULT_LIMITS)
         assert_diagnostics(
@@ -287,20 +293,6 @@ class TestStructuredErrors:
 
 
 class TestMetadataAndEdgePaths:
-    def test_to_metadata_dict_passthrough_dict_on_serialization_error(
-        self,
-    ) -> None:
-        payload = {"bad": nested_list(101)}
-        metadata = to_metadata_dict(payload)
-
-        assert metadata == payload
-
-    def test_to_metadata_dict_returns_empty_for_non_dict_failure(self) -> None:
-        assert to_metadata_dict(nested_list(101)) == {}
-
-    def test_to_metadata_dict_wraps_scalar_success(self) -> None:
-        assert to_metadata_dict("hello") == {"response": "hello"}
-
     def test_json_encode_error_reports_nested_path(self) -> None:
         with pytest.raises(JsonEncodeError) as exc_info:
             to_jsonable({"a": [{"b": object()}]}, limits=DEFAULT_LIMITS)
