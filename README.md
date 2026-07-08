@@ -25,6 +25,16 @@ serialization policy:
 digest = sha256_json_digest(serializer.to_jsonable(value))
 ```
 
+## Ecosystem
+
+`dr-serialize` provides serialization/schema utilities shared across the
+dr-* stack: JSON-safe conversion, explicit limits, and canonical hashing.
+Neighbor repos are `dr-providers`, `dr-graph`, `dr-platform`, `dr-code`,
+`whetstone-ai`, and `unitbench`.
+This repo depends directly on `pydantic` and no named ecosystem neighbor;
+no consumer repo is declared here, though tests document extraction lineage
+from `whetstone-ai`.
+
 ## Normalization: `Serializer`
 
 ```python
