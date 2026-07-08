@@ -14,9 +14,9 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from dr_serialize import (
-    DEFAULT_MAX_DEPTH,
     POSTGRES_JSONB_MAX_BYTES,
     JsonEncodeError,
     MaxDepthExceededError,
@@ -24,6 +24,7 @@ from dr_serialize import (
     ObjectVarsSerializationError,
     PayloadTooLargeError,
     SerializationError,
+    SerializationLimits,
     postgres_jsonb_limits,
     serialization,
     to_jsonable,
@@ -42,6 +43,7 @@ from tests.support import (
 )
 
 DEFAULT_LIMITS = postgres_jsonb_limits()
+DEFAULT_MAX_DEPTH = DEFAULT_LIMITS.max_depth
 
 
 class TestToJsonableInvariants:
@@ -200,12 +202,16 @@ class TestGuardrails:
         )
 
     def test_hard_max_bytes_defaults_to_max_bytes(self) -> None:
-        from dr_serialize import SerializationLimits
-
         limits = SerializationLimits(max_bytes=100)
         with pytest.raises(PayloadTooLargeError) as exc_info:
             to_jsonable(large_payload(500), limits=limits)
         assert exc_info.value.postgres_max_bytes == 100
+
+    def test_serialization_limits_are_frozen(self) -> None:
+        limits = SerializationLimits(max_bytes=100)
+
+        with pytest.raises(ValidationError, match="frozen"):
+            limits.max_bytes = 200
 
     def test_json_encode_error(self) -> None:
         with pytest.raises(JsonEncodeError) as exc_info:

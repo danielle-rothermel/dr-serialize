@@ -27,8 +27,6 @@ from dr_serialize.hashing import (
     sha256_json_digest,
 )
 from dr_serialize.limits import (
-    DEFAULT_MAX_DEPTH,
-    POSTGRES_JSONB_LIMITS,
     POSTGRES_JSONB_MAX_BYTES,
     POSTGRES_JSONB_PAYLOAD_MAX_BYTES,
     SerializationLimits,
@@ -47,9 +45,7 @@ from dr_serialize.serialization import (
 
 __all__ = [
     "DEBUG_DETAIL_LIMIT",
-    "DEFAULT_MAX_DEPTH",
     "MESSAGE_PREVIEW",
-    "POSTGRES_JSONB_LIMITS",
     "POSTGRES_JSONB_MAX_BYTES",
     "POSTGRES_JSONB_PAYLOAD_MAX_BYTES",
     "SHA256_HEX_DIGEST_LENGTH",

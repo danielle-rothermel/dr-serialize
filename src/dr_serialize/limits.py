@@ -33,7 +33,7 @@ class SerializationLimits(BaseModel):
     when omitted it defaults to ``max_bytes``.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     max_depth: StrictInt = DEFAULT_MAX_DEPTH
     max_bytes: StrictInt
@@ -44,13 +44,6 @@ class SerializationLimits(BaseModel):
         if self.hard_max_bytes is not None:
             return self.hard_max_bytes
         return self.max_bytes
-
-
-POSTGRES_JSONB_LIMITS = SerializationLimits(
-    max_depth=DEFAULT_MAX_DEPTH,
-    max_bytes=POSTGRES_JSONB_PAYLOAD_MAX_BYTES,
-    hard_max_bytes=POSTGRES_JSONB_MAX_BYTES,
-)
 
 
 def postgres_jsonb_limits(
