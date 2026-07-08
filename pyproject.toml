@@ -94,5 +94,8 @@ ignore = ["PLR1711", "S101", "TRY003"]
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["PLR2004", "PLC0415"]
 
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-decorators = ["dataclasses.dataclass"]
+
 [tool.ty.src]
 include = ["src", "tests"]

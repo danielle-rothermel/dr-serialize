@@ -14,7 +14,7 @@ import inspect
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import pydantic
 
@@ -31,9 +31,7 @@ from dr_serialize.errors import (
     detail_repr,
     preview_repr,
 )
-
-if TYPE_CHECKING:
-    from dr_serialize.limits import SerializationLimits
+from dr_serialize.limits import SerializationLimits
 
 ENCODED_PREVIEW_SLICE = 8192
 

@@ -12,33 +12,43 @@ dependency-light (Pydantic only), and deliberately narrow in scope.
 - **Canonical JSON + digests** — `canonical_json` (sorted-key, compact,
   NaN-rejecting) and `sha256_json_digest` with caller-owned truncation
   lengths.
-- **JSON-safe conversion engine** — best-effort `to_jsonable` /
-  `to_metadata_dict` over an ordered handler chain (stdlib + Pydantic
-  handlers built in) with depth and size guards.
-- **Handler registration** — `register_handler` lets consumers add their
-  own type handlers; registered handlers run before the generic
-  fallbacks. `convert_value` is the public recursion entry point for
-  handlers converting nested values.
+- **JSON-safe conversion engine** — best-effort `Serializer.to_jsonable`
+  over an ordered handler chain (stdlib + Pydantic handlers built in)
+  with depth and size guards.
+- **Pluggable consumer handlers** — a `Serializer` is constructed with a
+  tuple of handlers, each `(x: Any, ctx: ConversionContext) ->
+  JsonableHandle`; handlers run before the generic fallbacks, return
+  `(False, None)` to fall through, and recurse into children via
+  `ctx.convert(child, key)`.
 - **Explicit limits** — `SerializationLimits` injected at the call site;
-  `POSTGRES_JSONB_LIMITS` / `postgres_jsonb_limits(...)` ship as *a*
-  preset, not *the* truth.
+  `postgres_jsonb_limits(...)` ships as *a* preset, not *the* truth.
 - **Typed errors** — the `SerializationError` hierarchy with
-  path-to-offending-value diagnostics; consumers subclass
-  `ValueTransformError` for their own handler failures.
+  path-to-offending-value diagnostics (`.diagnostics()`); consumers
+  subclass `ValueTransformError` for their own handler failures.
 
 ## Usage
 
 ```python
 from dr_serialize import (
+    Serializer,
     canonical_json,
     postgres_jsonb_limits,
-    register_handler,
     sha256_json_digest,
-    to_jsonable,
+)
+
+
+def my_handler(x, ctx):
+    if not isinstance(x, MyType):
+        return False, None
+    return True, {"value": ctx.convert(x.value, "value")}
+
+
+serializer = Serializer(
+    limits=postgres_jsonb_limits(), handlers=(my_handler,)
 )
 
 digest = sha256_json_digest({"b": 1, "a": 2}, length=16)
-payload = to_jsonable(value, limits=postgres_jsonb_limits())
+payload = serializer.to_jsonable(value)
 ```
 
 ## Anti-goals
