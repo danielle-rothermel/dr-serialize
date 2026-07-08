@@ -1,66 +1,103 @@
 # dr-serialize
 
-Canonical JSON hashing and JSON-safe serialization with pluggable type
-handlers and explicit, configurable limits.
+JSON-safe serialization and canonical hashing for Python, built as **two
+deliberately separate lanes**:
 
-Extracted from [whetstone-ai](https://github.com/danielle-rothermel/whetstone-ai);
-the foundation package its sibling libraries depend on. Small,
-dependency-light (Pydantic only), and deliberately narrow in scope.
+```text
+                normalization lane (policy)
+Any value --> Serializer.to_jsonable(...) --> Jsonable value
+                                                   |
+                identity lane (deterministic)      v
+              canonical_json(...) --> stable text --> sha256_json_digest(...)
+```
 
-## What it provides
+- The **normalization lane** is *policy*: it decides what your objects
+  become as JSON-safe data - extensible via handlers, bounded by explicit
+  limits, lossy where it must be.
+- The **identity lane** is *deterministic*: it encodes already-JSON-safe
+  data as canonical text and fingerprints it - no handlers, no limits,
+  same input, same bytes, forever.
 
-- **Canonical JSON + digests** — `canonical_json` (sorted-key, compact,
-  NaN-rejecting) and `sha256_json_digest` with caller-owned truncation
-  lengths.
-- **JSON-safe conversion engine** — best-effort `Serializer.to_jsonable`
-  over an ordered handler chain (stdlib + Pydantic handlers built in)
-  with depth and size guards.
-- **Pluggable consumer handlers** — a `Serializer` is constructed with a
-  tuple of handlers, each `(x: Any, ctx: ConversionContext) ->
-  JsonableHandle`; handlers run before the generic fallbacks, return
-  `(False, None)` to fall through, and recurse into children via
-  `ctx.convert(child, key)`.
-- **Explicit limits** — `SerializationLimits` injected at the call site;
-  `postgres_jsonb_limits(...)` ships as *a* preset, not *the* truth.
-- **Typed errors** — the `SerializationError` hierarchy with
-  path-to-offending-value diagnostics (`.diagnostics()`); consumers
-  subclass `ValueTransformError` for their own handler failures.
-
-## Usage
+They compose at your call site, so identity never silently depends on
+serialization policy:
 
 ```python
-from dr_serialize import (
-    Serializer,
-    canonical_json,
-    postgres_jsonb_limits,
-    sha256_json_digest,
-)
-
-
-def my_handler(x, ctx):
-    if not isinstance(x, MyType):
-        return False, None
-    return True, {"value": ctx.convert(x.value, "value")}
-
-
-serializer = Serializer(
-    limits=postgres_jsonb_limits(), handlers=(my_handler,)
-)
-
-digest = sha256_json_digest({"b": 1, "a": 2}, length=16)
-payload = serializer.to_jsonable(value)
+digest = sha256_json_digest(serializer.to_jsonable(value))
 ```
 
-## Anti-goals
+## Normalization: `Serializer`
 
-- No storage, DB coupling, or compression.
-- Not a general utils package: additions must be about canonical
-  serialization or digests and needed by at least two consumers.
+```python
+from dr_serialize import Serializer, postgres_jsonb_limits
 
-## Development
-
-```bash
-uv sync
-uv run pytest
-uv run ruff check && uv run ty check
+serializer = Serializer(limits=postgres_jsonb_limits())
+payload = serializer.to_jsonable(anything)   # JSON-safe, size- and depth-checked
 ```
+
+A `Serializer` bundles `SerializationLimits` with an ordered tuple of
+handlers. Built-in handlers cover scalars, sequences, mappings, bytes,
+types, Pydantic models, coroutines/generators, and `__dict__` objects.
+Your handlers run after the scalar/container built-ins and before the
+fallbacks, so they can intercept any non-primitive value:
+
+```python
+from dr_serialize import ConversionContext, JsonableHandle, Serializer, postgres_jsonb_limits
+
+def jsonable_point(x: object, ctx: ConversionContext) -> JsonableHandle:
+    if isinstance(x, Point):
+        return True, {"x": ctx.convert(x.x, "x"), "y": ctx.convert(x.y, "y")}
+    return False, None      # fall through to the next handler
+
+serializer = Serializer(limits=postgres_jsonb_limits(), handlers=(jsonable_point,))
+```
+
+Handlers recurse through `ctx.convert(child, key)` - the library owns
+depth and path bookkeeping, and the configured `max_depth` is enforced
+through handler recursion too.
+
+### Limits
+
+`SerializationLimits` (frozen) carries `max_depth`, `max_bytes`, and
+`hard_max_bytes`. `postgres_jsonb_limits(max_bytes=...)` is the shipped
+preset for Postgres JSONB storage; construct your own for other ceilings.
+`to_jsonable` requires limits explicitly - every call site states its
+storage policy.
+
+## Identity: `canonical_json` and `sha256_json_digest`
+
+```python
+from dr_serialize import canonical_json, sha256_json_digest
+
+text = canonical_json(payload)                     # sorted keys, compact, NaN rejected
+key  = sha256_json_digest(payload, length=16)      # truncated hex digest
+```
+
+Both take `Jsonable` input - data that is already JSON-safe, typically
+the output of `Serializer.to_jsonable` or values you construct yourself.
+This lane is intentionally policy-free: digests are long-lived identity
+keys, so they must never change because a handler was added or a limit
+tuned. If you need conversion first, compose the lanes explicitly.
+
+## Errors
+
+Both lanes raise from one typed taxonomy rooted at `SerializationError`,
+and every error carries the path to the offending value plus a
+`diagnostics()` dict safe to persist:
+
+| Error | Raised by |
+| --- | --- |
+| `MaxDepthExceededError` | engine: nesting exceeded `max_depth` |
+| `JsonEncodeError` | engine probe and canonical lane: value not JSON-encodable (canonical also rejects NaN/inf) |
+| `PayloadTooLargeError` | engine: encoded size exceeded `max_bytes` |
+| `ModelDumpError` | engine: Pydantic `model_dump` failed |
+| `ObjectVarsSerializationError` | engine: `__dict__` walk failed |
+| `ValueTransformError` | base for consumer handler failures - subclass it with a `message_prefix` |
+
+## API surface
+
+Normalization: `Serializer`, `ConversionContext`, `JsonableHandler`,
+`JsonableHandle`, `SerializationLimits`, `postgres_jsonb_limits`,
+`POSTGRES_JSONB_PAYLOAD_MAX_BYTES`, `POSTGRES_JSONB_MAX_BYTES`.
+Identity: `canonical_json`, `sha256_json_digest`.
+Boundary type: `Jsonable`.
+Errors: the taxonomy above plus `JsonPath`, `preview_repr`, `detail_repr`.

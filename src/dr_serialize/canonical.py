@@ -1,0 +1,63 @@
+"""Identity lane: canonical JSON text and digests for JSON-safe values.
+
+Deterministic and policy-free: no handlers, no limits, no normalization.
+This lane consumes the ``Jsonable`` values the conversion engine
+(:mod:`dr_serialize.serialization`) produces; to fingerprint an arbitrary
+object, compose the lanes explicitly::
+
+    digest = sha256_json_digest(serializer.to_jsonable(value))
+
+Canonical text is the contract-bearer: digest stability derives from
+canonical-text stability, and consumers pin both with golden tests.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+
+from dr_serialize._encoding import TEXT_ENCODING
+from dr_serialize.errors import JsonEncodeError, detail_repr, preview_repr
+from dr_serialize.jsonable import Jsonable, find_json_failure
+
+SHA256_HEX_DIGEST_LENGTH = 64
+
+
+def canonical_json(value: Jsonable) -> str:
+    try:
+        return json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+    except (TypeError, ValueError) as error:
+        failure_path, leaf = find_json_failure(
+            value,
+            reject_non_finite=True,
+        ) or ((), value)
+        raise JsonEncodeError(
+            path=failure_path,
+            type_name=type(leaf).__name__,
+            detail=detail_repr(leaf),
+            underlying=error,
+            value_preview=preview_repr(value),
+        ) from error
+
+
+def sha256_json_digest(
+    value: Jsonable,
+    *,
+    length: int | None = None,
+) -> str:
+    digest = hashlib.sha256(
+        canonical_json(value).encode(TEXT_ENCODING)
+    ).hexdigest()
+    if length is None:
+        return digest
+    if length < 1 or length > SHA256_HEX_DIGEST_LENGTH:
+        raise ValueError(
+            f"digest length must be between 1 and "
+            f"{SHA256_HEX_DIGEST_LENGTH}, got {length}"
+        )
+    return digest[:length]

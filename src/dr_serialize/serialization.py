@@ -31,15 +31,13 @@ from dr_serialize.errors import (
     detail_repr,
     preview_repr,
 )
+from dr_serialize.jsonable import Jsonable, find_json_failure
 from dr_serialize.limits import SerializationLimits
 
 ENCODED_PREVIEW_SLICE = 8192
 
 type JsonableHandle = tuple[bool, Any]
 type JsonableHandler = Callable[[Any, ConversionContext], JsonableHandle]
-
-_JSON_LEAF_TYPES = (type(None), bool, int, float, str)
-_JSON_CONTAINER_TYPES = (*_JSON_LEAF_TYPES, dict, list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,7 +53,9 @@ class ConversionContext:
     depth: int
     path: JsonPath
 
-    def convert(self, child: Any, key: str | int | None = None) -> Any:
+    def convert(
+        self, child: Any, key: str | int | None = None
+    ) -> Jsonable:
         child_path = self.path if key is None else (*self.path, key)
         return _convert_node(
             self.serializer, child, self.depth + 1, child_path
@@ -69,13 +69,13 @@ class Serializer:
     limits: SerializationLimits
     handlers: tuple[JsonableHandler, ...] = ()
 
-    def to_jsonable(self, x: Any) -> Any:
+    def to_jsonable(self, x: Any) -> Jsonable:
         """Convert ``x`` to a JSON-safe value, enforcing ``self.limits``."""
         value = _convert_node(self, x, 0, ())
         try:
             encoded = json.dumps(value, ensure_ascii=False)
         except TypeError as error:
-            failure_path, leaf = _find_non_jsonable_path(value)
+            failure_path, leaf = find_json_failure(value) or ((), value)
             raise JsonEncodeError(
                 path=failure_path,
                 type_name=type(leaf).__name__,
@@ -103,7 +103,7 @@ class Serializer:
 
 def _convert_node(
     serializer: Serializer, x: Any, depth: int, path: JsonPath
-) -> Any:
+) -> Jsonable:
     if depth > serializer.limits.max_depth:
         raise MaxDepthExceededError(
             depth=depth,
@@ -145,33 +145,6 @@ def _top_level_key_sizes(value: Any) -> dict[str, int]:
         str(key): len(json.dumps(item, ensure_ascii=False).encode())
         for key, item in value.items()
     }
-
-
-def _find_non_jsonable_path(  # noqa: PLR0911 -- exhaustive leaf walk
-    value: Any,
-    path: JsonPath = (),
-) -> tuple[JsonPath, Any]:
-    if isinstance(value, _JSON_LEAF_TYPES):
-        return path, value
-    if isinstance(value, dict):
-        for key, item in value.items():
-            sub_path = (*path, str(key))
-            if not isinstance(item, _JSON_CONTAINER_TYPES):
-                return sub_path, item
-            found_path, leaf = _find_non_jsonable_path(item, sub_path)
-            if not isinstance(leaf, _JSON_LEAF_TYPES):
-                return found_path, leaf
-        return path, value
-    if isinstance(value, list):
-        for index, item in enumerate(value):
-            sub_path = (*path, index)
-            if not isinstance(item, _JSON_CONTAINER_TYPES):
-                return sub_path, item
-            found_path, leaf = _find_non_jsonable_path(item, sub_path)
-            if not isinstance(leaf, _JSON_LEAF_TYPES):
-                return found_path, leaf
-        return path, value
-    return path, value
 
 
 def _jsonable_scalar(x: Any, ctx: ConversionContext) -> JsonableHandle:

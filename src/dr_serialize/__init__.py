@@ -1,12 +1,21 @@
-"""Canonical hashing and JSON-safe serialization.
+"""JSON-safe serialization and canonical hashing, as two deliberate lanes.
 
-Public surface: canonical JSON + digests (:mod:`dr_serialize.hashing`),
-the instance-based conversion engine with pluggable handlers
-(:mod:`dr_serialize.serialization`), explicit limits presets
-(:mod:`dr_serialize.limits`), and the typed error taxonomy
-(:mod:`dr_serialize.errors`).
+**Normalization lane** (policy, lossy, extensible):
+:class:`Serializer` converts arbitrary Python values to JSON-safe
+``Jsonable`` data under explicit :class:`SerializationLimits`, through an
+ordered, pluggable handler chain (:mod:`dr_serialize.serialization`).
+
+**Identity lane** (deterministic, policy-free): :func:`canonical_json`
+and :func:`sha256_json_digest` turn already-JSON-safe values into stable
+canonical text and fingerprints (:mod:`dr_serialize.canonical`).
+
+The lanes compose at the call site --
+``sha256_json_digest(serializer.to_jsonable(x))`` -- so digest stability
+never depends on handler policy. Typed errors for both lanes live in
+:mod:`dr_serialize.errors`.
 """
 
+from dr_serialize.canonical import canonical_json, sha256_json_digest
 from dr_serialize.errors import (
     JsonEncodeError,
     JsonPath,
@@ -19,7 +28,7 @@ from dr_serialize.errors import (
     detail_repr,
     preview_repr,
 )
-from dr_serialize.hashing import canonical_json, sha256_json_digest
+from dr_serialize.jsonable import Jsonable
 from dr_serialize.limits import (
     POSTGRES_JSONB_MAX_BYTES,
     POSTGRES_JSONB_PAYLOAD_MAX_BYTES,
@@ -39,6 +48,7 @@ __all__ = [
     "ConversionContext",
     "JsonEncodeError",
     "JsonPath",
+    "Jsonable",
     "JsonableHandle",
     "JsonableHandler",
     "MaxDepthExceededError",

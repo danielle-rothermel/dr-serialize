@@ -77,7 +77,7 @@ class JsonEncodeError(SerializationError):
         path: JsonPath,
         type_name: str,
         detail: str,
-        underlying: TypeError,
+        underlying: TypeError | ValueError,
         value_preview: str,
     ) -> None:
         self.path = path
