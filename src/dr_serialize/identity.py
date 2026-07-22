@@ -120,16 +120,49 @@ class IdentityDocumentError(SerializationError):
 class IdentityDocument:
     """A validated, self-describing, versioned Identity Document.
 
-    Instances exist only via :func:`build_identity_document` or
-    :func:`validate_identity_document`, so a constructed ``IdentityDocument``
-    always holds a validated finite-JSON payload and the exact three-field
-    shape. The owning domain chooses ``schema``, ``schema_version``, and the
-    complete ``payload``; dr-serialize validates them.
+    Construction itself validates (see :meth:`__post_init__`), so every
+    ``IdentityDocument`` -- whether built via :func:`build_identity_document`,
+    :func:`validate_identity_document`, or the exported constructor directly
+    -- always holds a validated finite-JSON payload with the exact
+    three-field shape. The owning domain chooses ``schema``,
+    ``schema_version``, and the complete ``payload``; dr-serialize validates
+    them.
     """
 
     schema: str
     schema_version: int
     payload: Jsonable
+
+    def __post_init__(self) -> None:
+        """Reject any document the validators would reject.
+
+        The public constructor is exported, so it must enforce the same
+        invariant as :func:`build_identity_document` /
+        :func:`validate_identity_document`: ``schema`` is a string,
+        ``schema_version`` is a real int (not bool), and ``payload`` is
+        strict finite JSON. Without this, a directly constructed document
+        with, for example, int/enum dict keys would be handed straight to
+        ``json.dumps`` and have its keys silently coerced to strings,
+        producing a valid-looking Identity Hash that collides with the
+        string-keyed document. Validating here raises the typed
+        :class:`IdentityDocumentError` / :class:`FiniteJsonError` instead.
+        """
+        if not isinstance(self.schema, str):
+            raise IdentityDocumentError(
+                path=("schema",),
+                reason="field must be a string",
+                detail=detail_repr(self.schema),
+            )
+        # bool is a subclass of int; schema_version must be a real int.
+        if isinstance(self.schema_version, bool) or not isinstance(
+            self.schema_version, int
+        ):
+            raise IdentityDocumentError(
+                path=("schema_version",),
+                reason="field must be an integer",
+                detail=detail_repr(self.schema_version),
+            )
+        validate_finite_json(self.payload, ("payload",))
 
     def to_json_dict(self) -> dict[str, Jsonable]:
         """Return the exact three-field document as a plain dict."""

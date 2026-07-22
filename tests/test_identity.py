@@ -271,6 +271,76 @@ def test_document_rejects_non_finite_in_payload() -> None:
 
 
 # --------------------------------------------------------------------------
+# Direct IdentityDocument(...) construction is validated too
+# --------------------------------------------------------------------------
+
+
+def test_direct_construction_rejects_non_string_key_payload() -> None:
+    """The exported constructor validates the payload like the builders.
+
+    A directly constructed document with non-string dict keys must raise a
+    typed :class:`FiniteJsonError` at construction, not silently coerce the
+    keys via ``json.dumps`` when hashed or canonicalized.
+    """
+    with pytest.raises(FiniteJsonError) as exc_info:
+        IdentityDocument(
+            schema="s",
+            schema_version=1,
+            payload=cast("Any", {1: "a", 2: "b"}),
+        )
+    assert exc_info.value.path == ("payload",)
+    assert exc_info.value.reason == "non-string object key"
+
+
+def test_direct_construction_rejects_non_json_payload() -> None:
+    with pytest.raises(FiniteJsonError) as exc_info:
+        IdentityDocument(
+            schema="s",
+            schema_version=1,
+            payload=cast("Any", {"bad": object()}),
+        )
+    assert exc_info.value.path == ("payload", "bad")
+
+
+def test_direct_construction_rejects_bad_schema_types() -> None:
+    with pytest.raises(IdentityDocumentError) as exc_info:
+        IdentityDocument(
+            schema=cast("Any", 1), schema_version=1, payload={}
+        )
+    assert exc_info.value.path == ("schema",)
+    bool_version: Any = True
+    with pytest.raises(IdentityDocumentError) as version_info:
+        IdentityDocument(
+            schema="s", schema_version=bool_version, payload={}
+        )
+    assert version_info.value.path == ("schema_version",)
+
+
+def test_int_key_payload_cannot_collide_with_string_key_document() -> None:
+    """The int/enum-key coercion collision is impossible by construction.
+
+    Previously an int-keyed ``{1: 'x', 2: 'y'}`` payload hashed identically
+    to the string-keyed ``{'1': 'x', '2': 'y'}`` document, because
+    ``json.dumps`` coerced the keys. The int-keyed document must now fail to
+    construct at all, so no collision can occur.
+    """
+    string_keyed = IdentityDocument(
+        schema="s",
+        schema_version=1,
+        payload={"1": "x", "2": "y"},
+    )
+    # The string-keyed document hashes fine.
+    assert len(identity_hash(string_keyed)) == SHA256_HEX_DIGEST_LENGTH
+    # The int-keyed document cannot be constructed, so it cannot collide.
+    with pytest.raises(FiniteJsonError):
+        IdentityDocument(
+            schema="s",
+            schema_version=1,
+            payload=cast("Any", {1: "x", 2: "y"}),
+        )
+
+
+# --------------------------------------------------------------------------
 # Canonical Identity JSON and Identity Hash
 # --------------------------------------------------------------------------
 
