@@ -88,6 +88,47 @@ This lane is intentionally policy-free: digests are long-lived identity
 keys, so they must never change because a handler was added or a limit
 tuned. If you need conversion first, compose the lanes explicitly.
 
+## Identity contract: Identity Document and `identity_hash`
+
+The identity contract is the strict, mechanism-only path for cross-repo
+domain identity. It validates finite JSON, wraps it in an exact
+self-describing versioned document, and hashes the canonical bytes:
+
+```python
+from dr_serialize import build_identity_document, identity_hash
+
+doc = build_identity_document(
+    schema="example.config",       # the owning domain chooses this
+    schema_version=1,              # ...and this
+    payload={"identity_field": "value"},  # ...and the complete payload
+)
+h = identity_hash(doc)             # full 64-char lowercase SHA-256 hex
+```
+
+- **Strict finite JSON.** `validate_finite_json` accepts only `null`,
+  `bool`, `str`, finite numbers, lists, and dicts with string keys,
+  recursively. It rejects non-JSON values, non-string keys, `NaN`/`inf`,
+  and reference cycles with a typed `FiniteJsonError` carrying a
+  JsonPath-style location. No coercion, no custom serializers, no lossy
+  normalization - so a runtime value can never silently collapse onto an
+  identity.
+- **Exact document.** The Identity Document is exactly
+  `{schema, schema_version, payload}`. Missing or extra fields are invalid
+  (`IdentityDocumentError`). dr-serialize never selects payload fields;
+  the owning domain passes a complete payload.
+- **Canonical Identity JSON.** `canonical_identity_json` renders the
+  complete validated document as compact, sorted-key UTF-8 JSON. It pins
+  the same profile as `canonical_json` and is deliberately **not** RFC 8785.
+- **Full Identity Hash.** `identity_hash` returns the full 64-character
+  lowercase SHA-256 hex of the canonical bytes. There is no truncation or
+  prefix parameter on this path; `identity_hash_prefix` is a separate,
+  display-only helper that never establishes identity.
+
+The identity contract is separate from the normalization lane on purpose:
+diagnostic normalization is potentially lossy and must never feed identity
+hashing. Committed golden vectors live in
+`tests/fixtures/identity_golden.json` for dependent repos to reuse.
+
 ## Errors
 
 Both lanes raise from one typed taxonomy rooted at `SerializationError`,
@@ -102,12 +143,18 @@ and every error carries the path to the offending value plus a
 | `ModelDumpError` | engine: Pydantic `model_dump` failed |
 | `ObjectVarsSerializationError` | engine: `__dict__` walk failed |
 | `ValueTransformError` | base for consumer handler failures - subclass it with a `message_prefix` |
+| `FiniteJsonError` | identity path: value is not strict finite JSON (non-JSON, non-string key, NaN/inf, cycle) |
+| `IdentityDocumentError` | identity path: document is not the exact three-field shape |
 
 ## API surface
 
 Normalization: `Serializer`, `ConversionContext`, `JsonableHandler`,
 `JsonableHandle`, `SerializationLimits`, `postgres_jsonb_limits`,
 `POSTGRES_JSONB_PAYLOAD_MAX_BYTES`, `POSTGRES_JSONB_MAX_BYTES`.
-Identity: `canonical_json`, `sha256_json_digest`.
+Identity lane: `canonical_json`, `sha256_json_digest`.
+Identity contract: `validate_finite_json`, `IdentityDocument`,
+`build_identity_document`, `validate_identity_document`,
+`canonical_identity_json`, `identity_hash`, `compute_identity_hash`,
+`identity_hash_prefix`, `IDENTITY_DOCUMENT_FIELDS`.
 Boundary type: `Jsonable`.
 Errors: the taxonomy above plus `JsonPath`, `preview_repr`, `detail_repr`.
