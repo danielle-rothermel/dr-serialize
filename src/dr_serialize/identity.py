@@ -162,7 +162,7 @@ class IdentityDocument:
                 reason="field must be an integer",
                 detail=detail_repr(self.schema_version),
             )
-        validate_strict_json(self.payload, ("payload",))
+        _validate_strict_json(self.payload, ("payload",), frozenset())
 
     def to_json_dict(self) -> dict[str, Jsonable]:
         """Return the exact three-field document as a plain dict."""
@@ -173,11 +173,7 @@ class IdentityDocument:
         }
 
 
-def validate_strict_json(
-    value: Any,
-    path: JsonPath = (),
-    _seen: frozenset[int] = frozenset(),
-) -> Jsonable:
+def validate_strict_json(value: Any) -> Jsonable:
     """Return ``value`` if it is strict JSON, else raise.
 
     Accepts, recursively: ``None``, ``bool``, ``int``, finite ``float``,
@@ -186,6 +182,19 @@ def validate_strict_json(
     non-finite numbers (``NaN``/``Inf``), and reference cycles, raising
     :class:`StrictJsonError` with the JsonPath-style ``path`` to the first
     offending value or key. No coercion or normalization is performed.
+    """
+    return _validate_strict_json(value, (), frozenset())
+
+
+def _validate_strict_json(
+    value: Any,
+    path: JsonPath,
+    seen: frozenset[int],
+) -> Jsonable:
+    """Recursive strict-JSON check carrying traversal state.
+
+    ``path`` is the JsonPath-style location of ``value``; ``seen`` holds the
+    ``id()`` of every container on the current path, for cycle detection.
     """
     if value is None or isinstance(value, (bool, int, str)):
         # bool is a subclass of int; both are accepted JSON scalars.
@@ -200,14 +209,14 @@ def validate_strict_json(
             )
         return value
     if isinstance(value, dict):
-        if id(value) in _seen:
+        if id(value) in seen:
             raise StrictJsonError(
                 path=path,
                 reason="reference cycle",
                 type_name="dict",
                 detail=detail_repr(value),
             )
-        seen = _seen | {id(value)}
+        inner = seen | {id(value)}
         for key, item in value.items():
             if not isinstance(key, str):
                 raise StrictJsonError(
@@ -216,19 +225,19 @@ def validate_strict_json(
                     type_name=type(key).__name__,
                     detail=detail_repr(key),
                 )
-            validate_strict_json(item, (*path, key), seen)
+            _validate_strict_json(item, (*path, key), inner)
         return value
     if isinstance(value, list):
-        if id(value) in _seen:
+        if id(value) in seen:
             raise StrictJsonError(
                 path=path,
                 reason="reference cycle",
                 type_name="list",
                 detail=detail_repr(value),
             )
-        seen = _seen | {id(value)}
+        inner = seen | {id(value)}
         for index, item in enumerate(value):
-            validate_strict_json(item, (*path, index), seen)
+            _validate_strict_json(item, (*path, index), inner)
         return value
     raise StrictJsonError(
         path=path,

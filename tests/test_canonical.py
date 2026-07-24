@@ -3,6 +3,10 @@
 The golden fixture in ``tests/fixtures/hashing_golden.json`` was captured
 from whetstone-ai before extraction; byte-identical reproduction is the
 migration acceptance gate.
+
+The fixture's metadata keys were renamed ``digest`` -> ``hash`` after
+capture; the ``value``/``canonical_json`` inputs and all hash values remain
+byte-identical to the whetstone-ai capture.
 """
 
 from __future__ import annotations
