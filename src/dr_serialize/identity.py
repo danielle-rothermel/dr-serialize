@@ -1,13 +1,13 @@
-"""Identity contract: strict finite JSON, Identity Documents, hashing.
+"""Identity contract: strict JSON, Identity Documents, hashing.
 
 This module is the mechanism side of the coordinated identity reset. It
 owns three things and nothing else:
 
-1. **Strict recursive finite-JSON validation** -- accept only ``null``,
+1. **Strict recursive JSON validation** -- accept only ``null``,
    ``bool``, ``str``, finite numbers, lists of accepted values, and dicts
    with string keys and accepted values. Every other runtime value, every
    non-string key, every non-finite number, and every reference cycle is
-   rejected with a typed :class:`FiniteJsonError` carrying a JsonPath-style
+   rejected with a typed :class:`StrictJsonError` carrying a JsonPath-style
    location. There is no coercion, no custom serializer, and no lossy
    normalization on this path.
 
@@ -51,10 +51,10 @@ if TYPE_CHECKING:
 IDENTITY_DOCUMENT_FIELDS = ("schema", "schema_version", "payload")
 
 
-class FiniteJsonError(SerializationError):
-    """A value is not strict finite JSON.
+class StrictJsonError(SerializationError):
+    """A value is not strict JSON.
 
-    Raised by :func:`validate_finite_json` (and therefore by document
+    Raised by :func:`validate_strict_json` (and therefore by document
     validation and hashing) when a value is not JSON, has a non-string
     object key, is a non-finite number, or forms a reference cycle. The
     ``path`` locates the exact offending leaf or key JsonPath-style.
@@ -73,7 +73,7 @@ class FiniteJsonError(SerializationError):
         self.type_name = type_name
         self.detail = detail
         super().__init__(
-            f"not finite JSON at path {path!r}: {reason} ({type_name})"
+            f"not strict JSON at path {path!r}: {reason} ({type_name})"
         )
 
     def diagnostics(self) -> dict[str, Any]:
@@ -90,8 +90,8 @@ class IdentityDocumentError(SerializationError):
 
     Raised by :func:`validate_identity_document` when the document is not a
     mapping, is missing a required field, carries an extra field, or has a
-    field of the wrong type. Finite-JSON problems inside the payload raise
-    :class:`FiniteJsonError` instead.
+    field of the wrong type. Strict-JSON problems inside the payload raise
+    :class:`StrictJsonError` instead.
     """
 
     def __init__(
@@ -123,7 +123,7 @@ class IdentityDocument:
     Construction itself validates (see :meth:`__post_init__`), so every
     ``IdentityDocument`` -- whether built via :func:`build_identity_document`,
     :func:`validate_identity_document`, or the exported constructor directly
-    -- always holds a validated finite-JSON payload with the exact
+    -- always holds a validated strict-JSON payload with the exact
     three-field shape. The owning domain chooses ``schema``,
     ``schema_version``, and the complete ``payload``; dr-serialize validates
     them.
@@ -140,12 +140,12 @@ class IdentityDocument:
         invariant as :func:`build_identity_document` /
         :func:`validate_identity_document`: ``schema`` is a string,
         ``schema_version`` is a real int (not bool), and ``payload`` is
-        strict finite JSON. Without this, a directly constructed document
+        strict JSON. Without this, a directly constructed document
         with, for example, int/enum dict keys would be handed straight to
         ``json.dumps`` and have its keys silently coerced to strings,
         producing a valid-looking Identity Hash that collides with the
         string-keyed document. Validating here raises the typed
-        :class:`IdentityDocumentError` / :class:`FiniteJsonError` instead.
+        :class:`IdentityDocumentError` / :class:`StrictJsonError` instead.
         """
         if not isinstance(self.schema, str):
             raise IdentityDocumentError(
@@ -162,7 +162,7 @@ class IdentityDocument:
                 reason="field must be an integer",
                 detail=detail_repr(self.schema_version),
             )
-        validate_finite_json(self.payload, ("payload",))
+        validate_strict_json(self.payload, ("payload",))
 
     def to_json_dict(self) -> dict[str, Jsonable]:
         """Return the exact three-field document as a plain dict."""
@@ -173,18 +173,18 @@ class IdentityDocument:
         }
 
 
-def validate_finite_json(
+def validate_strict_json(
     value: Any,
     path: JsonPath = (),
     _seen: frozenset[int] = frozenset(),
 ) -> Jsonable:
-    """Return ``value`` if it is strict finite JSON, else raise.
+    """Return ``value`` if it is strict JSON, else raise.
 
     Accepts, recursively: ``None``, ``bool``, ``int``, finite ``float``,
     ``str``, ``list`` of accepted values, and ``dict`` with ``str`` keys and
     accepted values. Rejects every other runtime type, non-string dict keys,
     non-finite numbers (``NaN``/``Inf``), and reference cycles, raising
-    :class:`FiniteJsonError` with the JsonPath-style ``path`` to the first
+    :class:`StrictJsonError` with the JsonPath-style ``path`` to the first
     offending value or key. No coercion or normalization is performed.
     """
     if value is None or isinstance(value, (bool, int, str)):
@@ -192,7 +192,7 @@ def validate_finite_json(
         return value
     if isinstance(value, float):
         if not math.isfinite(value):
-            raise FiniteJsonError(
+            raise StrictJsonError(
                 path=path,
                 reason="non-finite number",
                 type_name="float",
@@ -201,7 +201,7 @@ def validate_finite_json(
         return value
     if isinstance(value, dict):
         if id(value) in _seen:
-            raise FiniteJsonError(
+            raise StrictJsonError(
                 path=path,
                 reason="reference cycle",
                 type_name="dict",
@@ -210,17 +210,17 @@ def validate_finite_json(
         seen = _seen | {id(value)}
         for key, item in value.items():
             if not isinstance(key, str):
-                raise FiniteJsonError(
+                raise StrictJsonError(
                     path=path,
                     reason="non-string object key",
                     type_name=type(key).__name__,
                     detail=detail_repr(key),
                 )
-            validate_finite_json(item, (*path, key), seen)
+            validate_strict_json(item, (*path, key), seen)
         return value
     if isinstance(value, list):
         if id(value) in _seen:
-            raise FiniteJsonError(
+            raise StrictJsonError(
                 path=path,
                 reason="reference cycle",
                 type_name="list",
@@ -228,9 +228,9 @@ def validate_finite_json(
             )
         seen = _seen | {id(value)}
         for index, item in enumerate(value):
-            validate_finite_json(item, (*path, index), seen)
+            validate_strict_json(item, (*path, index), seen)
         return value
-    raise FiniteJsonError(
+    raise StrictJsonError(
         path=path,
         reason="unsupported type",
         type_name=type(value).__name__,
@@ -267,9 +267,9 @@ def validate_identity_document(
     """Validate a mapping as an exact-shape Identity Document.
 
     Requires exactly the fields ``schema`` (str), ``schema_version`` (int,
-    not bool), and ``payload`` (strict finite JSON). Missing fields, extra
+    not bool), and ``payload`` (strict JSON). Missing fields, extra
     fields, and wrong field types raise :class:`IdentityDocumentError`;
-    finite-JSON problems inside the payload raise :class:`FiniteJsonError`
+    strict-JSON problems inside the payload raise :class:`StrictJsonError`
     with a ``("payload", ...)`` path.
     """
     if not isinstance(document, dict):
@@ -298,7 +298,7 @@ def validate_identity_document(
     schema_version = _require_field_type(
         document, "schema_version", int, "an integer"
     )
-    payload = validate_finite_json(document["payload"], ("payload",))
+    payload = validate_strict_json(document["payload"], ("payload",))
     return IdentityDocument(
         schema=schema,
         schema_version=schema_version,
@@ -335,7 +335,7 @@ def canonical_identity_json(document: IdentityDocument) -> str:
     :func:`dr_serialize.canonical.canonical_json`
     (``sort_keys=True``, ``separators=(",", ":")``, ``ensure_ascii=True``,
     ``allow_nan=False``); it is NOT RFC 8785. The payload is already
-    validated finite JSON, so serialization cannot silently coerce a
+    validated strict JSON, so serialization cannot silently coerce a
     runtime value onto an identity.
     """
     return json.dumps(
@@ -346,7 +346,7 @@ def canonical_identity_json(document: IdentityDocument) -> str:
     )
 
 
-def identity_hash(document: IdentityDocument) -> str:
+def identity_document_hash(document: IdentityDocument) -> str:
     """Return the full Identity Hash of a validated Identity Document.
 
     The full 64-character lowercase SHA-256 hex of the Canonical Identity
@@ -362,9 +362,9 @@ def compute_identity_hash(document: Mapping[Any, Any]) -> str:
     """Validate a mapping and return its full Identity Hash.
 
     Convenience one-shot over :func:`validate_identity_document` and
-    :func:`identity_hash` for callers holding a raw mapping.
+    :func:`identity_document_hash` for callers holding a raw mapping.
     """
-    return identity_hash(validate_identity_document(document))
+    return identity_document_hash(validate_identity_document(document))
 
 
 def identity_hash_prefix(hash_hex: str, length: int) -> str:

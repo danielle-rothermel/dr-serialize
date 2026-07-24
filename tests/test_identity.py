@@ -1,6 +1,6 @@
 """Contract tests for the identity path.
 
-Covers strict finite-JSON validation and its rejection classes, the exact
+Covers strict JSON validation and its rejection classes, the exact
 three-field Identity Document, Canonical Identity JSON, and the full
 Identity Hash. The golden fixture in ``tests/fixtures/identity_golden.json``
 is committed for reuse by other repos; byte-identical canonical JSON and
@@ -17,16 +17,16 @@ from typing import Any, cast
 import pytest
 
 from dr_serialize import (
-    FiniteJsonError,
+    StrictJsonError,
     IdentityDocument,
     IdentityDocumentError,
     Jsonable,
     build_identity_document,
     canonical_identity_json,
     compute_identity_hash,
-    identity_hash,
+    identity_document_hash,
     identity_hash_prefix,
-    validate_finite_json,
+    validate_strict_json,
     validate_identity_document,
 )
 from dr_serialize.canonical import SHA256_HEX_DIGEST_LENGTH
@@ -37,7 +37,7 @@ GOLDEN_FIXTURE = (
 
 
 # --------------------------------------------------------------------------
-# Strict finite-JSON validation: acceptance
+# Strict JSON validation: acceptance
 # --------------------------------------------------------------------------
 
 
@@ -63,23 +63,23 @@ GOLDEN_FIXTURE = (
         {"nested": {"deep": {"deeper": [1, {"x": "y"}]}}},
     ],
 )
-def test_validate_finite_json_accepts_finite_json(value: Any) -> None:
-    assert validate_finite_json(value) is value
+def test_validate_strict_json_accepts_strict_json(value: Any) -> None:
+    assert validate_strict_json(value) is value
 
 
-def test_validate_finite_json_accepts_numeric_string_keys() -> None:
+def test_validate_strict_json_accepts_numeric_string_keys() -> None:
     value = {"10": "ten", "2": "two", "1": "one"}
-    assert validate_finite_json(value) is value
+    assert validate_strict_json(value) is value
 
 
 # --------------------------------------------------------------------------
-# Strict finite-JSON validation: rejection, one test per invalid class
+# Strict JSON validation: rejection, one test per invalid class
 # --------------------------------------------------------------------------
 
 
 def test_rejects_non_json_value_at_root() -> None:
-    with pytest.raises(FiniteJsonError) as exc_info:
-        validate_finite_json(object())
+    with pytest.raises(StrictJsonError) as exc_info:
+        validate_strict_json(object())
     exc = exc_info.value
     assert exc.path == ()
     assert exc.reason == "unsupported type"
@@ -88,8 +88,8 @@ def test_rejects_non_json_value_at_root() -> None:
 
 def test_rejects_non_json_value_with_jsonpath_location() -> None:
     value = {"k": [1, object()]}
-    with pytest.raises(FiniteJsonError) as exc_info:
-        validate_finite_json(value)
+    with pytest.raises(StrictJsonError) as exc_info:
+        validate_strict_json(value)
     exc = exc_info.value
     assert exc.path == ("k", 1)
     assert exc.reason == "unsupported type"
@@ -106,8 +106,8 @@ def test_rejects_non_json_value_with_jsonpath_location() -> None:
     "bad_value", [float("nan"), float("inf"), float("-inf")]
 )
 def test_rejects_non_finite_number(bad_value: float) -> None:
-    with pytest.raises(FiniteJsonError) as exc_info:
-        validate_finite_json({"x": [0.0, bad_value]})
+    with pytest.raises(StrictJsonError) as exc_info:
+        validate_strict_json({"x": [0.0, bad_value]})
     exc = exc_info.value
     assert exc.path == ("x", 1)
     assert exc.reason == "non-finite number"
@@ -117,8 +117,8 @@ def test_rejects_non_finite_number(bad_value: float) -> None:
 @pytest.mark.parametrize("bad_key", [1, 2.0, None, True, (1, 2)])
 def test_rejects_non_string_object_key(bad_key: Any) -> None:
     value = {"ok": {bad_key: "v"}}
-    with pytest.raises(FiniteJsonError) as exc_info:
-        validate_finite_json(value)
+    with pytest.raises(StrictJsonError) as exc_info:
+        validate_strict_json(value)
     exc = exc_info.value
     assert exc.path == ("ok",)
     assert exc.reason == "non-string object key"
@@ -127,8 +127,8 @@ def test_rejects_non_string_object_key(bad_key: Any) -> None:
 def test_rejects_dict_reference_cycle() -> None:
     value: dict[str, Any] = {"a": 1}
     value["self"] = value
-    with pytest.raises(FiniteJsonError) as exc_info:
-        validate_finite_json(value)
+    with pytest.raises(StrictJsonError) as exc_info:
+        validate_strict_json(value)
     exc = exc_info.value
     assert exc.reason == "reference cycle"
     assert exc.type_name == "dict"
@@ -138,8 +138,8 @@ def test_rejects_list_reference_cycle() -> None:
     inner: list[Any] = [1]
     value = {"items": inner}
     inner.append(inner)
-    with pytest.raises(FiniteJsonError) as exc_info:
-        validate_finite_json(value)
+    with pytest.raises(StrictJsonError) as exc_info:
+        validate_strict_json(value)
     exc = exc_info.value
     assert exc.reason == "reference cycle"
     assert exc.type_name == "list"
@@ -148,7 +148,7 @@ def test_rejects_list_reference_cycle() -> None:
 def test_repeated_shared_subtree_is_not_a_cycle() -> None:
     shared = {"k": "v"}
     value = {"a": shared, "b": shared}
-    assert validate_finite_json(value) is value
+    assert validate_strict_json(value) is value
 
 
 @pytest.mark.parametrize(
@@ -162,8 +162,8 @@ def test_repeated_shared_subtree_is_not_a_cycle() -> None:
     ],
 )
 def test_rejects_assorted_non_json_types(bad_value: Any) -> None:
-    with pytest.raises(FiniteJsonError):
-        validate_finite_json(bad_value)
+    with pytest.raises(StrictJsonError):
+        validate_strict_json(bad_value)
 
 
 # --------------------------------------------------------------------------
@@ -248,8 +248,8 @@ def test_document_rejects_non_int_schema_version(bad_version: Any) -> None:
     assert exc_info.value.path == ("schema_version",)
 
 
-def test_document_payload_finite_json_error_has_payload_path() -> None:
-    with pytest.raises(FiniteJsonError) as exc_info:
+def test_document_payload_strict_json_error_has_payload_path() -> None:
+    with pytest.raises(StrictJsonError) as exc_info:
         validate_identity_document(
             {
                 "schema": "s",
@@ -261,7 +261,7 @@ def test_document_payload_finite_json_error_has_payload_path() -> None:
 
 
 def test_document_rejects_non_finite_in_payload() -> None:
-    with pytest.raises(FiniteJsonError) as exc_info:
+    with pytest.raises(StrictJsonError) as exc_info:
         build_identity_document(
             schema="s",
             schema_version=1,
@@ -279,10 +279,10 @@ def test_direct_construction_rejects_non_string_key_payload() -> None:
     """The exported constructor validates the payload like the builders.
 
     A directly constructed document with non-string dict keys must raise a
-    typed :class:`FiniteJsonError` at construction, not silently coerce the
+    typed :class:`StrictJsonError` at construction, not silently coerce the
     keys via ``json.dumps`` when hashed or canonicalized.
     """
-    with pytest.raises(FiniteJsonError) as exc_info:
+    with pytest.raises(StrictJsonError) as exc_info:
         IdentityDocument(
             schema="s",
             schema_version=1,
@@ -293,7 +293,7 @@ def test_direct_construction_rejects_non_string_key_payload() -> None:
 
 
 def test_direct_construction_rejects_non_json_payload() -> None:
-    with pytest.raises(FiniteJsonError) as exc_info:
+    with pytest.raises(StrictJsonError) as exc_info:
         IdentityDocument(
             schema="s",
             schema_version=1,
@@ -330,9 +330,9 @@ def test_int_key_payload_cannot_collide_with_string_key_document() -> None:
         payload={"1": "x", "2": "y"},
     )
     # The string-keyed document hashes fine.
-    assert len(identity_hash(string_keyed)) == SHA256_HEX_DIGEST_LENGTH
+    assert len(identity_document_hash(string_keyed)) == SHA256_HEX_DIGEST_LENGTH
     # The int-keyed document cannot be constructed, so it cannot collide.
-    with pytest.raises(FiniteJsonError):
+    with pytest.raises(StrictJsonError):
         IdentityDocument(
             schema="s",
             schema_version=1,
@@ -357,14 +357,14 @@ def test_canonical_identity_json_is_compact_sorted() -> None:
     )
 
 
-def test_identity_hash_is_full_lowercase_sha256() -> None:
+def test_identity_document_hash_is_full_lowercase_sha256() -> None:
     doc = build_identity_document(
         schema="s", schema_version=1, payload={"k": "v"}
     )
-    digest = identity_hash(doc)
-    assert len(digest) == SHA256_HEX_DIGEST_LENGTH
-    assert digest == digest.lower()
-    assert all(c in "0123456789abcdef" for c in digest)
+    hash_value = identity_document_hash(doc)
+    assert len(hash_value) == SHA256_HEX_DIGEST_LENGTH
+    assert hash_value == hash_value.lower()
+    assert all(c in "0123456789abcdef" for c in hash_value)
 
 
 def test_compute_identity_hash_one_shot_matches_two_step() -> None:
@@ -373,22 +373,22 @@ def test_compute_identity_hash_one_shot_matches_two_step() -> None:
         "schema_version": 1,
         "payload": {"k": "v"},
     }
-    two_step = identity_hash(validate_identity_document(document))
+    two_step = identity_document_hash(validate_identity_document(document))
     assert compute_identity_hash(document) == two_step
 
 
-def test_identity_hash_has_no_truncation_parameter() -> None:
+def test_identity_document_hash_has_no_truncation_parameter() -> None:
     import inspect
 
     # The identity path exposes no truncation/prefix parameter; the only
     # parameter is the validated document.
-    params = list(inspect.signature(identity_hash).parameters)
+    params = list(inspect.signature(identity_document_hash).parameters)
     assert params == ["document"]
     doc = build_identity_document(schema="s", schema_version=1, payload={})
     # Passing a length keyword is a plain TypeError at runtime.
     kwargs: dict[str, Any] = {"document": doc, "length": 16}
     with pytest.raises(TypeError):
-        identity_hash(**kwargs)
+        identity_document_hash(**kwargs)
 
 
 # --------------------------------------------------------------------------
@@ -415,7 +415,7 @@ def test_key_order_does_not_affect_canonical_json_or_hash() -> None:
         for payload in _permuted_dicts(pairs)
     ]
     canonical_values = {canonical_identity_json(d) for d in docs}
-    hashes = {identity_hash(d) for d in docs}
+    hashes = {identity_document_hash(d) for d in docs}
     assert len(canonical_values) == 1
     assert len(hashes) == 1
 
@@ -432,7 +432,7 @@ def test_nested_dict_insertion_order_does_not_affect_hash() -> None:
         payload={"z": [1, 2], "outer": {"y": 2, "x": 1}},
     )
     assert canonical_identity_json(doc_a) == canonical_identity_json(doc_b)
-    assert identity_hash(doc_a) == identity_hash(doc_b)
+    assert identity_document_hash(doc_a) == identity_document_hash(doc_b)
 
 
 def test_list_order_is_significant_for_identity() -> None:
@@ -442,7 +442,7 @@ def test_list_order_is_significant_for_identity() -> None:
     doc_b = build_identity_document(
         schema="s", schema_version=1, payload={"items": [3, 2, 1]}
     )
-    assert identity_hash(doc_a) != identity_hash(doc_b)
+    assert identity_document_hash(doc_a) != identity_document_hash(doc_b)
 
 
 def test_schema_version_bump_changes_identity() -> None:
@@ -453,7 +453,7 @@ def test_schema_version_bump_changes_identity() -> None:
     v2 = build_identity_document(
         schema="s", schema_version=2, payload=payload
     )
-    assert identity_hash(v1) != identity_hash(v2)
+    assert identity_document_hash(v1) != identity_document_hash(v2)
 
 
 # --------------------------------------------------------------------------
@@ -463,7 +463,7 @@ def test_schema_version_bump_changes_identity() -> None:
 
 def test_identity_hash_prefix_is_leading_slice() -> None:
     doc = build_identity_document(schema="s", schema_version=1, payload={})
-    full = identity_hash(doc)
+    full = identity_document_hash(doc)
     prefix = identity_hash_prefix(full, 12)
     assert len(prefix) == 12
     assert full.startswith(prefix)
@@ -472,7 +472,7 @@ def test_identity_hash_prefix_is_leading_slice() -> None:
 @pytest.mark.parametrize("length", [0, -1, 65])
 def test_identity_hash_prefix_rejects_bad_length(length: int) -> None:
     doc = build_identity_document(schema="s", schema_version=1, payload={})
-    full = identity_hash(doc)
+    full = identity_document_hash(doc)
     with pytest.raises(ValueError, match="prefix length"):
         identity_hash_prefix(full, length)
 
@@ -497,7 +497,7 @@ def test_golden_identity_case_reproduces(name: str) -> None:
     document = case["document"]
     doc = validate_identity_document(document)
     assert canonical_identity_json(doc) == case["canonical_json"]
-    assert identity_hash(doc) == case["identity_hash"]
+    assert identity_document_hash(doc) == case["identity_hash"]
     assert compute_identity_hash(document) == case["identity_hash"]
 
 
@@ -536,9 +536,9 @@ def test_identity_path_does_not_coerce_via_diagnostic_normalization() -> None:
     assert normalized == {"name": "n", "count": 1}
 
     # Identity path rejects the un-normalized model outright.
-    with pytest.raises(FiniteJsonError):
-        validate_finite_json(model)
-    with pytest.raises(FiniteJsonError):
+    with pytest.raises(StrictJsonError):
+        validate_strict_json(model)
+    with pytest.raises(StrictJsonError):
         build_identity_document(
             schema="s", schema_version=1, payload={"model": model}
         )

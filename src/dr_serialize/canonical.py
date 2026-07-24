@@ -1,13 +1,13 @@
-"""Identity lane: canonical JSON text and digests for JSON-safe values.
+"""Identity lane: canonical JSON text and hashes for JSON-safe values.
 
 Deterministic and policy-free: no handlers, no limits, no normalization.
 This lane consumes the ``Jsonable`` values the conversion engine
 (:mod:`dr_serialize.serialization`) produces; to fingerprint an arbitrary
 object, compose the lanes explicitly::
 
-    digest = sha256_json_digest(serializer.to_jsonable(value))
+    hash_value = json_hash(serializer.to_jsonable(value))
 
-Canonical text is the contract-bearer: digest stability derives from
+Canonical text is the contract-bearer: hash stability derives from
 canonical-text stability, and consumers pin both with golden tests.
 """
 
@@ -45,19 +45,19 @@ def canonical_json(value: Jsonable) -> str:
         ) from error
 
 
-def sha256_json_digest(
+def json_hash(
     value: Jsonable,
     *,
     length: int | None = None,
 ) -> str:
-    digest = hashlib.sha256(
+    hash_value = hashlib.sha256(
         canonical_json(value).encode(TEXT_ENCODING)
     ).hexdigest()
     if length is None:
-        return digest
+        return hash_value
     if length < 1 or length > SHA256_HEX_DIGEST_LENGTH:
         raise ValueError(
-            f"digest length must be between 1 and "
+            f"hash length must be between 1 and "
             f"{SHA256_HEX_DIGEST_LENGTH}, got {length}"
         )
-    return digest[:length]
+    return hash_value[:length]

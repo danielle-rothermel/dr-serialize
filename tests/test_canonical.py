@@ -1,4 +1,4 @@
-"""Contract tests for canonical JSON and digests.
+"""Contract tests for canonical JSON and hashes.
 
 The golden fixture in ``tests/fixtures/hashing_golden.json`` was captured
 from whetstone-ai before extraction; byte-identical reproduction is the
@@ -17,7 +17,7 @@ from dr_serialize import (
     Jsonable,
     JsonEncodeError,
     canonical_json,
-    sha256_json_digest,
+    json_hash,
 )
 from dr_serialize.canonical import SHA256_HEX_DIGEST_LENGTH
 
@@ -42,23 +42,23 @@ def test_canonical_json_rejects_nan() -> None:
     assert isinstance(exc.underlying, ValueError)
 
 
-def test_sha256_json_digest_full_length() -> None:
-    digest = sha256_json_digest({"k": "v"})
-    assert len(digest) == SHA256_HEX_DIGEST_LENGTH
-    assert digest == sha256_json_digest({"k": "v"})
+def test_json_hash_full_length() -> None:
+    hash_value = json_hash({"k": "v"})
+    assert len(hash_value) == SHA256_HEX_DIGEST_LENGTH
+    assert hash_value == json_hash({"k": "v"})
 
 
 @pytest.mark.parametrize("length", [1, 16, 24, 32, 64])
-def test_sha256_json_digest_truncation(length: int) -> None:
-    digest = sha256_json_digest({"k": "v"}, length=length)
-    assert len(digest) == length
-    assert sha256_json_digest({"k": "v"}).startswith(digest)
+def test_json_hash_truncation(length: int) -> None:
+    hash_value = json_hash({"k": "v"}, length=length)
+    assert len(hash_value) == length
+    assert json_hash({"k": "v"}).startswith(hash_value)
 
 
 @pytest.mark.parametrize("length", [0, -1, 65])
-def test_sha256_json_digest_rejects_bad_length(length: int) -> None:
-    with pytest.raises(ValueError, match="digest length"):
-        sha256_json_digest({"k": "v"}, length=length)
+def test_json_hash_rejects_bad_length(length: int) -> None:
+    with pytest.raises(ValueError, match="hash length"):
+        json_hash({"k": "v"}, length=length)
 
 
 class TestCanonicalTypedErrors:
@@ -90,14 +90,14 @@ class TestCanonicalTypedErrors:
         assert exc.type_name == "float"
         assert isinstance(exc.underlying, ValueError)
 
-    def test_digest_propagates_json_encode_error(self) -> None:
+    def test_hash_propagates_json_encode_error(self) -> None:
         value = cast("Jsonable", {"k": object()})
         with pytest.raises(JsonEncodeError):
-            sha256_json_digest(value)
+            json_hash(value)
 
-    def test_digest_length_validation_stays_value_error(self) -> None:
-        with pytest.raises(ValueError, match="digest length"):
-            sha256_json_digest({"a": 1}, length=0)
+    def test_hash_length_validation_stays_value_error(self) -> None:
+        with pytest.raises(ValueError, match="hash length"):
+            json_hash({"a": 1}, length=0)
 
 
 def _golden_cases() -> dict[str, dict[str, Any]]:
@@ -109,8 +109,8 @@ def test_golden_hashing_case_reproduces(name: str) -> None:
     case = _golden_cases()[name]
     value = case["value"]
     assert canonical_json(value) == case["canonical_json"]
-    assert sha256_json_digest(value) == case["digest"]
+    assert json_hash(value) == case["hash"]
     assert (
-        sha256_json_digest(value, length=GOLDEN_TRUNCATED_LENGTH)
-        == case["truncated_digest"]
+        json_hash(value, length=GOLDEN_TRUNCATED_LENGTH)
+        == case["truncated_hash"]
     )

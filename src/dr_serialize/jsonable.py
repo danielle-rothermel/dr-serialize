@@ -3,7 +3,7 @@
 The conversion engine (:class:`~dr_serialize.serialization.Serializer`)
 produces ``Jsonable``; the identity lane
 (:func:`~dr_serialize.canonical.canonical_json`,
-:func:`~dr_serialize.canonical.sha256_json_digest`) consumes it.
+:func:`~dr_serialize.canonical.json_hash`) consumes it.
 """
 
 from __future__ import annotations
