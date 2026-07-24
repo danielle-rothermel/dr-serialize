@@ -46,8 +46,6 @@ from dr_serialize.errors import SerializationError, detail_repr
 from dr_serialize.jsonable import Jsonable
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
     from dr_serialize.errors import JsonPath
 
 IDENTITY_DOCUMENT_FIELDS = ("schema", "schema_version", "payload")
@@ -240,33 +238,10 @@ def validate_strict_json(
     )
 
 
-def _require_field_type(
-    document: Mapping[Any, Any],
-    field: str,
-    expected: type,
-    type_label: str,
-) -> Any:
-    value = document[field]
-    # bool is a subclass of int; schema_version must be a real int.
-    if expected is int and isinstance(value, bool):
-        raise IdentityDocumentError(
-            path=(field,),
-            reason=f"field must be {type_label}",
-            detail=detail_repr(value),
-        )
-    if not isinstance(value, expected):
-        raise IdentityDocumentError(
-            path=(field,),
-            reason=f"field must be {type_label}",
-            detail=detail_repr(value),
-        )
-    return value
-
-
 def validate_identity_document(
-    document: Mapping[Any, Any],
+    document: dict[Any, Any],
 ) -> IdentityDocument:
-    """Validate a mapping as an exact-shape Identity Document.
+    """Validate a dict as an exact-shape Identity Document.
 
     Requires exactly the fields ``schema`` (str), ``schema_version`` (int,
     not bool), and ``payload`` (strict JSON). Missing fields, extra
@@ -296,15 +271,13 @@ def validate_identity_document(
             reason=f"unexpected field(s): {sorted(extra)}",
             detail=detail_repr(sorted(keys)),
         )
-    schema = _require_field_type(document, "schema", str, "a string")
-    schema_version = _require_field_type(
-        document, "schema_version", int, "an integer"
-    )
-    payload = validate_strict_json(document["payload"], ("payload",))
+    # The constructor's __post_init__ enforces field types (schema is a
+    # string, schema_version is a real int) and payload strictness in the
+    # same order, so validation lives in one place.
     return IdentityDocument(
-        schema=schema,
-        schema_version=schema_version,
-        payload=payload,
+        schema=document["schema"],
+        schema_version=document["schema_version"],
+        payload=document["payload"],
     )
 
 
@@ -360,11 +333,11 @@ def identity_document_hash(document: IdentityDocument) -> str:
     ).hexdigest()
 
 
-def compute_identity_hash(document: Mapping[Any, Any]) -> str:
-    """Validate a mapping and return its full Identity Hash.
+def compute_identity_hash(document: dict[Any, Any]) -> str:
+    """Validate a dict and return its full Identity Hash.
 
     Convenience one-shot over :func:`validate_identity_document` and
-    :func:`identity_document_hash` for callers holding a raw mapping.
+    :func:`identity_document_hash` for callers holding a raw dict.
     """
     return identity_document_hash(validate_identity_document(document))
 
