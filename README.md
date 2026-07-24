@@ -8,7 +8,7 @@ deliberately separate lanes**:
 Any value --> Serializer.to_jsonable(...) --> Jsonable value
                                                    |
                 identity lane (deterministic)      v
-              canonical_json(...) --> stable text --> sha256_json_digest(...)
+              canonical_json(...) --> stable text --> json_hash(...)
 ```
 
 - The **normalization lane** is *policy*: it decides what your objects
@@ -22,7 +22,7 @@ They compose at your call site, so identity never silently depends on
 serialization policy:
 
 ```python
-digest = sha256_json_digest(serializer.to_jsonable(value))
+hash_value = json_hash(serializer.to_jsonable(value))
 ```
 
 ## Ecosystem
@@ -73,42 +73,42 @@ preset for Postgres JSONB storage; construct your own for other ceilings.
 `to_jsonable` requires limits explicitly - every call site states its
 storage policy.
 
-## Identity: `canonical_json` and `sha256_json_digest`
+## Identity: `canonical_json` and `json_hash`
 
 ```python
-from dr_serialize import canonical_json, sha256_json_digest
+from dr_serialize import canonical_json, json_hash
 
 text = canonical_json(payload)                     # sorted keys, compact, NaN rejected
-key  = sha256_json_digest(payload, length=16)      # truncated hex digest
+key  = json_hash(payload, length=16)               # truncated hex hash
 ```
 
 Both take `Jsonable` input - data that is already JSON-safe, typically
 the output of `Serializer.to_jsonable` or values you construct yourself.
-This lane is intentionally policy-free: digests are long-lived identity
+This lane is intentionally policy-free: hashes are long-lived identity
 keys, so they must never change because a handler was added or a limit
 tuned. If you need conversion first, compose the lanes explicitly.
 
-## Identity contract: Identity Document and `identity_hash`
+## Identity contract: Identity Document and `identity_document_hash`
 
 The identity contract is the strict, mechanism-only path for cross-repo
-domain identity. It validates finite JSON, wraps it in an exact
+domain identity. It validates strict JSON, wraps it in an exact
 self-describing versioned document, and hashes the canonical bytes:
 
 ```python
-from dr_serialize import build_identity_document, identity_hash
+from dr_serialize import build_identity_document, identity_document_hash
 
 doc = build_identity_document(
     schema="example.config",       # the owning domain chooses this
     schema_version=1,              # ...and this
     payload={"identity_field": "value"},  # ...and the complete payload
 )
-h = identity_hash(doc)             # full 64-char lowercase SHA-256 hex
+h = identity_document_hash(doc)    # full 64-char lowercase SHA-256 hex
 ```
 
-- **Strict finite JSON.** `validate_finite_json` accepts only `null`,
+- **Strict JSON.** `validate_strict_json` accepts only `null`,
   `bool`, `str`, finite numbers, lists, and dicts with string keys,
   recursively. It rejects non-JSON values, non-string keys, `NaN`/`inf`,
-  and reference cycles with a typed `FiniteJsonError` carrying a
+  and reference cycles with a typed `StrictJsonError` carrying a
   JsonPath-style location. No coercion, no custom serializers, no lossy
   normalization - so a runtime value can never silently collapse onto an
   identity.
@@ -119,7 +119,7 @@ h = identity_hash(doc)             # full 64-char lowercase SHA-256 hex
 - **Canonical Identity JSON.** `canonical_identity_json` renders the
   complete validated document as compact, sorted-key UTF-8 JSON. It pins
   the same profile as `canonical_json` and is deliberately **not** RFC 8785.
-- **Full Identity Hash.** `identity_hash` returns the full 64-character
+- **Full Identity Hash.** `identity_document_hash` returns the full 64-character
   lowercase SHA-256 hex of the canonical bytes. There is no truncation or
   prefix parameter on this path; `identity_hash_prefix` is a separate,
   display-only helper that never establishes identity.
@@ -143,7 +143,7 @@ and every error carries the path to the offending value plus a
 | `ModelDumpError` | engine: Pydantic `model_dump` failed |
 | `ObjectVarsSerializationError` | engine: `__dict__` walk failed |
 | `ValueTransformError` | base for consumer handler failures - subclass it with a `message_prefix` |
-| `FiniteJsonError` | identity path: value is not strict finite JSON (non-JSON, non-string key, NaN/inf, cycle) |
+| `StrictJsonError` | identity path: value is not strict JSON (non-JSON, non-string key, NaN/inf, cycle) |
 | `IdentityDocumentError` | identity path: document is not the exact three-field shape |
 
 ## API surface
@@ -151,10 +151,10 @@ and every error carries the path to the offending value plus a
 Normalization: `Serializer`, `ConversionContext`, `JsonableHandler`,
 `JsonableHandle`, `SerializationLimits`, `postgres_jsonb_limits`,
 `POSTGRES_JSONB_PAYLOAD_MAX_BYTES`, `POSTGRES_JSONB_MAX_BYTES`.
-Identity lane: `canonical_json`, `sha256_json_digest`.
-Identity contract: `validate_finite_json`, `IdentityDocument`,
+Identity lane: `canonical_json`, `json_hash`.
+Identity contract: `validate_strict_json`, `IdentityDocument`,
 `build_identity_document`, `validate_identity_document`,
-`canonical_identity_json`, `identity_hash`, `compute_identity_hash`,
+`canonical_identity_json`, `identity_document_hash`, `compute_identity_hash`,
 `identity_hash_prefix`, `IDENTITY_DOCUMENT_FIELDS`.
 Boundary type: `Jsonable`.
 Errors: the taxonomy above plus `JsonPath`, `preview_repr`, `detail_repr`.

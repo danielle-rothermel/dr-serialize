@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="doc.css">
+<title>dr-serialize · The identity contract this repo owns</title>
+<style>
+  /* Page-local tokens. Purple (--anchor) = main-point accents (.key/.must);
+     blue (--accent) = term links (.term-ref), matching doc.css link hue. */
+  .term-name { font-weight: 600; }
+  dfn.term-name { font-style: normal; }
+  .must { color: var(--anchor); font-weight: 600; }
+  .term-ref { color: var(--accent); text-decoration: underline; text-decoration-style: dashed; text-underline-offset: 2px; }
+  td ul { margin: 0; padding-left: 18px; }
+  td li { margin-bottom: 4px; }
+  td li:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+<main class="wide">
+
+<h1>The dr-serialize identity contract</h1>
+<p class="dek">A reference for the terms and guarantees that bind dr-serialize.</p>
+<div class="byline">dr-serialize · 2026-07-24</div>
+
+<p>This is the vocabulary of the identity contract dr-serialize implements: the <span class="key">terms</span>, the <span class="key">guarantees</span> that bind this repo, what is in and out of <span class="key">scope</span>, and the <span class="key">mapping</span> from each term to the names actually exported by <a href="../src/dr_serialize/__init__.py"><code>dr_serialize</code></a>.</p>
+
+<div class="section-head" id="terms"><h2>Terms</h2></div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+  <tbody>
+    <tr><td><dfn class="term-name" id="term-document">Document</dfn></td><td>A complete serialized structure governed by a declared schema.</td></tr>
+    <tr><td><dfn class="term-name" id="term-payload">Payload</dfn></td><td>The inner data a <a class="term-ref" href="#term-document">document</a> carries; here, always the caller-selected identity data.</td></tr>
+    <tr><td><dfn class="term-name" id="term-hash">Hash</dfn></td><td>Deterministic fixed-length value computed by a declared algorithm over exact declared input bytes; its specific role and semantics come from the qualified term. dr-serialize implements the <a class="term-ref" href="#term-identity-hash">identity hash</a> specialization.</td></tr>
+    <tr><td><dfn class="term-name" id="term-strict-json">Strict JSON</dfn></td><td>A value composed only of <code>null</code>, booleans, strings, finite numbers, lists of strict JSON, and string-keyed objects of strict JSON, recursively. Excludes <code>NaN</code> and <code>Infinity</code> — which Python's <code>json</code> module accepts by default but which are not valid JSON — and every other runtime type.</td></tr>
+    <tr><td><dfn class="term-name" id="term-canonical-json">Canonical JSON</dfn></td><td>The single deterministic UTF-8 JSON rendering of a JSON-safe value — compact, sorted keys. The same value always produces the same bytes.</td></tr>
+    <tr><td><dfn class="term-name" id="term-identity-payload">Identity Payload</dfn></td><td>Validated <a class="term-ref" href="#term-strict-json">strict-JSON</a> domain data deliberately selected by the caller to contain exactly the fields that determine the object's identity, and none that are incidental runtime or storage state; dr-serialize validates the surrounding <a class="term-ref" href="#term-document">document</a> but never selects or infers payload fields.</td></tr>
+    <tr><td><dfn class="term-name" id="term-identity-document">Identity Document</dfn></td><td>Complete versioned <a class="term-ref" href="#term-strict-json">strict-JSON</a> document that carries its own schema name and version, with exactly the shape <code>{schema, schema_version, payload}</code>; the caller selects the <a class="term-ref" href="#term-identity-payload">identity payload</a> fields inside it, while dr-serialize validates the strict JSON and exact document shape.</td></tr>
+    <tr><td><dfn class="term-name" id="term-canonical-identity-json">Canonical Identity JSON</dfn></td><td>The <a class="term-ref" href="#term-canonical-json">canonical JSON</a> of a validated <a class="term-ref" href="#term-identity-document">identity document</a>.</td></tr>
+    <tr><td><dfn class="term-name" id="term-identity-hash">Identity Hash</dfn></td><td>The full 64-character lowercase SHA-256 <a class="term-ref" href="#term-hash">hash</a> of the <a class="term-ref" href="#term-canonical-identity-json">canonical identity JSON</a> of an <a class="term-ref" href="#term-identity-document">identity document</a>.</td></tr>
+    <tr><td><dfn class="term-name" id="term-identity-hash-prefix">Identity Hash Prefix</dfn></td><td>Display-only leading characters of an <a class="term-ref" href="#term-identity-hash">identity hash</a> that never establish identity, equality, storage keys, or references.</td></tr>
+    <tr><td><dfn class="term-name" id="term-diagnostic-normalized-json">Diagnostic Normalized JSON</dfn></td><td>The potentially lossy, size- and depth-bounded JSON-safe value produced by the normalization lane (<code>Serializer.to_jsonable</code>) for diagnostics or non-identity storage; never an input to <a class="term-ref" href="#term-identity-hash">identity hash</a> computation.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="section-head" id="guarantees"><h2>Guarantees</h2></div>
+
+<div class="callout">
+  <strong>Normalization vs. Identity Lanes Stay Separate.</strong> The normalization lane (<code>Serializer</code>, lossy, policy-driven) and the identity lane (<code>validate_strict_json</code> → <code>IdentityDocument</code> → <code>canonical_identity_json</code> → <code>identity_document_hash</code>, strict, policy-free) never cross: <a class="term-ref" href="#term-diagnostic-normalized-json">diagnostic normalized JSON</a> never feeds identity hashing.
+</div>
+<ul>
+  <li><span class="must">Validates</span> <a class="term-ref" href="#term-strict-json">strict JSON</a> and the <span class="key">exact</span> <a class="term-ref" href="#term-identity-document">identity document</a> <span class="key">shape</span> <code>{schema, schema_version, payload}</code>.</li>
+  <li><span class="must">Rejects</span> non-string object keys, non-finite numbers, and implicit object conversion.</li>
+  <li><span class="must">Rejects</span> all unordered collections (sets, and every non-list/dict container) — <span class="key">ordering is the caller's responsibility</span>; <a class="term-ref" href="#term-payload">payloads</a> contain only already-ordered lists.</li>
+  <li><span class="must">Renders</span> <a class="term-ref" href="#term-canonical-identity-json">canonical identity JSON</a> as UTF-8 from the <span class="key">complete</span> <a class="term-ref" href="#term-identity-document">identity document</a>, without lossy normalization.</li>
+  <li><span class="must">Computes the full</span> <a class="term-ref" href="#term-identity-hash">identity hash</a> — a lowercase <span class="key">64-character SHA-256</span> value over <a class="term-ref" href="#term-canonical-identity-json">canonical identity JSON</a>.</li>
+  <li><span class="must">Never selects or infers</span> <a class="term-ref" href="#term-payload">payload</a> fields — <span class="key">payload selection belongs to the caller</span>.</li>
+  <li><a class="term-ref" href="#term-identity-hash-prefix">Identity hash prefixes</a> are <span class="key">display-only</span> and never establish identity, equality, storage keys, or references.</li>
+  <li>Diagnostic <code>Serializer.to_jsonable</code> output is never an <a class="term-ref" href="#term-identity-payload">identity payload</a> nor a substitute for <a class="term-ref" href="#term-identity-hash">identity hashes</a>; the identity path never invokes the normalization lane.</li>
+</ul>
+
+<div class="section-head" id="scope"><h2>In vs. Out of Scope</h2></div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>In scope</th><th>Out of scope</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>
+        <ul>
+          <li><a class="term-ref" href="#term-strict-json">Strict-JSON</a> and exact <a class="term-ref" href="#term-identity-document">identity document</a> validation</li>
+          <li><a class="term-ref" href="#term-canonical-identity-json">Canonical identity JSON</a> rendering</li>
+          <li>Full <a class="term-ref" href="#term-identity-hash">identity hash</a> computation</li>
+          <li>JSON-shaped conversion utilities</li>
+          <li>Serialization limits</li>
+          <li>Error diagnostics</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Domain schemas or <a class="term-ref" href="#term-identity-payload">identity payload</a> field selection</li>
+          <li>Storage references</li>
+          <li>Persistence</li>
+          <li>Domain semantics</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="section-head" id="exported-names"><h2>Exported Names</h2></div>
+
+<p class="aside">Each row maps a term, or a group of supporting exports, to names in <a href="../src/dr_serialize/__init__.py"><code>dr_serialize.__all__</code></a>. Every exported name appears exactly once in the names column; there are no aliases or alternate spellings. The terms <a class="term-ref" href="#term-document">document</a>, <a class="term-ref" href="#term-payload">payload</a>, <a class="term-ref" href="#term-hash">hash</a>, and <a class="term-ref" href="#term-identity-payload">identity payload</a> name concepts rather than exports, so they have no row.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Term</th><th>Exported names</th><th>Note</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><a class="term-ref" href="#term-strict-json">Strict JSON</a></td>
+      <td><code>validate_strict_json</code>, <code>StrictJsonError</code></td>
+      <td>Validation returns the value unchanged; rejection raises <code>StrictJsonError</code> carrying the path to the first offending value.</td>
+    </tr>
+    <tr>
+      <td><a class="term-ref" href="#term-canonical-json">Canonical JSON</a></td>
+      <td><code>canonical_json</code>, <code>json_hash</code></td>
+      <td>General-purpose deterministic rendering and <a class="term-ref" href="#term-hash">hash</a> over already-JSON-safe values, distinct from <a class="term-ref" href="#term-canonical-identity-json">canonical identity JSON</a>; the lanes compose at the call site as <code>json_hash(serializer.to_jsonable(x))</code>.</td>
+    </tr>
+    <tr>
+      <td><a class="term-ref" href="#term-identity-document">Identity Document</a></td>
+      <td><code>IdentityDocument</code>, <code>build_identity_document</code>, <code>validate_identity_document</code>, <code>IDENTITY_DOCUMENT_FIELDS</code>, <code>IdentityDocumentError</code></td>
+      <td>Construction itself validates: a malformed document raises <code>IdentityDocumentError</code>, and strict-JSON problems inside the payload raise <code>StrictJsonError</code>.</td>
+    </tr>
+    <tr>
+      <td><a class="term-ref" href="#term-canonical-identity-json">Canonical Identity JSON</a></td>
+      <td><code>canonical_identity_json</code></td>
+      <td>Deterministic compact sorted-key rendering; deliberately not RFC 8785 (JCS).</td>
+    </tr>
+    <tr>
+      <td><a class="term-ref" href="#term-identity-hash">Identity Hash</a></td>
+      <td><code>identity_document_hash</code>, <code>compute_identity_hash</code></td>
+      <td><code>identity_document_hash</code> takes a validated document; <code>compute_identity_hash</code> validates a raw mapping and hashes it in one call. The same operation as <code>json_hash</code>, restricted to validated identity documents.</td>
+    </tr>
+    <tr>
+      <td><a class="term-ref" href="#term-identity-hash-prefix">Identity Hash Prefix</a></td>
+      <td><code>identity_hash_prefix</code></td>
+      <td>Display-only projection of an already-computed <a class="term-ref" href="#term-identity-hash">identity hash</a>.</td>
+    </tr>
+    <tr>
+      <td><a class="term-ref" href="#term-diagnostic-normalized-json">Diagnostic Normalized JSON</a></td>
+      <td><code>Serializer</code>, <code>Jsonable</code>, <code>JsonableHandler</code>, <code>JsonableHandle</code>, <code>ConversionContext</code></td>
+      <td>Produced by the <code>Serializer.to_jsonable</code> method. Handlers (<code>JsonableHandler</code>, returning a <code>JsonableHandle</code>) extend conversion; <code>ConversionContext</code> carries depth and path state.</td>
+    </tr>
+    <tr>
+      <td>Serialization limits</td>
+      <td><code>SerializationLimits</code>, <code>postgres_jsonb_limits</code>, <code>POSTGRES_JSONB_MAX_BYTES</code>, <code>POSTGRES_JSONB_PAYLOAD_MAX_BYTES</code></td>
+      <td>Explicit size and depth bounds for the normalization lane; the postgres names are a shipped preset for Postgres JSONB storage.</td>
+    </tr>
+    <tr>
+      <td>Error diagnostics</td>
+      <td><code>SerializationError</code>, <code>JsonEncodeError</code>, <code>PayloadTooLargeError</code>, <code>MaxDepthExceededError</code>, <code>ModelDumpError</code>, <code>ObjectVarsSerializationError</code>, <code>ValueTransformError</code>, <code>JsonPath</code>, <code>preview_repr</code>, <code>detail_repr</code></td>
+      <td>One typed taxonomy rooted at <code>SerializationError</code>; the identity-lane members <code>StrictJsonError</code> and <code>IdentityDocumentError</code> are listed with their terms above. Every error carries a <code>JsonPath</code> to the offending value; <code>preview_repr</code> and <code>detail_repr</code> format values for messages. <code>ValueTransformError</code> is the base class for consumer handler failures.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="colophon">
+  <p><strong>Scope.</strong> This sheet is the authoritative statement of the identity contract dr-serialize implements. Exported names match <code>src/dr_serialize/__init__.py</code>.</p>
+</div>
+
+</main>
+</body>
+</html>
