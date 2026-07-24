@@ -25,7 +25,8 @@ Raw mapping --> IdentityDocument --> canonical_identity_json --> identity_docume
   exact Identity Document shape, then hashes the canonical bytes - no
   coercion, and diagnostic normalized JSON never feeds it.
 
-The vocabulary sheet at [`.defs/vocab.html`](.defs/vocab.html) is the
+The [vocabulary sheet](https://danielle-rothermel.github.io/dr-serialize/)
+(source: `.defs/vocab.html`) is the
 authoritative statement of the identity contract this repo implements:
 the terms, the guarantees, what is in and out of scope, and the mapping
 from each term to the exported names.
@@ -105,12 +106,12 @@ explicitly.
 
 The identity lane is the strict, policy-free path for cross-repo domain
 identity: validate strict JSON, wrap it in the exact three-field
-[Identity Document](.defs/vocab.html#term-identity-document)
+[Identity Document](https://danielle-rothermel.github.io/dr-serialize/#term-identity-document)
 `{schema, schema_version, payload}`, render its
-[Canonical Identity JSON](.defs/vocab.html#term-canonical-identity-json),
+[Canonical Identity JSON](https://danielle-rothermel.github.io/dr-serialize/#term-canonical-identity-json),
 and hash the canonical bytes into the full
-[Identity Hash](.defs/vocab.html#term-identity-hash). The
-[vocabulary sheet](.defs/vocab.html) defines each term and the guarantees
+[Identity Hash](https://danielle-rothermel.github.io/dr-serialize/#term-identity-hash). The
+[vocabulary sheet](https://danielle-rothermel.github.io/dr-serialize/) defines each term and the guarantees
 that bind this lane; the owning domain chooses the schema, version, and
 complete payload - dr-serialize only validates.
 
