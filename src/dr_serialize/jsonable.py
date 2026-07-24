@@ -1,9 +1,10 @@
-"""The boundary type between dr-serialize's two lanes.
+"""The JSON-safe boundary type between dr-serialize's lanes.
 
 The conversion engine (:class:`~dr_serialize.serialization.Serializer`)
-produces ``Jsonable``; the identity lane
+produces ``Jsonable``; the canonical JSON utilities
 (:func:`~dr_serialize.canonical.canonical_json`,
-:func:`~dr_serialize.canonical.json_hash`) consumes it.
+:func:`~dr_serialize.canonical.json_hash`) and the identity lane
+(:mod:`dr_serialize.identity`) consume it.
 """
 
 from __future__ import annotations

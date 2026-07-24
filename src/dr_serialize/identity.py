@@ -1,7 +1,9 @@
-"""Identity contract: strict JSON, Identity Documents, hashing.
+"""Identity lane: strict JSON, Identity Documents, the Identity Hash.
 
-This module is the mechanism side of the coordinated identity reset. It
-owns three things and nothing else:
+This module implements the identity lane of the identity contract; the
+authoritative vocabulary -- terms, guarantees, scope, and exported-name
+mapping -- lives in ``.defs/vocab.html``. The lane owns three things and
+nothing else:
 
 1. **Strict recursive JSON validation** -- accept only ``null``,
    ``bool``, ``str``, finite numbers, lists of accepted values, and dicts
@@ -24,8 +26,8 @@ owns three things and nothing else:
 dr-serialize selects no identity-bearing fields, no schema name, and no
 schema version -- those belong to each owning domain.
 
-This module is deliberately separate from the diagnostic normalization
-lane (:mod:`dr_serialize.serialization`). Diagnostic normalization is
+This module is deliberately separate from the normalization lane
+(:mod:`dr_serialize.serialization`). Diagnostic normalized JSON is
 potentially lossy and MUST NOT feed identity hashing; nothing here calls
 ``Serializer.to_jsonable`` or any handler chain.
 """
@@ -39,7 +41,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from dr_serialize._encoding import TEXT_ENCODING
-from dr_serialize.canonical import SHA256_HEX_DIGEST_LENGTH
+from dr_serialize.canonical import SHA256_HEX_LENGTH
 from dr_serialize.errors import SerializationError, detail_repr
 from dr_serialize.jsonable import Jsonable
 
@@ -375,14 +377,14 @@ def identity_hash_prefix(hash_hex: str, length: int) -> str:
     Identity Hash; it is intentionally not part of the hashing path. The
     input must be a full 64-character lowercase SHA-256 hex string.
     """
-    if len(hash_hex) != SHA256_HEX_DIGEST_LENGTH:
+    if len(hash_hex) != SHA256_HEX_LENGTH:
         raise ValueError(
-            f"expected a {SHA256_HEX_DIGEST_LENGTH}-character identity hash, "
+            f"expected a {SHA256_HEX_LENGTH}-character identity hash, "
             f"got length {len(hash_hex)}"
         )
-    if length < 1 or length > SHA256_HEX_DIGEST_LENGTH:
+    if length < 1 or length > SHA256_HEX_LENGTH:
         raise ValueError(
             f"display prefix length must be between 1 and "
-            f"{SHA256_HEX_DIGEST_LENGTH}, got {length}"
+            f"{SHA256_HEX_LENGTH}, got {length}"
         )
     return hash_hex[:length]

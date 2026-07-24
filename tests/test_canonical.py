@@ -19,7 +19,7 @@ from dr_serialize import (
     canonical_json,
     json_hash,
 )
-from dr_serialize.canonical import SHA256_HEX_DIGEST_LENGTH
+from dr_serialize.canonical import SHA256_HEX_LENGTH
 
 GOLDEN_FIXTURE = Path(__file__).parent / "fixtures" / "hashing_golden.json"
 GOLDEN_TRUNCATED_LENGTH = 16
@@ -44,7 +44,7 @@ def test_canonical_json_rejects_nan() -> None:
 
 def test_json_hash_full_length() -> None:
     hash_value = json_hash({"k": "v"})
-    assert len(hash_value) == SHA256_HEX_DIGEST_LENGTH
+    assert len(hash_value) == SHA256_HEX_LENGTH
     assert hash_value == json_hash({"k": "v"})
 
 

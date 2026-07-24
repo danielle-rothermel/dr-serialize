@@ -29,7 +29,7 @@ from dr_serialize import (
     validate_strict_json,
     validate_identity_document,
 )
-from dr_serialize.canonical import SHA256_HEX_DIGEST_LENGTH
+from dr_serialize.canonical import SHA256_HEX_LENGTH
 
 GOLDEN_FIXTURE = (
     Path(__file__).parent / "fixtures" / "identity_golden.json"
@@ -330,7 +330,7 @@ def test_int_key_payload_cannot_collide_with_string_key_document() -> None:
         payload={"1": "x", "2": "y"},
     )
     # The string-keyed document hashes fine.
-    assert len(identity_document_hash(string_keyed)) == SHA256_HEX_DIGEST_LENGTH
+    assert len(identity_document_hash(string_keyed)) == SHA256_HEX_LENGTH
     # The int-keyed document cannot be constructed, so it cannot collide.
     with pytest.raises(StrictJsonError):
         IdentityDocument(
@@ -362,7 +362,7 @@ def test_identity_document_hash_is_full_lowercase_sha256() -> None:
         schema="s", schema_version=1, payload={"k": "v"}
     )
     hash_value = identity_document_hash(doc)
-    assert len(hash_value) == SHA256_HEX_DIGEST_LENGTH
+    assert len(hash_value) == SHA256_HEX_LENGTH
     assert hash_value == hash_value.lower()
     assert all(c in "0123456789abcdef" for c in hash_value)
 
@@ -504,7 +504,7 @@ def test_golden_identity_case_reproduces(name: str) -> None:
 def test_golden_hashes_are_full_length_and_unique() -> None:
     cases = _golden_cases()
     hashes = [c["identity_hash"] for c in cases.values()]
-    assert all(len(h) == SHA256_HEX_DIGEST_LENGTH for h in hashes)
+    assert all(len(h) == SHA256_HEX_LENGTH for h in hashes)
     assert len(set(hashes)) == len(hashes)
 
 
