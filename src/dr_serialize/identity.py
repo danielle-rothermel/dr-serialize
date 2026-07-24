@@ -34,6 +34,7 @@ potentially lossy and MUST NOT feed identity hashing; nothing here calls
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import math
@@ -127,6 +128,12 @@ class IdentityDocument:
     three-field shape. The owning domain chooses ``schema``,
     ``schema_version``, and the complete ``payload``; dr-serialize validates
     them.
+
+    **Snapshot semantics.** The constructor takes a deep copy of ``payload``
+    after validation, so the document owns an independent snapshot: later
+    mutation of the caller's original object cannot affect the document or
+    its Identity Hash. Likewise :meth:`to_json_dict` returns a fresh deep
+    copy, so mutating the returned mapping never touches the stored payload.
     """
 
     schema: str
@@ -163,13 +170,22 @@ class IdentityDocument:
                 detail=detail_repr(self.schema_version),
             )
         _validate_strict_json(self.payload, ("payload",), frozenset())
+        # Snapshot the payload so post-construction mutation of the caller's
+        # object cannot change the document or its hash. Validation above
+        # already rejected reference cycles, so deepcopy is safe. The
+        # dataclass is frozen+slots, so assign via object.__setattr__.
+        object.__setattr__(self, "payload", copy.deepcopy(self.payload))
 
     def to_json_dict(self) -> dict[str, Jsonable]:
-        """Return the exact three-field document as a plain dict."""
+        """Return the exact three-field document as a plain dict.
+
+        The ``payload`` is deep-copied, so mutating the returned mapping (or
+        any nested container) never affects this document or its hash.
+        """
         return {
             "schema": self.schema,
             "schema_version": self.schema_version,
-            "payload": self.payload,
+            "payload": copy.deepcopy(self.payload),
         }
 
 
@@ -271,14 +287,14 @@ def validate_identity_document(
         raise IdentityDocumentError(
             path=(),
             reason=f"missing field(s): {sorted(missing)}",
-            detail=detail_repr(sorted(keys)),
+            detail=detail_repr(sorted(keys, key=repr)),
         )
     extra = keys - expected
     if extra:
         raise IdentityDocumentError(
             path=(),
-            reason=f"unexpected field(s): {sorted(extra)}",
-            detail=detail_repr(sorted(keys)),
+            reason=f"unexpected field(s): {sorted(extra, key=repr)}",
+            detail=detail_repr(sorted(keys, key=repr)),
         )
     # The constructor's __post_init__ enforces field types (schema is a
     # string, schema_version is a real int) and payload strictness in the

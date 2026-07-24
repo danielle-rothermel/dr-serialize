@@ -24,6 +24,7 @@ from dr_serialize import (
     json_hash,
 )
 from dr_serialize.canonical import SHA256_HEX_LENGTH
+from dr_serialize.jsonable import find_json_failure
 
 GOLDEN_FIXTURE = Path(__file__).parent / "fixtures" / "hashing_golden.json"
 GOLDEN_TRUNCATED_LENGTH = 16
@@ -102,6 +103,52 @@ class TestCanonicalTypedErrors:
     def test_hash_length_validation_stays_value_error(self) -> None:
         with pytest.raises(ValueError, match="hash length"):
             json_hash({"a": 1}, length=0)
+
+
+class TestCycleAndKeyDiagnostics:
+    def test_cyclic_dict_raises_json_encode_error(self) -> None:
+        cyclic: dict[str, Any] = {"a": 1}
+        cyclic["self"] = cyclic
+        with pytest.raises(JsonEncodeError):
+            canonical_json(cast("Jsonable", cyclic))
+        with pytest.raises(JsonEncodeError):
+            json_hash(cast("Jsonable", cyclic))
+
+    def test_cyclic_list_raises_json_encode_error(self) -> None:
+        cyclic: list[Any] = [1, 2]
+        cyclic.append(cyclic)
+        with pytest.raises(JsonEncodeError):
+            canonical_json(cast("Jsonable", cyclic))
+        with pytest.raises(JsonEncodeError):
+            json_hash(cast("Jsonable", cyclic))
+
+    def test_find_json_failure_reports_non_string_key_with_path(
+        self,
+    ) -> None:
+        found = find_json_failure({"outer": {1: 2}})
+        assert found is not None
+        path, leaf = found
+        assert path == ("outer",)
+        assert leaf == 1
+
+    def test_find_json_failure_reports_top_level_non_string_key(
+        self,
+    ) -> None:
+        found = find_json_failure({1: 2})
+        assert found is not None
+        path, leaf = found
+        assert path == ()
+        assert leaf == 1
+
+    def test_find_json_failure_reports_cycle_instead_of_recursing(
+        self,
+    ) -> None:
+        cyclic: dict[str, Any] = {}
+        cyclic["self"] = cyclic
+        found = find_json_failure(cyclic)
+        assert found is not None
+        path, _leaf = found
+        assert path == ("self",)
 
 
 def _golden_cases() -> dict[str, dict[str, Any]]:

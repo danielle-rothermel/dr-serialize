@@ -222,6 +222,34 @@ def test_document_rejects_extra_field() -> None:
     assert exc_info.value.diagnostics()["reason"] == exc_info.value.reason
 
 
+def test_extra_field_with_non_string_key_raises_identity_error() -> None:
+    # A malformed document mixing str and non-str keys must not blow up in
+    # ``sorted()``; it must raise the typed IdentityDocumentError.
+    with pytest.raises(IdentityDocumentError) as exc_info:
+        validate_identity_document(
+            cast(
+                "Any",
+                {
+                    "schema": "s",
+                    "schema_version": 1,
+                    "payload": {},
+                    42: "x",
+                },
+            )
+        )
+    assert "unexpected" in exc_info.value.reason
+
+
+def test_missing_field_with_non_string_key_raises_identity_error() -> None:
+    # Missing-field path also sorts caller-supplied keys; a mixed-key
+    # document must raise IdentityDocumentError, not TypeError.
+    with pytest.raises(IdentityDocumentError) as exc_info:
+        validate_identity_document(
+            cast("Any", {"schema": "s", "payload": {}, 42: "x"})
+        )
+    assert "missing" in exc_info.value.reason
+
+
 def test_document_rejects_non_mapping() -> None:
     with pytest.raises(IdentityDocumentError):
         validate_identity_document(cast("Any", ["not", "a", "dict"]))
@@ -268,6 +296,34 @@ def test_document_rejects_non_finite_in_payload() -> None:
             payload={"x": float("inf")},
         )
     assert exc_info.value.path == ("payload", "x")
+
+
+def test_mutating_original_payload_does_not_change_document() -> None:
+    payload: dict[str, Any] = {"a": 1, "nested": {"b": 2}}
+    doc = IdentityDocument(schema="s", schema_version=1, payload=payload)
+    canonical_before = canonical_identity_json(doc)
+    hash_before = identity_document_hash(doc)
+
+    # Mutate the caller's original dict after construction.
+    payload["a"] = 999
+    payload["nested"]["b"] = 999
+    payload["new"] = "added"
+
+    assert canonical_identity_json(doc) == canonical_before
+    assert identity_document_hash(doc) == hash_before
+
+
+def test_mutating_to_json_dict_result_does_not_change_document() -> None:
+    doc = IdentityDocument(
+        schema="s", schema_version=1, payload={"nested": {"b": 2}}
+    )
+    hash_before = identity_document_hash(doc)
+
+    returned = doc.to_json_dict()
+    cast("dict[str, Any]", returned["payload"])["nested"]["b"] = 999
+    cast("dict[str, Any]", returned["payload"])["injected"] = True
+
+    assert identity_document_hash(doc) == hash_before
 
 
 # --------------------------------------------------------------------------
