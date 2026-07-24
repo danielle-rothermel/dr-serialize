@@ -1,28 +1,41 @@
 # dr-serialize
 
-JSON-safe serialization and canonical hashing for Python, built as **two
-deliberately separate lanes**:
+JSON-safe serialization and canonical hashing for Python: **two
+deliberately separate lanes** - a policy-driven normalization lane and a
+strict identity lane - plus general-purpose canonical JSON utilities:
 
 ```text
                 normalization lane (policy)
-Any value --> Serializer.to_jsonable(...) --> Jsonable value
+Any value --> Serializer.to_jsonable(...) --> diagnostic normalized JSON
                                                    |
-                identity lane (deterministic)      v
-              canonical_json(...) --> stable text --> sha256_json_digest(...)
+                canonical JSON (deterministic)     v
+              canonical_json(...) --> stable text --> json_hash(...)
+
+                identity lane (strict, policy-free)
+Raw mapping --> IdentityDocument --> canonical_identity_json --> identity_document_hash
 ```
 
 - The **normalization lane** is *policy*: it decides what your objects
-  become as JSON-safe data - extensible via handlers, bounded by explicit
-  limits, lossy where it must be.
-- The **identity lane** is *deterministic*: it encodes already-JSON-safe
-  data as canonical text and fingerprints it - no handlers, no limits,
-  same input, same bytes, forever.
+  become as diagnostic normalized JSON - extensible via handlers, bounded
+  by explicit limits, lossy where it must be.
+- The **canonical JSON** utilities are *deterministic*: they encode
+  already-JSON-safe data as canonical text and hashes - no handlers, no
+  limits, same input, same bytes, forever.
+- The **identity lane** is *strict*: it validates strict JSON and the
+  exact Identity Document shape, then hashes the canonical bytes - no
+  coercion, and diagnostic normalized JSON never feeds it.
 
-They compose at your call site, so identity never silently depends on
-serialization policy:
+The [vocabulary sheet](https://danielle-rothermel.github.io/dr-serialize/)
+(source: `.defs/vocab.html`) is the
+authoritative statement of the identity contract this repo implements:
+the terms, the guarantees, what is in and out of scope, and the mapping
+from each term to the exported names.
+
+Normalization and canonical JSON compose at your call site, so hashes
+never silently depend on serialization policy:
 
 ```python
-digest = sha256_json_digest(serializer.to_jsonable(value))
+hash_value = json_hash(serializer.to_jsonable(value))
 ```
 
 ## Ecosystem
@@ -73,41 +86,81 @@ preset for Postgres JSONB storage; construct your own for other ceilings.
 `to_jsonable` requires limits explicitly - every call site states its
 storage policy.
 
-## Identity: `canonical_json` and `sha256_json_digest`
+## Canonical JSON: `canonical_json` and `json_hash`
 
 ```python
-from dr_serialize import canonical_json, sha256_json_digest
+from dr_serialize import canonical_json, json_hash
 
 text = canonical_json(payload)                     # sorted keys, compact, NaN rejected
-key  = sha256_json_digest(payload, length=16)      # truncated hex digest
+key  = json_hash(payload, length=16)               # truncated hex hash
 ```
 
 Both take `Jsonable` input - data that is already JSON-safe, typically
 the output of `Serializer.to_jsonable` or values you construct yourself.
-This lane is intentionally policy-free: digests are long-lived identity
+These utilities are intentionally policy-free: hashes are long-lived
 keys, so they must never change because a handler was added or a limit
-tuned. If you need conversion first, compose the lanes explicitly.
+tuned. If you need conversion first, compose with the normalization lane
+explicitly.
+
+## Identity lane: Identity Document and `identity_document_hash`
+
+The identity lane is the strict, policy-free path for cross-repo domain
+identity: validate strict JSON, wrap it in the exact three-field
+[Identity Document](https://danielle-rothermel.github.io/dr-serialize/#term-identity-document)
+`{schema, schema_version, payload}`, render its
+[Canonical Identity JSON](https://danielle-rothermel.github.io/dr-serialize/#term-canonical-identity-json),
+and hash the canonical bytes into the full
+[Identity Hash](https://danielle-rothermel.github.io/dr-serialize/#term-identity-hash). The
+[vocabulary sheet](https://danielle-rothermel.github.io/dr-serialize/) defines each term and the guarantees
+that bind this lane; the owning domain chooses the schema, version, and
+complete payload - dr-serialize only validates.
+
+```python
+from dr_serialize import build_identity_document, identity_document_hash
+
+doc = build_identity_document(
+    schema="example.config",       # the owning domain chooses this
+    schema_version=1,              # ...and this
+    payload={"identity_field": "value"},  # ...and the complete payload
+)
+h = identity_document_hash(doc)    # full 64-char lowercase SHA-256 hex
+```
+
+Rejections are typed: `StrictJsonError` for values that are not strict
+JSON, `IdentityDocumentError` for documents that are not the exact
+three-field shape. There is no truncation parameter on this path;
+`identity_hash_prefix` is a separate, display-only helper that never
+establishes identity. Diagnostic normalized JSON never feeds identity
+hashing. Committed golden vectors live in
+`tests/fixtures/identity_golden.json` for dependent repos to reuse.
 
 ## Errors
 
-Both lanes raise from one typed taxonomy rooted at `SerializationError`,
+Both lanes and the canonical JSON utilities raise from one typed
+taxonomy rooted at `SerializationError`,
 and every error carries the path to the offending value plus a
 `diagnostics()` dict safe to persist:
 
 | Error | Raised by |
 | --- | --- |
 | `MaxDepthExceededError` | engine: nesting exceeded `max_depth` |
-| `JsonEncodeError` | engine probe and canonical lane: value not JSON-encodable (canonical also rejects NaN/inf) |
+| `JsonEncodeError` | engine probe and canonical JSON: value not JSON-encodable (canonical also rejects NaN/inf) |
 | `PayloadTooLargeError` | engine: encoded size exceeded `max_bytes` |
 | `ModelDumpError` | engine: Pydantic `model_dump` failed |
 | `ObjectVarsSerializationError` | engine: `__dict__` walk failed |
 | `ValueTransformError` | base for consumer handler failures - subclass it with a `message_prefix` |
+| `StrictJsonError` | identity lane: value is not strict JSON (non-JSON, non-string key, NaN/inf, cycle) |
+| `IdentityDocumentError` | identity lane: document is not the exact three-field shape |
 
 ## API surface
 
 Normalization: `Serializer`, `ConversionContext`, `JsonableHandler`,
 `JsonableHandle`, `SerializationLimits`, `postgres_jsonb_limits`,
 `POSTGRES_JSONB_PAYLOAD_MAX_BYTES`, `POSTGRES_JSONB_MAX_BYTES`.
-Identity: `canonical_json`, `sha256_json_digest`.
+Canonical JSON: `canonical_json`, `json_hash`.
+Identity lane: `validate_strict_json`, `IdentityDocument`,
+`build_identity_document`, `validate_identity_document`,
+`canonical_identity_json`, `identity_document_hash`, `compute_identity_hash`,
+`identity_hash_prefix`, `IDENTITY_DOCUMENT_FIELDS`.
 Boundary type: `Jsonable`.
 Errors: the taxonomy above plus `JsonPath`, `preview_repr`, `detail_repr`.
