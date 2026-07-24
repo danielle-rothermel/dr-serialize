@@ -1,0 +1,176 @@
+{
+  "note": "Identity Document golden vectors. Cross-repo reusable. Profile: compact sorted-key UTF-8 JSON (json.dumps sort_keys=True, separators=(\",\",\":\"), ensure_ascii=True, allow_nan=False). NOT RFC 8785. identity_hash = full lowercase sha256 hex of the canonical bytes.",
+  "cases": {
+    "minimal_empty_payload": {
+      "document": {
+        "schema": "example.config",
+        "schema_version": 1,
+        "payload": {}
+      },
+      "canonical_json": "{\"payload\":{},\"schema\":\"example.config\",\"schema_version\":1}",
+      "identity_hash": "da5b353dca5e98c9dffcb40d2ebfd819a3aae635500ae0209e95722b75695aee"
+    },
+    "single_string_field": {
+      "document": {
+        "schema": "example.config",
+        "schema_version": 1,
+        "payload": {
+          "identity_field": "value"
+        }
+      },
+      "canonical_json": "{\"payload\":{\"identity_field\":\"value\"},\"schema\":\"example.config\",\"schema_version\":1}",
+      "identity_hash": "aeca38d8b304f021f6984ca6094f1ab7bb6ffc657569278d5c1f28420116c2cb"
+    },
+    "scalar_mix": {
+      "document": {
+        "schema": "example.scalars",
+        "schema_version": 3,
+        "payload": {
+          "b": true,
+          "a": null,
+          "n": 42,
+          "f": 1.5,
+          "s": "x"
+        }
+      },
+      "canonical_json": "{\"payload\":{\"a\":null,\"b\":true,\"f\":1.5,\"n\":42,\"s\":\"x\"},\"schema\":\"example.scalars\",\"schema_version\":3}",
+      "identity_hash": "f6feef490180820956f9538a514b26646b6e69e9a1383d2955af8730f6a60c4f"
+    },
+    "nested_payload": {
+      "document": {
+        "schema": "example.nested",
+        "schema_version": 2,
+        "payload": {
+          "outer": {
+            "inner": [
+              1,
+              2,
+              {
+                "k": "v"
+              }
+            ],
+            "flag": false
+          },
+          "sibling": "value"
+        }
+      },
+      "canonical_json": "{\"payload\":{\"outer\":{\"flag\":false,\"inner\":[1,2,{\"k\":\"v\"}]},\"sibling\":\"value\"},\"schema\":\"example.nested\",\"schema_version\":2}",
+      "identity_hash": "4de65108991cdeabaf0d862c59c5de9540d4c46cb5906a788e335d8552a7652f"
+    },
+    "list_payload_root": {
+      "document": {
+        "schema": "example.list",
+        "schema_version": 1,
+        "payload": {
+          "items": [
+            3,
+            1,
+            2,
+            [
+              4,
+              5
+            ]
+          ]
+        }
+      },
+      "canonical_json": "{\"payload\":{\"items\":[3,1,2,[4,5]]},\"schema\":\"example.list\",\"schema_version\":1}",
+      "identity_hash": "13d294b60932349c0d122dc8993bfb0a93f6c3baa64c2dfc7f9426facdc58d48"
+    },
+    "unicode_payload": {
+      "document": {
+        "schema": "example.unicode",
+        "schema_version": 1,
+        "payload": {
+          "text": "héllo 日本語 🎯"
+        }
+      },
+      "canonical_json": "{\"payload\":{\"text\":\"h\\u00e9llo \\u65e5\\u672c\\u8a9e \\ud83c\\udfaf\"},\"schema\":\"example.unicode\",\"schema_version\":1}",
+      "identity_hash": "c385227ceeeb40b1c630e02e6c2ff740e441e6292c54078cfcd34d51b084059b"
+    },
+    "large_integer": {
+      "document": {
+        "schema": "example.bignum",
+        "schema_version": 1,
+        "payload": {
+          "n": 9007199254740992
+        }
+      },
+      "canonical_json": "{\"payload\":{\"n\":9007199254740992},\"schema\":\"example.bignum\",\"schema_version\":1}",
+      "identity_hash": "37dc028c974a9a5c6d6b1c560ec3dd076d5af1e848bbc8223e1bb19de8463d99"
+    },
+    "negative_and_zero": {
+      "document": {
+        "schema": "example.numbers",
+        "schema_version": 1,
+        "payload": {
+          "vals": [
+            0,
+            -1,
+            -0.001,
+            1e+300
+          ]
+        }
+      },
+      "canonical_json": "{\"payload\":{\"vals\":[0,-1,-0.001,1e+300]},\"schema\":\"example.numbers\",\"schema_version\":1}",
+      "identity_hash": "b82ac36193d7b2bb7ce8300ed2466c5df8d91807645c2de4942eb5630b9fa883"
+    },
+    "numeric_string_keys": {
+      "document": {
+        "schema": "example.keys",
+        "schema_version": 1,
+        "payload": {
+          "10": "ten",
+          "2": "two",
+          "1": "one"
+        }
+      },
+      "canonical_json": "{\"payload\":{\"1\":\"one\",\"10\":\"ten\",\"2\":\"two\"},\"schema\":\"example.keys\",\"schema_version\":1}",
+      "identity_hash": "74a8b71d9d646fedbbfd9d7881353cedb4b7973fe33ba2c172fff6b74ade8e25"
+    },
+    "version_bump_same_payload": {
+      "document": {
+        "schema": "example.config",
+        "schema_version": 2,
+        "payload": {
+          "identity_field": "value"
+        }
+      },
+      "canonical_json": "{\"payload\":{\"identity_field\":\"value\"},\"schema\":\"example.config\",\"schema_version\":2}",
+      "identity_hash": "f9cde5ce759c9af7989a0aa800e96612ab35990f695f7386d250f41e81157bef"
+    },
+    "empty_string_schema_edge": {
+      "document": {
+        "schema": "a",
+        "schema_version": 1,
+        "payload": {
+          "k": ""
+        }
+      },
+      "canonical_json": "{\"payload\":{\"k\":\"\"},\"schema\":\"a\",\"schema_version\":1}",
+      "identity_hash": "38cea4dd4b4371d047c7899bd90473ea191c370c0307f72f2facc91d9c3073b0"
+    },
+    "deeply_nested": {
+      "document": {
+        "schema": "example.deep",
+        "schema_version": 1,
+        "payload": {
+          "a": {
+            "b": {
+              "c": {
+                "d": [
+                  null,
+                  true,
+                  {
+                    "e": 1
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "canonical_json": "{\"payload\":{\"a\":{\"b\":{\"c\":{\"d\":[null,true,{\"e\":1}]}}}},\"schema\":\"example.deep\",\"schema_version\":1}",
+      "identity_hash": "6f8ea95f7642ccab1402975e17fdecf3444df4ab18017a67843a8ae5977d87cf"
+    }
+  }
+}

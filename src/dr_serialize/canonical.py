@@ -1,13 +1,17 @@
-"""Identity lane: canonical JSON text and digests for JSON-safe values.
+"""Canonical JSON: deterministic text and hashes for JSON-safe values.
 
 Deterministic and policy-free: no handlers, no limits, no normalization.
-This lane consumes the ``Jsonable`` values the conversion engine
-(:mod:`dr_serialize.serialization`) produces; to fingerprint an arbitrary
-object, compose the lanes explicitly::
+These general-purpose utilities consume the ``Jsonable`` values the
+conversion engine (:mod:`dr_serialize.serialization`) produces; to
+fingerprint an arbitrary object, compose with the normalization lane
+explicitly::
 
-    digest = sha256_json_digest(serializer.to_jsonable(value))
+    hash_value = json_hash(serializer.to_jsonable(value))
 
-Canonical text is the contract-bearer: digest stability derives from
+They are distinct from the identity lane (:mod:`dr_serialize.identity`),
+which restricts hashing to validated Identity Documents.
+
+Canonical text is the contract-bearer: hash stability derives from
 canonical-text stability, and consumers pin both with golden tests.
 """
 
@@ -20,7 +24,7 @@ from dr_serialize._encoding import TEXT_ENCODING
 from dr_serialize.errors import JsonEncodeError, detail_repr, preview_repr
 from dr_serialize.jsonable import Jsonable, find_json_failure
 
-SHA256_HEX_DIGEST_LENGTH = 64
+SHA256_HEX_LENGTH = 64
 
 
 def canonical_json(value: Jsonable) -> str:
@@ -45,19 +49,19 @@ def canonical_json(value: Jsonable) -> str:
         ) from error
 
 
-def sha256_json_digest(
+def json_hash(
     value: Jsonable,
     *,
     length: int | None = None,
 ) -> str:
-    digest = hashlib.sha256(
+    hash_value = hashlib.sha256(
         canonical_json(value).encode(TEXT_ENCODING)
     ).hexdigest()
     if length is None:
-        return digest
-    if length < 1 or length > SHA256_HEX_DIGEST_LENGTH:
+        return hash_value
+    if length < 1 or length > SHA256_HEX_LENGTH:
         raise ValueError(
-            f"digest length must be between 1 and "
-            f"{SHA256_HEX_DIGEST_LENGTH}, got {length}"
+            f"hash length must be between 1 and "
+            f"{SHA256_HEX_LENGTH}, got {length}"
         )
-    return digest[:length]
+    return hash_value[:length]
