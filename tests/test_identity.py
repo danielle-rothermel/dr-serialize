@@ -17,17 +17,17 @@ from typing import Any, cast
 import pytest
 
 from dr_serialize import (
-    StrictJsonError,
     IdentityDocument,
     IdentityDocumentError,
     Jsonable,
+    StrictJsonError,
     build_identity_document,
     canonical_identity_json,
     compute_identity_hash,
     identity_document_hash,
     identity_hash_prefix,
-    validate_strict_json,
     validate_identity_document,
+    validate_strict_json,
 )
 from dr_serialize.canonical import SHA256_HEX_LENGTH
 
