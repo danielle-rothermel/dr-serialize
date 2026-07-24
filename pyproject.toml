@@ -8,13 +8,14 @@ authors = [
     { name = "Danielle Rothermel", email = "danielle.rothermel@gmail.com" }
 ]
 requires-python = ">=3.12"
+keywords = ["json", "canonical-json", "serialization", "hashing", "identity", "sha256"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
 ]
 dependencies = [
@@ -24,6 +25,8 @@ dependencies = [
 [project.urls]
 Repository = "https://github.com/danielle-rothermel/dr-serialize"
 Issues = "https://github.com/danielle-rothermel/dr-serialize/issues"
+Documentation = "https://danielle-rothermel.github.io/dr-serialize/"
+Changelog = "https://github.com/danielle-rothermel/dr-serialize/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling"]
