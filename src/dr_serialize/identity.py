@@ -1,11 +1,11 @@
-"""Identity lane: strict JSON, Identity Documents, the Identity Hash.
+"""Identity lane: strict JSON values, Identity Documents, the Identity Hash.
 
 This module implements the identity lane of the identity contract; the
 authoritative vocabulary -- terms, guarantees, scope, and exported-name
 mapping -- lives in ``.defs/vocab.html``. The lane owns three things and
 nothing else:
 
-1. **Strict recursive JSON validation** -- accept only ``null``,
+1. **Strict recursive JSON value validation** -- accept only ``null``,
    ``bool``, ``str``, finite numbers, lists of accepted values, and dicts
    with string keys and accepted values. Every other runtime value, every
    non-string key, every non-finite number, and every reference cycle is
@@ -18,7 +18,7 @@ nothing else:
    are invalid. dr-serialize never selects payload fields; the owning
    domain passes a complete payload.
 
-3. **Canonical Identity JSON** and the full **Identity Hash**: a
+3. **Canonical Identity JSON Text** and the full **Identity Hash**: a
    deterministic compact sorted-key UTF-8 rendering of the complete
    validated document, and the full 64-character lowercase SHA-256 hex of
    its UTF-8 bytes.
@@ -27,7 +27,7 @@ dr-serialize selects no identity-bearing fields, no schema name, and no
 schema version -- those belong to each owning domain.
 
 This module is deliberately separate from the normalization lane
-(:mod:`dr_serialize.serialization`). Diagnostic normalized JSON is
+(:mod:`dr_serialize.serialization`). A diagnostic normalized JSON value is
 potentially lossy and MUST NOT feed identity hashing; nothing here calls
 ``Serializer.to_jsonable`` or any handler chain.
 """
@@ -56,7 +56,7 @@ IDENTITY_DOCUMENT_FIELDS = ("schema", "schema_version", "payload")
 
 
 class StrictJsonError(SerializationError):
-    """A value is not strict JSON.
+    """A value is not a strict JSON value.
 
     Raised by :func:`validate_strict_json` (and therefore by document
     validation and hashing) when a value is not JSON, has a non-string
@@ -77,7 +77,7 @@ class StrictJsonError(SerializationError):
         self.type_name = type_name
         self.detail = detail
         super().__init__(
-            f"not strict JSON at path {path!r}: {reason} ({type_name})"
+            f"not a strict JSON value at path {path!r}: {reason} ({type_name})"
         )
 
     def diagnostics(self) -> dict[str, Any]:
@@ -94,8 +94,8 @@ class IdentityDocumentError(SerializationError):
 
     Raised by :func:`validate_identity_document` when the document is not a
     mapping, is missing a required field, carries an extra field, or has a
-    field of the wrong type. Strict-JSON problems inside the payload raise
-    :class:`StrictJsonError` instead.
+    field of the wrong type. Values inside the payload that are not strict
+    JSON values raise :class:`StrictJsonError` instead.
     """
 
     def __init__(
@@ -127,8 +127,8 @@ class IdentityDocument:
     Construction itself validates (see :meth:`__post_init__`), so every
     ``IdentityDocument`` -- whether built via :func:`build_identity_document`,
     :func:`validate_identity_document`, or the exported constructor directly
-    -- always holds a validated strict-JSON payload with the exact
-    three-field shape. The owning domain chooses ``schema``,
+    -- always holds a payload validated as a strict JSON value with the
+    exact three-field shape. The owning domain chooses ``schema``,
     ``schema_version``, and the complete ``payload``; dr-serialize validates
     them.
 
@@ -150,7 +150,7 @@ class IdentityDocument:
         invariant as :func:`build_identity_document` /
         :func:`validate_identity_document`: ``schema`` is a string,
         ``schema_version`` is a real int (not bool), and ``payload`` is
-        strict JSON. Without this, a directly constructed document
+        a strict JSON value. Without this, a directly constructed document
         with, for example, int/enum dict keys would be handed straight to
         ``json.dumps`` and have its keys silently coerced to strings,
         producing a valid-looking Identity Hash that collides with the
@@ -193,7 +193,7 @@ class IdentityDocument:
 
 
 def validate_strict_json(value: Any) -> Jsonable:
-    """Return ``value`` if it is strict JSON, else raise.
+    """Return ``value`` if it is a strict JSON value, else raise.
 
     Accepts, recursively: ``None``, ``bool``, ``int``, finite ``float``,
     ``str``, ``list`` of accepted values, and ``dict`` with ``str`` keys and
@@ -210,7 +210,7 @@ def _validate_strict_json(
     path: JsonPath,
     seen: frozenset[int],
 ) -> Jsonable:
-    """Recursive strict-JSON check carrying traversal state.
+    """Recursive strict JSON value check carrying traversal state.
 
     ``path`` is the JsonPath-style location of ``value``; ``seen`` holds the
     ``id()`` of every container on the current path, for cycle detection.
@@ -272,10 +272,10 @@ def validate_identity_document(
     """Validate a dict as an exact-shape Identity Document.
 
     Requires exactly the fields ``schema`` (str), ``schema_version`` (int,
-    not bool), and ``payload`` (strict JSON). Missing fields, extra
+    not bool), and ``payload`` (a strict JSON value). Missing fields, extra
     fields, and wrong field types raise :class:`IdentityDocumentError`;
-    strict-JSON problems inside the payload raise :class:`StrictJsonError`
-    with a ``("payload", ...)`` path.
+    values inside the payload that are not strict JSON values raise
+    :class:`StrictJsonError` with a ``("payload", ...)`` path.
     """
     if not isinstance(document, dict):
         raise IdentityDocumentError(
@@ -331,15 +331,15 @@ def build_identity_document(
 
 
 def canonical_identity_json(document: IdentityDocument) -> str:
-    """Render Canonical Identity JSON for a validated Identity Document.
+    """Render Canonical Identity JSON Text for an Identity Document.
 
     Deterministic, compact, sorted-key UTF-8 JSON text of the complete
     three-field document. This pins the same profile as
     :func:`dr_serialize.canonical.canonical_json`
     (``sort_keys=True``, ``separators=(",", ":")``, ``ensure_ascii=True``,
     ``allow_nan=False``); it is NOT RFC 8785. The payload is already
-    validated strict JSON, so serialization cannot silently coerce a
-    runtime value onto an identity.
+    validated as a strict JSON value, so serialization cannot silently
+    coerce a runtime value onto an identity.
     """
     return canonical_json(document.to_json_dict())
 
@@ -356,7 +356,7 @@ def identity_document_hash(document: IdentityDocument) -> Sha256Digest:
     """Return the full Identity Hash of a validated Identity Document.
 
     The full 64-character lowercase SHA-256 hex of the Canonical Identity
-    JSON UTF-8 bytes. There is deliberately no truncation or prefix
+    JSON Text's UTF-8 bytes. There is deliberately no truncation or prefix
     parameter on this path; use :func:`identity_hash_prefix` for display.
     """
     return Sha256Digest(

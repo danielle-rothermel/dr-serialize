@@ -2,25 +2,25 @@
 
 **Normalization lane** (policy, lossy, extensible):
 :class:`Serializer` converts arbitrary Python values to diagnostic
-normalized JSON -- JSON-safe ``Jsonable`` data -- under explicit
+normalized JSON value -- JSON-safe ``Jsonable`` data -- under explicit
 :class:`SerializationLimits`, through an ordered, pluggable handler
 chain (:mod:`dr_serialize.serialization`).
 
-**Canonical JSON** (deterministic, policy-free): :func:`canonical_json`,
+**Canonical JSON Text** (deterministic, policy-free): :func:`canonical_json`,
 :func:`canonical_json_bytes`, and :func:`json_hash` turn already-JSON-safe
-values into stable canonical text, bytes, and hashes
+values into stable canonical JSON text, exact bytes, and hashes
 (:mod:`dr_serialize.canonical`).
 
 **Identity lane** (strict, policy-free): :func:`validate_strict_json`,
 :class:`IdentityDocument`, :func:`canonical_identity_json`, and
 :func:`identity_document_hash` implement the identity contract -- strict
-recursive JSON validation, the exact three-field Identity Document,
-its Canonical Identity JSON, and the full lowercase SHA-256 Identity Hash
+JSON value validation, the exact three-field Identity Document,
+its Canonical Identity JSON Text, and the full lowercase SHA-256 Identity Hash
 (:mod:`dr_serialize.identity`). This lane never invokes the normalization
-lane: diagnostic normalized JSON is potentially lossy and must not feed
-identity hashing.
+lane: a diagnostic normalized JSON value is potentially lossy and must not
+feed identity hashing.
 
-Normalization and canonical JSON compose at the call site --
+Normalization and canonical JSON text generation compose at the call site --
 ``json_hash(serializer.to_jsonable(x))`` -- so hash stability
 never depends on handler policy. Typed errors for every lane live in
 :mod:`dr_serialize.errors` and :mod:`dr_serialize.identity`. The

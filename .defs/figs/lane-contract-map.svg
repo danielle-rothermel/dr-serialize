@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1360" role="img" aria-labelledby="title desc">
+  <title id="title">dr-serialize surface and lane contract map</title>
+  <desc id="desc">A newcomer-oriented map of three public surfaces: policy-driven normalization from arbitrary Python values to diagnostic Jsonable data, deterministic Canonical JSON Text utilities over already-Jsonable values, and the strict policy-free identity lane from caller-selected schema, version, and payload to a full SHA-256 identity hash. A lower band shows the permitted explicit composition from normalization into general canonical hashing and forbids feeding normalized diagnostic data into identity hashing.</desc>
+  <defs>
+    <style>
+      .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .ink { fill: #1b2333; }
+      .muted { fill: #5b6577; }
+      .quiet { fill: #778195; }
+      .label { font-size: 13px; font-weight: 700; letter-spacing: 1.4px; }
+      .h1 { font-size: 38px; font-weight: 750; }
+      .dek { font-size: 19px; }
+      .lane-title { font-size: 23px; font-weight: 750; }
+      .section { font-size: 15px; font-weight: 700; }
+      .body { font-size: 15px; }
+      .small { font-size: 13.5px; }
+      .code { font-size: 13.5px; }
+      .code-small { font-size: 12.5px; }
+      .chip { font-size: 12px; font-weight: 700; letter-spacing: 1px; }
+      .card { fill: #ffffff; stroke: #e3e8ef; stroke-width: 1.5; }
+      .code-box { fill: #f8f9fc; stroke: #e3e8ef; stroke-width: 1.2; }
+      .node { fill: #fbfcfe; stroke: #9aa7bd; stroke-width: 1.5; }
+      .soft-blue { fill: #e9f2fb; }
+      .soft-purple { fill: #f4eefb; }
+      .soft-green { fill: #e8f5ec; }
+      .soft-amber { fill: #fff6e0; }
+      .soft-red { fill: #fdeceb; }
+      .rule { stroke: #e3e8ef; stroke-width: 1.5; }
+      .arrow { fill: none; stroke: #8b96a9; stroke-width: 2.2; marker-end: url(#arrow-gray); }
+      .arrow-blue { fill: none; stroke: #1866b4; stroke-width: 2.4; marker-end: url(#arrow-blue); }
+      .arrow-green { fill: none; stroke: #2b8a3e; stroke-width: 2.4; marker-end: url(#arrow-green); }
+      .arrow-red { fill: none; stroke: #c0392b; stroke-width: 2.4; stroke-dasharray: 8 7; }
+    </style>
+    <marker id="arrow-gray" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b96a9"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1866b4"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2b8a3e"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#1b2333" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1360" fill="#f4f6f9"/>
+
+  <!-- Header -->
+  <g class="sans">
+    <text x="54" y="68" class="label" fill="#6f42c1">DR-SERIALIZE · PUBLIC CONTRACT MAP</text>
+    <text x="54" y="116" class="h1 ink">Choose the surface by what your data means</text>
+    <text x="54" y="150" class="dek muted">Normalize runtime values, stabilize JSON-safe data, or establish domain identity.</text>
+
+    <g transform="translate(1050 52)">
+      <rect x="0" y="0" width="146" height="30" rx="15" class="soft-amber"/>
+      <circle cx="17" cy="15" r="5" fill="#9a6700"/>
+      <text x="29" y="20" class="chip" fill="#7a5200">POLICY-DRIVEN</text>
+      <rect x="156" y="0" width="151" height="30" rx="15" class="soft-purple"/>
+      <circle cx="173" cy="15" r="5" fill="#6f42c1"/>
+      <text x="185" y="20" class="chip" fill="#5d35aa">DETERMINISTIC</text>
+      <rect x="317" y="0" width="170" height="30" rx="15" class="soft-green"/>
+      <circle cx="334" cy="15" r="5" fill="#2b8a3e"/>
+      <text x="346" y="20" class="chip" fill="#247534">STRICT IDENTITY</text>
+    </g>
+  </g>
+
+  <!-- Lane 1: normalization -->
+  <g transform="translate(54 188)" class="sans">
+    <rect width="472" height="820" rx="16" class="card" filter="url(#shadow)"/>
+    <rect width="472" height="8" rx="4" fill="#9a6700"/>
+    <circle cx="34" cy="48" r="19" class="soft-amber"/>
+    <text x="34" y="54" text-anchor="middle" class="section" fill="#7a5200">1</text>
+    <text x="66" y="47" class="lane-title ink">Normalize arbitrary Python</text>
+    <text x="66" y="70" class="small muted">For diagnostics and bounded non-identity storage</text>
+
+    <line x1="24" y1="92" x2="448" y2="92" class="rule"/>
+    <text x="28" y="119" class="label" fill="#9a6700">INPUT</text>
+    <rect x="24" y="132" width="424" height="62" rx="10" class="node"/>
+    <text x="40" y="157" class="mono code ink">x: Any</text>
+    <text x="40" y="180" class="small muted">scalars · mappings · tuples/sets · bytes · models · objects</text>
+
+    <path d="M236 194 V222" class="arrow"/>
+    <text x="28" y="244" class="label" fill="#9a6700">REPRESENTATIVE API</text>
+    <rect x="24" y="257" width="424" height="194" rx="10" class="code-box"/>
+    <text x="40" y="283" class="mono code ink">class Serializer:</text>
+    <text x="54" y="307" class="mono code muted">limits: SerializationLimits</text>
+    <text x="54" y="331" class="mono code muted">handlers: tuple[JsonableHandler, ...]</text>
+    <text x="54" y="361" class="mono code ink">def to_jsonable(self, x: Any) -&gt; Jsonable: ...</text>
+    <text x="40" y="393" class="mono code-small ink">type JsonableHandler = Callable[</text>
+    <text x="54" y="414" class="mono code-small muted">[Any, ConversionContext], tuple[bool, Any]</text>
+    <text x="40" y="439" class="mono code-small ink">ctx.convert(child, key) -&gt; Jsonable</text>
+
+    <text x="28" y="482" class="label" fill="#9a6700">WHAT THE LANE DOES</text>
+    <circle cx="35" cy="510" r="4" fill="#9a6700"/>
+    <text x="48" y="515" class="body ink">Applies an ordered, extensible handler policy.</text>
+    <circle cx="35" cy="541" r="4" fill="#9a6700"/>
+    <text x="48" y="546" class="body ink">May be lossy: tuple/set → list, keys → str,</text>
+    <text x="48" y="568" class="body ink">bytes and runtime-only values → placeholders.</text>
+    <circle cx="35" cy="597" r="4" fill="#9a6700"/>
+    <text x="48" y="602" class="body ink">Enforces explicit max_depth and max_bytes.</text>
+    <text x="48" y="624" class="small muted">postgres_jsonb_limits() is a shipped preset.</text>
+
+    <path d="M236 642 V670" class="arrow"/>
+    <text x="28" y="691" class="label" fill="#9a6700">OUTPUT</text>
+    <rect x="24" y="704" width="424" height="88" rx="10" fill="#fff6e0" stroke="#d6ad55" stroke-width="1.5"/>
+    <text x="40" y="730" class="section ink">Diagnostic Normalized JSON Value</text>
+    <text x="40" y="754" class="mono code-small ink">Jsonable = None | bool | int | float | str</text>
+    <text x="40" y="776" class="mono code-small ink">         | list[Jsonable] | dict[str, Jsonable]</text>
+    <text x="28" y="812" class="small" fill="#7a5200">Policy-bearing · bounded · JSON-safe · potentially lossy</text>
+  </g>
+
+  <!-- Lane 2: canonical utilities -->
+  <g transform="translate(564 188)" class="sans">
+    <rect width="472" height="820" rx="16" class="card" filter="url(#shadow)"/>
+    <rect width="472" height="8" rx="4" fill="#6f42c1"/>
+    <circle cx="34" cy="48" r="19" class="soft-purple"/>
+    <text x="34" y="54" text-anchor="middle" class="section" fill="#5d35aa">2</text>
+    <text x="66" y="47" class="lane-title ink">Stabilize JSON-safe data</text>
+    <text x="66" y="70" class="small muted">General Canonical JSON Text + fingerprints</text>
+
+    <line x1="24" y1="92" x2="448" y2="92" class="rule"/>
+    <text x="28" y="119" class="label" fill="#6f42c1">INPUT</text>
+    <rect x="24" y="132" width="424" height="62" rx="10" class="node"/>
+    <text x="40" y="157" class="mono code ink">value: Jsonable</text>
+    <text x="40" y="180" class="small muted">Already JSON-safe—constructed directly or normalized explicitly</text>
+
+    <path d="M236 194 V222" class="arrow"/>
+    <text x="28" y="244" class="label" fill="#6f42c1">REPRESENTATIVE API</text>
+    <rect x="24" y="257" width="424" height="128" rx="10" class="code-box"/>
+    <text x="40" y="286" class="mono code ink">def canonical_json(value: Jsonable) -&gt; str: ...</text>
+    <text x="40" y="320" class="mono code ink">def json_hash(</text>
+    <text x="54" y="344" class="mono code ink">value: Jsonable, *, length: int | None = None</text>
+    <text x="40" y="368" class="mono code ink">) -&gt; str: ...</text>
+
+    <text x="28" y="416" class="label" fill="#6f42c1">FIXED BEHAVIOR</text>
+    <circle cx="35" cy="444" r="4" fill="#6f42c1"/>
+    <text x="48" y="449" class="body ink">Sorted keys, compact separators, NaN/∞ rejected.</text>
+    <circle cx="35" cy="475" r="4" fill="#6f42c1"/>
+    <text x="48" y="480" class="body ink">SHA-256 over canonical JSON text UTF-8 bytes.</text>
+    <circle cx="35" cy="506" r="4" fill="#6f42c1"/>
+    <text x="48" y="511" class="body ink">No handlers, limits, or implicit normalization.</text>
+    <text x="48" y="534" class="small muted">Same input → same canonical JSON text + hash.</text>
+
+    <path d="M236 552 V580" class="arrow"/>
+    <text x="28" y="601" class="label" fill="#6f42c1">OUTPUTS</text>
+    <rect x="24" y="614" width="424" height="78" rx="10" fill="#f4eefb" stroke="#a78ad3" stroke-width="1.5"/>
+    <text x="40" y="640" class="section ink">Canonical JSON Text</text>
+    <text x="40" y="665" class="mono code ink">str  ·  deterministic contract-bearer</text>
+    <rect x="24" y="705" width="424" height="78" rx="10" fill="#f4eefb" stroke="#a78ad3" stroke-width="1.5"/>
+    <text x="40" y="731" class="section ink">General JSON hash</text>
+    <text x="40" y="756" class="mono code ink">str  ·  64 hex, optionally truncated by length</text>
+    <text x="28" y="812" class="small" fill="#5d35aa">Deterministic · policy-free · general purpose · not domain identity</text>
+  </g>
+
+  <!-- Lane 3: identity -->
+  <g transform="translate(1074 188)" class="sans">
+    <rect width="472" height="820" rx="16" class="card" filter="url(#shadow)"/>
+    <rect width="472" height="8" rx="4" fill="#2b8a3e"/>
+    <circle cx="34" cy="48" r="19" class="soft-green"/>
+    <text x="34" y="54" text-anchor="middle" class="section" fill="#247534">3</text>
+    <text x="66" y="47" class="lane-title ink">Establish domain identity</text>
+    <text x="66" y="70" class="small muted">For stable cross-repo identity, keys, and references</text>
+
+    <line x1="24" y1="92" x2="448" y2="92" class="rule"/>
+    <text x="28" y="119" class="label" fill="#2b8a3e">CALLER-OWNED INPUT</text>
+    <rect x="24" y="132" width="424" height="86" rx="10" class="node"/>
+    <text x="40" y="157" class="mono code ink">schema: str  ·  schema_version: int</text>
+    <text x="40" y="180" class="mono code ink">payload: Jsonable  # Strict JSON Value</text>
+    <text x="40" y="202" class="small muted">The domain selects every identity-bearing payload field.</text>
+
+    <path d="M236 218 V240" class="arrow"/>
+    <text x="28" y="262" class="label" fill="#2b8a3e">VALIDATED DOCUMENT</text>
+    <rect x="24" y="275" width="424" height="190" rx="10" class="code-box"/>
+    <text x="40" y="301" class="mono code ink">@dataclass(frozen=True, slots=True)</text>
+    <text x="40" y="325" class="mono code ink">class IdentityDocument:</text>
+    <text x="54" y="349" class="mono code muted">schema: str</text>
+    <text x="54" y="373" class="mono code muted">schema_version: int</text>
+    <text x="54" y="397" class="mono code muted">payload: Jsonable</text>
+    <text x="40" y="421" class="mono code-small ink">validate_strict_json(value: Any) -&gt; Jsonable</text>
+    <text x="40" y="443" class="mono code-small ink">build_identity_document(...) -&gt; IdentityDocument</text>
+    <text x="40" y="461" class="mono code-small muted">validate_identity_document(raw) -&gt; IdentityDocument</text>
+
+    <text x="28" y="486" class="label" fill="#2b8a3e">STRICTNESS GATE</text>
+    <circle cx="35" cy="504" r="4" fill="#2b8a3e"/>
+    <text x="48" y="509" class="body ink">Exact {schema, schema_version, payload} shape.</text>
+    <circle cx="35" cy="535" r="4" fill="#2b8a3e"/>
+    <text x="48" y="540" class="body ink">Strict JSON Value: finite numbers, string keys.</text>
+    <circle cx="35" cy="566" r="4" fill="#2b8a3e"/>
+    <text x="48" y="571" class="body ink">No coercion, handlers, truncation, or cycles.</text>
+    <circle cx="35" cy="597" r="4" fill="#2b8a3e"/>
+    <text x="48" y="602" class="body ink">Deep-copied payload gives snapshot semantics.</text>
+
+    <path d="M236 620 V646" class="arrow"/>
+    <text x="28" y="668" class="label" fill="#2b8a3e">IDENTITY API + OUTPUT</text>
+    <rect x="24" y="681" width="424" height="111" rx="10" fill="#e8f5ec" stroke="#72b77e" stroke-width="1.5"/>
+    <text x="40" y="708" class="mono code-small ink">canonical_identity_json(doc) -&gt; str</text>
+    <text x="40" y="733" class="mono code-small ink">identity_document_hash(doc) -&gt; str</text>
+    <text x="40" y="758" class="mono code-small ink">compute_identity_hash(raw_dict) -&gt; str</text>
+    <text x="40" y="781" class="small" fill="#247534">full 64-character lowercase SHA-256 hex</text>
+    <text x="28" y="812" class="mono code-small" fill="#247534">identity_hash_prefix(hash_hex, n) → display only</text>
+  </g>
+
+  <!-- Composition rules -->
+  <g transform="translate(54 1040)" class="sans">
+    <rect width="1492" height="266" rx="16" class="card"/>
+    <text x="28" y="38" class="lane-title ink">How the surfaces relate</text>
+    <text x="28" y="62" class="small muted">Cross a boundary only when the call site says so.</text>
+
+    <!-- Allowed composition -->
+    <rect x="24" y="82" width="905" height="158" rx="12" fill="#f8fbff" stroke="#b8cbe1" stroke-width="1.4"/>
+    <rect x="40" y="98" width="96" height="24" rx="12" class="soft-blue"/>
+    <text x="88" y="115" text-anchor="middle" class="chip" fill="#1866b4">PERMITTED</text>
+    <text x="151" y="116" class="section ink">Explicit normalization → general hash</text>
+
+    <rect x="42" y="137" width="176" height="58" rx="9" class="soft-amber" stroke="#d6ad55"/>
+    <text x="130" y="161" text-anchor="middle" class="mono code-small ink">value: Any</text>
+    <text x="130" y="181" text-anchor="middle" class="small muted">runtime object</text>
+    <path d="M218 166 H278" class="arrow-blue"/>
+    <text x="248" y="151" text-anchor="middle" class="mono code-small" fill="#1866b4">to_jsonable</text>
+    <rect x="280" y="137" width="252" height="58" rx="9" class="soft-amber" stroke="#d6ad55"/>
+    <text x="406" y="161" text-anchor="middle" class="mono code-small ink">diagnostic: Jsonable</text>
+    <text x="406" y="181" text-anchor="middle" class="small muted">policy-derived output</text>
+    <path d="M532 166 H592" class="arrow-blue"/>
+    <text x="562" y="151" text-anchor="middle" class="small" fill="#1866b4">explicit</text>
+    <rect x="594" y="137" width="298" height="58" rx="9" class="soft-purple" stroke="#a78ad3"/>
+    <text x="743" y="161" text-anchor="middle" class="mono code-small ink">json_hash(diagnostic)</text>
+    <text x="743" y="181" text-anchor="middle" class="small muted">general fingerprint, not identity</text>
+    <rect x="42" y="207" width="850" height="22" rx="5" class="code-box"/>
+    <text x="467" y="223" text-anchor="middle" class="mono code-small ink">hash_value = json_hash(serializer.to_jsonable(value))</text>
+
+    <!-- Forbidden crossing -->
+    <rect x="947" y="82" width="521" height="158" rx="12" fill="#fffafa" stroke="#e3aaa4" stroke-width="1.4"/>
+    <rect x="963" y="98" width="104" height="24" rx="12" class="soft-red"/>
+    <text x="1015" y="115" text-anchor="middle" class="chip" fill="#c0392b">FORBIDDEN</text>
+    <text x="1082" y="116" class="section ink">Normalization → identity</text>
+    <rect x="968" y="141" width="184" height="56" rx="9" class="soft-amber" stroke="#d6ad55"/>
+    <text x="1060" y="164" text-anchor="middle" class="mono code-small ink">to_jsonable(...)</text>
+    <text x="1060" y="184" text-anchor="middle" class="small muted">potentially lossy</text>
+    <path d="M1152 169 H1256" class="arrow-red"/>
+    <circle cx="1204" cy="169" r="17" fill="#c0392b"/>
+    <path d="M1197 162 L1211 176 M1211 162 L1197 176" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+    <rect x="1258" y="141" width="188" height="56" rx="9" class="soft-green" stroke="#72b77e"/>
+    <text x="1352" y="164" text-anchor="middle" class="mono code-small ink">identity hash</text>
+    <text x="1352" y="184" text-anchor="middle" class="small muted">must stay strict</text>
+    <text x="963" y="221" class="small" fill="#a63227">Policy changes or lossy coercion must never redefine identity.</text>
+  </g>
+
+  <!-- Footer -->
+  <g class="sans">
+    <text x="54" y="1337" class="small muted">Shared failure contract: typed SerializationError subclasses carry a JsonPath and persistable diagnostics().</text>
+    <text x="1546" y="1337" text-anchor="end" class="mono code-small quiet">dr-serialize · ef3baeb</text>
+  </g>
+</svg>

@@ -1,4 +1,4 @@
-"""Canonical JSON: deterministic text and hashes for JSON-safe values.
+"""Canonical JSON Text: deterministic text and hashes for JSON-safe values.
 
 Deterministic and policy-free: no handlers, no limits, no normalization.
 These general-purpose utilities consume the ``Jsonable`` values the
@@ -11,8 +11,8 @@ explicitly::
 They are distinct from the identity lane (:mod:`dr_serialize.identity`),
 which restricts hashing to validated Identity Documents.
 
-Canonical text is the contract-bearer: hash stability derives from
-canonical-text stability, and consumers pin both with golden tests.
+Canonical JSON text is the contract-bearer: hash stability derives from
+canonical JSON text stability, and consumers pin both with golden tests.
 """
 
 from __future__ import annotations

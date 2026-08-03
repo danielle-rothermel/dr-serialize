@@ -2,13 +2,13 @@
 
 JSON-safe serialization and canonical hashing for Python: **two
 deliberately separate lanes** - a policy-driven normalization lane and a
-strict identity lane - plus general-purpose canonical JSON utilities:
+strict identity lane - plus general-purpose Canonical JSON Text utilities:
 
 ```text
                 normalization lane (policy)
-Any value --> Serializer.to_jsonable(...) --> diagnostic normalized JSON
+Any value --> Serializer.to_jsonable(...) --> diagnostic normalized JSON value
                                                    |
-                canonical JSON (deterministic)     v
+                canonical JSON text (deterministic) v
  canonical_json(...) --> stable text --> canonical_json_bytes(...) --> json_hash(...)
 
                 identity lane (strict, policy-free)
@@ -16,14 +16,15 @@ Raw mapping --> IdentityDocument --> canonical_identity_json --> identity_docume
 ```
 
 - The **normalization lane** is *policy*: it decides what your objects
-  become as diagnostic normalized JSON - extensible via handlers, bounded
-  by explicit limits, lossy where it must be.
-- The **canonical JSON** utilities are *deterministic*: they encode
-  already-JSON-safe data as canonical text, exact UTF-8 bytes, and hashes -
+  become as a diagnostic normalized JSON value - extensible via handlers,
+  bounded by explicit limits, lossy where it must be.
+- The **Canonical JSON Text** utilities are *deterministic*: they encode
+  already-JSON-safe data as canonical JSON text, exact UTF-8 bytes, and hashes -
   no handlers, no limits, same input, same bytes, forever.
-- The **identity lane** is *strict*: it validates strict JSON and the
-  exact Identity Document shape, then hashes the canonical bytes - no
-  coercion, and diagnostic normalized JSON never feeds it.
+- The **identity lane** is *strict*: it validates a strict JSON value and
+  the exact Identity Document shape, then hashes the canonical identity JSON
+  text's UTF-8 bytes - no coercion, and a diagnostic normalized JSON value
+  never feeds it.
 
 The [vocabulary sheet](https://danielle-rothermel.github.io/dr-serialize/)
 (source: `.defs/vocab.html`) is the
@@ -31,8 +32,8 @@ authoritative statement of the identity contract this repo implements:
 the terms, the guarantees, what is in and out of scope, and the mapping
 from each term to the exported names.
 
-Normalization and canonical JSON compose at your call site, so hashes
-never silently depend on serialization policy:
+Normalization and canonical JSON text generation compose at your call site,
+so hashes never silently depend on serialization policy:
 
 ```python
 hash_value = json_hash(serializer.to_jsonable(value))
@@ -86,7 +87,7 @@ preset for Postgres JSONB storage; construct your own for other ceilings.
 `to_jsonable` requires limits explicitly - every call site states its
 storage policy.
 
-## Canonical JSON: text, bytes, and hashes
+## Canonical JSON Text: text, bytes, and hashes
 
 ```python
 from dr_serialize import canonical_json, canonical_json_bytes, json_hash
@@ -140,11 +141,11 @@ persist traceback locals from secret-bearing decode calls.
 ## Identity lane: Identity Document and `identity_document_hash`
 
 The identity lane is the strict, policy-free path for cross-repo domain
-identity: validate strict JSON, wrap it in the exact three-field
+identity: validate a strict JSON value, wrap it in the exact three-field
 [Identity Document](https://danielle-rothermel.github.io/dr-serialize/#term-identity-document)
 `{schema, schema_version, payload}`, render its
-[Canonical Identity JSON](https://danielle-rothermel.github.io/dr-serialize/#term-canonical-identity-json),
-and hash the canonical bytes into the full
+[Canonical Identity JSON Text](https://danielle-rothermel.github.io/dr-serialize/#term-canonical-identity-json),
+and hash that text's UTF-8 bytes into the full
 [Identity Hash](https://danielle-rothermel.github.io/dr-serialize/#term-identity-hash). The
 [vocabulary sheet](https://danielle-rothermel.github.io/dr-serialize/) defines each term and the guarantees
 that bind this lane; the owning domain chooses the schema, version, and
@@ -167,15 +168,16 @@ wire = canonical_identity_json_bytes(doc)  # the exact bytes h covers
 ```
 
 Rejections are typed: `StrictJsonError` for values that are not strict
-JSON, `IdentityDocumentError` for documents that are not the exact
+JSON values, `IdentityDocumentError` for documents that are not the exact
 three-field shape. There is no truncation parameter on this path;
 `identity_hash_prefix` is a separate, display-only helper that never
-establishes identity. Diagnostic normalized JSON never feeds identity
-hashing.
+establishes identity. A diagnostic normalized JSON value never feeds
+identity hashing. Committed golden vectors live in
+`tests/fixtures/identity_golden.json` for dependent repos to reuse.
 
 ## Errors
 
-Both lanes and the canonical JSON utilities raise from one typed
+Both lanes and the Canonical JSON Text utilities raise from one typed
 taxonomy rooted at `SerializationError`,
 and every error carries the path to the offending value plus a
 `diagnostics()` dict safe to persist:
@@ -183,12 +185,12 @@ and every error carries the path to the offending value plus a
 | Error | Raised by |
 | --- | --- |
 | `MaxDepthExceededError` | engine: nesting exceeded `max_depth` |
-| `JsonEncodeError` | engine probe and canonical JSON: value not JSON-encodable (canonical also rejects NaN/inf) |
+| `JsonEncodeError` | engine probe and canonical JSON text: value not JSON-encodable (canonical also rejects NaN/inf) |
 | `PayloadTooLargeError` | engine: encoded size exceeded `max_bytes` |
 | `ModelDumpError` | engine: Pydantic `model_dump` failed |
 | `ObjectVarsSerializationError` | engine: `__dict__` walk failed |
 | `ValueTransformError` | base for consumer handler failures - subclass it with a `message_prefix` |
-| `StrictJsonError` | identity lane: value is not strict JSON (non-JSON, non-string key, NaN/inf, cycle) |
+| `StrictJsonError` | identity lane: value is not a strict JSON value (non-JSON, non-string key, NaN/inf, cycle) |
 | `IdentityDocumentError` | identity lane: document is not the exact three-field shape |
 | `StrictJsonDecodeError` | base for strict bytes-first decoding failures |
 | `JsonByteLimitError` | decoder: encoded input exceeds `max_bytes` |
@@ -206,7 +208,7 @@ malformed full digest.
 Normalization: `Serializer`, `ConversionContext`, `JsonableHandler`,
 `JsonableHandle`, `SerializationLimits`, `postgres_jsonb_limits`,
 `POSTGRES_JSONB_PAYLOAD_MAX_BYTES`, `POSTGRES_JSONB_MAX_BYTES`.
-Canonical JSON: `canonical_json`, `canonical_json_bytes`, `json_hash`,
+Canonical JSON Text: `canonical_json`, `canonical_json_bytes`, `json_hash`,
 `Sha256Digest`, `Sha256DigestError`.
 Strict decoding: `decode_strict_json_bytes`, `StrictJsonDecodeError`,
 `JsonByteLimitError`, `JsonDepthLimitError`, `InvalidUtf8Error`,

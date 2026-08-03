@@ -25,7 +25,7 @@ Initial release.
 - Normalization lane: `Serializer.to_jsonable` with an ordered, pluggable
   handler chain and explicit `SerializationLimits` (including the
   `postgres_jsonb_limits` preset).
-- Canonical JSON utilities: `canonical_json` and `json_hash` for
+- Canonical JSON Text utilities: `canonical_json` and `json_hash` for
   deterministic text and SHA-256 hashes over already-JSON-safe values.
 - Identity lane (`dr_serialize.identity`): `validate_strict_json`, the
   exact three-field `IdentityDocument`, `canonical_identity_json`, the

@@ -1,4 +1,4 @@
-"""Contract tests for canonical JSON and hashes.
+"""Contract tests for Canonical JSON Text and hashes.
 
 The golden fixture in ``tests/fixtures/hashing_golden.json`` was captured
 from whetstone-ai before extraction; byte-identical reproduction is the

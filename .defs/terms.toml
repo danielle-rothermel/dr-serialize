@@ -52,30 +52,31 @@ qualified term."""
 categories = ["canonicalization", "identity"]
 
 [[terms]]
-name = "strict JSON"
+name = "strict JSON value"
 definition = """
 A value drawn only from the JSON data model: null, booleans, strings, finite \
-numbers, ordered arrays of strict JSON, and string-keyed objects of strict \
-JSON, recursively. It excludes non-finite numbers, reference cycles, unordered \
-collections, and values that require conversion into JSON."""
+numbers, ordered arrays of strict JSON values, and string-keyed objects whose \
+values are strict JSON values, recursively. It excludes non-finite numbers, \
+reference cycles, unordered collections, and values that require conversion \
+into JSON."""
 exported_symbols = ["validate_strict_json", "StrictJsonError"]
 categories = ["identity"]
 
 [[terms]]
-name = "canonical JSON"
+name = "canonical JSON text"
 definition = """
-The single deterministic UTF-8 JSON representation selected for a JSON value, \
-using compact separators and sorted object keys. The same accepted value \
-always produces the same text and bytes."""
+The single deterministic UTF-8 JSON text selected for a JSON value, using \
+compact separators and sorted object keys. The same accepted value always \
+produces the same text and bytes."""
 exported_symbols = ["canonical_json", "json_hash"]
 categories = ["canonicalization"]
 
 [[terms]]
 name = "identity payload"
 definition = """
-Strict-JSON domain data deliberately selected to contain exactly the facts \
-that determine an object's identity. It excludes incidental runtime and \
-storage state and remains the owning domain's responsibility."""
+Domain data that is a strict JSON value, deliberately selected to contain \
+exactly the facts that determine an object's identity. It excludes incidental \
+runtime and storage state and remains the owning domain's responsibility."""
 categories = ["identity"]
 is_a = ["payload"]
 part_of = ["identity document"]
@@ -83,7 +84,7 @@ part_of = ["identity document"]
 [[terms]]
 name = "identity document"
 definition = """
-A complete, self-describing, versioned strict-JSON document with exactly the \
+A complete, self-describing, versioned strict JSON value with exactly the \
 shape {schema, schema_version, payload}. The schema names the governing domain \
 schema, the schema version selects its version, and the payload carries the \
 identity-defining domain facts."""
@@ -98,17 +99,17 @@ categories = ["identity"]
 is_a = ["document"]
 
 [[terms]]
-name = "canonical identity JSON"
+name = "canonical identity JSON text"
 definition = """
-The canonical JSON of a validated identity document."""
+The canonical JSON text of a validated identity document."""
 exported_symbols = ["canonical_identity_json"]
 categories = ["canonicalization", "identity"]
-is_a = ["canonical JSON"]
+is_a = ["canonical JSON text"]
 
 [[terms]]
 name = "identity hash"
 definition = """
-The full 64-character lowercase SHA-256 hash of the canonical identity JSON \
+The full 64-character lowercase SHA-256 hash of the canonical identity JSON text \
 of an identity document."""
 exported_symbols = ["identity_document_hash", "compute_identity_hash"]
 categories = ["canonicalization", "identity"]
@@ -124,9 +125,9 @@ categories = ["identity"]
 part_of = ["identity hash"]
 
 [[terms]]
-name = "diagnostic normalized JSON"
+name = "diagnostic normalized JSON value"
 definition = """
-The potentially lossy, size- and depth-bounded JSON-safe representation \
+The potentially lossy, size- and depth-bounded JSON-safe value \
 produced by normalization for diagnostics or non-identity storage. It is not \
 an identity payload and never supplies input to identity hashing."""
 exported_symbols = [
