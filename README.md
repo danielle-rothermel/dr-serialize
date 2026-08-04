@@ -132,7 +132,10 @@ invalid UTF-8, duplicate decoded object keys, non-finite numbers,
 malformed or trailing input, and multiple root values. Its iterative
 structural parser enforces `max_depth` without depending on Python
 recursion. Typed failures expose bounded structural diagnostics and never
-echo the input.
+echo the input. This guarantee covers exception messages, `diagnostics()`,
+and chained causes/contexts. As with ordinary Python exceptions, tooling
+that captures traceback locals can capture function arguments; do not
+persist traceback locals from secret-bearing decode calls.
 
 ## Identity lane: Identity Document and `identity_document_hash`
 
