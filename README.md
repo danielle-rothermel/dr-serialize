@@ -170,14 +170,6 @@ three-field shape. There is no truncation parameter on this path;
 establishes identity. Diagnostic normalized JSON never feeds identity
 hashing.
 
-## Conformance corpus
-
-`load_conformance_corpus()` loads a small bundled package-data corpus of
-immutable `ConformanceVector` values. Each vector identifies its
-`ConformanceLane` and pins input JSON, canonical text, canonical bytes, and
-the full `Sha256Digest`. Consumers can run the corpus against their
-integration boundary without copying canonicalization code or test files.
-
 ## Errors
 
 Both lanes and the canonical JSON utilities raise from one typed
@@ -221,7 +213,5 @@ Identity lane: `validate_strict_json`, `IdentityDocument`,
 `canonical_identity_json`, `canonical_identity_json_bytes`,
 `identity_document_hash`, `compute_identity_hash`, `identity_hash_prefix`,
 `IDENTITY_DOCUMENT_FIELDS`.
-Conformance: `ConformanceLane`, `ConformanceVector`,
-`load_conformance_corpus`.
 Boundary type: `Jsonable`.
 Errors: the taxonomy above plus `JsonPath`, `preview_repr`, `detail_repr`.

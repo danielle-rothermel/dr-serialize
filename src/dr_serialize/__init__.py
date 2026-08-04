@@ -33,11 +33,6 @@ from dr_serialize.canonical import (
     canonical_json_bytes,
     json_hash,
 )
-from dr_serialize.conformance import (
-    ConformanceLane,
-    ConformanceVector,
-    load_conformance_corpus,
-)
 from dr_serialize.decoding import (
     DuplicateJsonKeyError,
     InvalidUtf8Error,
@@ -93,8 +88,6 @@ __all__ = [
     "IDENTITY_DOCUMENT_FIELDS",
     "POSTGRES_JSONB_MAX_BYTES",
     "POSTGRES_JSONB_PAYLOAD_MAX_BYTES",
-    "ConformanceLane",
-    "ConformanceVector",
     "ConversionContext",
     "DuplicateJsonKeyError",
     "IdentityDocument",
@@ -132,7 +125,6 @@ __all__ = [
     "identity_document_hash",
     "identity_hash_prefix",
     "json_hash",
-    "load_conformance_corpus",
     "postgres_jsonb_limits",
     "preview_repr",
     "validate_identity_document",

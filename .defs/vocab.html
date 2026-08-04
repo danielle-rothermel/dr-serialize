@@ -45,7 +45,6 @@
     <tr><td><dfn class="term-name" id="term-identity-hash">Identity Hash</dfn></td><td>The full 64-character lowercase SHA-256 <a class="term-ref" href="#term-hash">hash</a> of the <a class="term-ref" href="#term-canonical-identity-json">canonical identity JSON</a> of an <a class="term-ref" href="#term-identity-document">identity document</a>.</td></tr>
     <tr><td><dfn class="term-name" id="term-identity-hash-prefix">Identity Hash Prefix</dfn></td><td>Display-only leading characters of an <a class="term-ref" href="#term-identity-hash">identity hash</a> that never establish identity, equality, storage keys, or references.</td></tr>
     <tr><td><dfn class="term-name" id="term-diagnostic-normalized-json">Diagnostic Normalized JSON</dfn></td><td>The potentially lossy, size- and depth-bounded JSON-safe value produced by the normalization lane (<code>Serializer.to_jsonable</code>) for diagnostics or non-identity storage; never an input to <a class="term-ref" href="#term-identity-hash">identity hash</a> computation.</td></tr>
-    <tr><td><dfn class="term-name" id="term-conformance-corpus">Conformance Corpus</dfn></td><td>A small immutable package-data set that pins representative JSON input together with its canonical text, exact UTF-8 bytes, and full SHA-256 digest for the general canonical and identity lanes.</td></tr>
   </tbody>
 </table>
 </div>
@@ -139,11 +138,6 @@
       <td><a class="term-ref" href="#term-identity-hash-prefix">Identity Hash Prefix</a></td>
       <td><code>identity_hash_prefix</code></td>
       <td>Display-only projection of an already-computed <a class="term-ref" href="#term-identity-hash">identity hash</a>.</td>
-    </tr>
-    <tr>
-      <td><a class="term-ref" href="#term-conformance-corpus">Conformance Corpus</a></td>
-      <td><code>ConformanceLane</code>, <code>ConformanceVector</code>, <code>load_conformance_corpus</code></td>
-      <td>The public loader returns immutable vectors backed by bundled package data; consumers reproduce outputs through the public canonical and identity APIs.</td>
     </tr>
     <tr>
       <td><a class="term-ref" href="#term-diagnostic-normalized-json">Diagnostic Normalized JSON</a></td>

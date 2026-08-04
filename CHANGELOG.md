@@ -15,8 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - The nominal `Sha256Digest` validation boundary for full lowercase SHA-256
   values; full canonical and identity hashes now return this string subtype
   without changing their values, and strict Pydantic fields preserve it.
-- A bundled immutable canonicalization conformance corpus exposed through
-  `load_conformance_corpus`.
 
 ## [0.1.0] - 2026-07-24
 
