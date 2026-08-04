@@ -9,7 +9,7 @@ strict identity lane - plus general-purpose canonical JSON utilities:
 Any value --> Serializer.to_jsonable(...) --> diagnostic normalized JSON
                                                    |
                 canonical JSON (deterministic)     v
-              canonical_json(...) --> stable text --> json_hash(...)
+ canonical_json(...) --> stable text --> canonical_json_bytes(...) --> json_hash(...)
 
                 identity lane (strict, policy-free)
 Raw mapping --> IdentityDocument --> canonical_identity_json --> identity_document_hash
@@ -19,8 +19,8 @@ Raw mapping --> IdentityDocument --> canonical_identity_json --> identity_docume
   become as diagnostic normalized JSON - extensible via handlers, bounded
   by explicit limits, lossy where it must be.
 - The **canonical JSON** utilities are *deterministic*: they encode
-  already-JSON-safe data as canonical text and hashes - no handlers, no
-  limits, same input, same bytes, forever.
+  already-JSON-safe data as canonical text, exact UTF-8 bytes, and hashes -
+  no handlers, no limits, same input, same bytes, forever.
 - The **identity lane** is *strict*: it validates strict JSON and the
   exact Identity Document shape, then hashes the canonical bytes - no
   coercion, and diagnostic normalized JSON never feeds it.
@@ -86,13 +86,15 @@ preset for Postgres JSONB storage; construct your own for other ceilings.
 `to_jsonable` requires limits explicitly - every call site states its
 storage policy.
 
-## Canonical JSON: `canonical_json` and `json_hash`
+## Canonical JSON: text, bytes, and hashes
 
 ```python
-from dr_serialize import canonical_json, json_hash
+from dr_serialize import canonical_json, canonical_json_bytes, json_hash
 
-text = canonical_json(payload)                     # sorted keys, compact, NaN rejected
-key  = json_hash(payload, length=16)               # truncated hex hash
+text = canonical_json(payload)              # sorted keys, compact, NaN rejected
+data = canonical_json_bytes(payload)        # exact UTF-8 encoding of text
+digest = json_hash(payload)                 # validated full Sha256Digest
+display = json_hash(payload, length=16)     # ordinary truncated string
 ```
 
 Both take `Jsonable` input - data that is already JSON-safe, typically
@@ -101,6 +103,36 @@ These utilities are intentionally policy-free: hashes are long-lived
 keys, so they must never change because a handler was added or a limit
 tuned. If you need conversion first, compose with the normalization lane
 explicitly.
+
+`Sha256Digest` is the nominal boundary for full SHA-256 values. Its
+`parse()` method accepts exactly 64 lowercase hexadecimal characters and
+raises `Sha256DigestError` for prefixes, alternate case, whitespace,
+truncation, or other malformed values. It also provides a strict Pydantic
+core schema, so `TypeAdapter(Sha256Digest)` and model fields preserve the
+nominal type, serialize as JSON strings, and publish the exact length and
+lowercase-hex pattern in JSON Schema.
+
+## Bounded strict JSON decoding
+
+`decode_strict_json_bytes` consumes one complete UTF-8 JSON value under
+mandatory byte and structural-depth limits:
+
+```python
+from dr_serialize import decode_strict_json_bytes
+
+value = decode_strict_json_bytes(
+    frame_bytes,
+    max_bytes=len(frame_bytes),
+    max_depth=32,
+)
+```
+
+The decoder is strict and non-coercing. It rejects byte-order marks,
+invalid UTF-8, duplicate decoded object keys, non-finite numbers,
+malformed or trailing input, and multiple root values. Its iterative
+structural parser enforces `max_depth` without depending on Python
+recursion. Typed failures expose bounded structural diagnostics and never
+echo the input.
 
 ## Identity lane: Identity Document and `identity_document_hash`
 
@@ -116,7 +148,11 @@ that bind this lane; the owning domain chooses the schema, version, and
 complete payload - dr-serialize only validates.
 
 ```python
-from dr_serialize import build_identity_document, identity_document_hash
+from dr_serialize import (
+    build_identity_document,
+    canonical_identity_json_bytes,
+    identity_document_hash,
+)
 
 doc = build_identity_document(
     schema="example.config",       # the owning domain chooses this
@@ -124,6 +160,7 @@ doc = build_identity_document(
     payload={"identity_field": "value"},  # ...and the complete payload
 )
 h = identity_document_hash(doc)    # full 64-char lowercase SHA-256 hex
+wire = canonical_identity_json_bytes(doc)  # the exact bytes h covers
 ```
 
 Rejections are typed: `StrictJsonError` for values that are not strict
@@ -131,8 +168,15 @@ JSON, `IdentityDocumentError` for documents that are not the exact
 three-field shape. There is no truncation parameter on this path;
 `identity_hash_prefix` is a separate, display-only helper that never
 establishes identity. Diagnostic normalized JSON never feeds identity
-hashing. Committed golden vectors live in
-`tests/fixtures/identity_golden.json` for dependent repos to reuse.
+hashing.
+
+## Conformance corpus
+
+`load_conformance_corpus()` loads a small bundled package-data corpus of
+immutable `ConformanceVector` values. Each vector identifies its
+`ConformanceLane` and pins input JSON, canonical text, canonical bytes, and
+the full `Sha256Digest`. Consumers can run the corpus against their
+integration boundary without copying canonicalization code or test files.
 
 ## Errors
 
@@ -151,16 +195,33 @@ and every error carries the path to the offending value plus a
 | `ValueTransformError` | base for consumer handler failures - subclass it with a `message_prefix` |
 | `StrictJsonError` | identity lane: value is not strict JSON (non-JSON, non-string key, NaN/inf, cycle) |
 | `IdentityDocumentError` | identity lane: document is not the exact three-field shape |
+| `StrictJsonDecodeError` | base for strict bytes-first decoding failures |
+| `JsonByteLimitError` | decoder: encoded input exceeds `max_bytes` |
+| `JsonDepthLimitError` | decoder: nesting exceeds `max_depth` |
+| `InvalidUtf8Error` | decoder: input is not strict UTF-8 |
+| `JsonSyntaxError` | decoder: malformed, incomplete, or trailing JSON |
+| `DuplicateJsonKeyError` | decoder: an object repeats a decoded key |
+| `NonFiniteJsonNumberError` | decoder: input contains a non-finite number |
+
+`Sha256Digest.parse()` raises `Sha256DigestError`, a `ValueError`, for a
+malformed full digest.
 
 ## API surface
 
 Normalization: `Serializer`, `ConversionContext`, `JsonableHandler`,
 `JsonableHandle`, `SerializationLimits`, `postgres_jsonb_limits`,
 `POSTGRES_JSONB_PAYLOAD_MAX_BYTES`, `POSTGRES_JSONB_MAX_BYTES`.
-Canonical JSON: `canonical_json`, `json_hash`.
+Canonical JSON: `canonical_json`, `canonical_json_bytes`, `json_hash`,
+`Sha256Digest`, `Sha256DigestError`.
+Strict decoding: `decode_strict_json_bytes`, `StrictJsonDecodeError`,
+`JsonByteLimitError`, `JsonDepthLimitError`, `InvalidUtf8Error`,
+`JsonSyntaxError`, `DuplicateJsonKeyError`, `NonFiniteJsonNumberError`.
 Identity lane: `validate_strict_json`, `IdentityDocument`,
 `build_identity_document`, `validate_identity_document`,
-`canonical_identity_json`, `identity_document_hash`, `compute_identity_hash`,
-`identity_hash_prefix`, `IDENTITY_DOCUMENT_FIELDS`.
+`canonical_identity_json`, `canonical_identity_json_bytes`,
+`identity_document_hash`, `compute_identity_hash`, `identity_hash_prefix`,
+`IDENTITY_DOCUMENT_FIELDS`.
+Conformance: `ConformanceLane`, `ConformanceVector`,
+`load_conformance_corpus`.
 Boundary type: `Jsonable`.
 Errors: the taxonomy above plus `JsonPath`, `preview_repr`, `detail_repr`.

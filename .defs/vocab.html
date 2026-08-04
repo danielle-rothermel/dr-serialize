@@ -23,7 +23,7 @@
 
 <h1>The dr-serialize identity contract</h1>
 <p class="dek">A reference for the terms and guarantees that bind dr-serialize.</p>
-<div class="byline">dr-serialize · 2026-07-24</div>
+<div class="byline">dr-serialize · 2026-08-04</div>
 
 <p>This is the vocabulary of the identity contract dr-serialize implements: the <span class="key">terms</span>, the <span class="key">guarantees</span> that bind this repo, what is in and out of <span class="key">scope</span>, and the <span class="key">mapping</span> from each term to the names actually exported by <a href="https://github.com/danielle-rothermel/dr-serialize/blob/main/src/dr_serialize/__init__.py"><code>dr_serialize</code></a>.</p>
 
@@ -36,6 +36,7 @@
     <tr><td><dfn class="term-name" id="term-document">Document</dfn></td><td>A complete serialized structure governed by a declared schema.</td></tr>
     <tr><td><dfn class="term-name" id="term-payload">Payload</dfn></td><td>The inner data a <a class="term-ref" href="#term-document">document</a> carries; here, always the caller-selected identity data.</td></tr>
     <tr><td><dfn class="term-name" id="term-hash">Hash</dfn></td><td>Deterministic fixed-length value computed by a declared algorithm over exact declared input bytes; its specific role and semantics come from the qualified term. dr-serialize implements the <a class="term-ref" href="#term-identity-hash">identity hash</a> specialization.</td></tr>
+    <tr><td><dfn class="term-name" id="term-sha256-digest">Full SHA-256 Digest</dfn></td><td>A validated nominal string containing exactly 64 lowercase hexadecimal characters. Prefixes, truncation, alternate case, whitespace, and prefixed spellings are not full digests.</td></tr>
     <tr><td><dfn class="term-name" id="term-strict-json">Strict JSON</dfn></td><td>A value composed only of <code>null</code>, booleans, strings, finite numbers, lists of strict JSON, and string-keyed objects of strict JSON, recursively. Excludes <code>NaN</code> and <code>Infinity</code> — which Python's <code>json</code> module accepts by default but which are not valid JSON — and every other runtime type.</td></tr>
     <tr><td><dfn class="term-name" id="term-canonical-json">Canonical JSON</dfn></td><td>The single deterministic UTF-8 JSON rendering of a JSON-safe value — compact, sorted keys. The same value always produces the same bytes.</td></tr>
     <tr><td><dfn class="term-name" id="term-identity-payload">Identity Payload</dfn></td><td>Validated <a class="term-ref" href="#term-strict-json">strict-JSON</a> domain data deliberately selected by the caller to contain exactly the fields that determine the object's identity, and none that are incidental runtime or storage state; dr-serialize validates the surrounding <a class="term-ref" href="#term-document">document</a> but never selects or infers payload fields.</td></tr>
@@ -44,6 +45,7 @@
     <tr><td><dfn class="term-name" id="term-identity-hash">Identity Hash</dfn></td><td>The full 64-character lowercase SHA-256 <a class="term-ref" href="#term-hash">hash</a> of the <a class="term-ref" href="#term-canonical-identity-json">canonical identity JSON</a> of an <a class="term-ref" href="#term-identity-document">identity document</a>.</td></tr>
     <tr><td><dfn class="term-name" id="term-identity-hash-prefix">Identity Hash Prefix</dfn></td><td>Display-only leading characters of an <a class="term-ref" href="#term-identity-hash">identity hash</a> that never establish identity, equality, storage keys, or references.</td></tr>
     <tr><td><dfn class="term-name" id="term-diagnostic-normalized-json">Diagnostic Normalized JSON</dfn></td><td>The potentially lossy, size- and depth-bounded JSON-safe value produced by the normalization lane (<code>Serializer.to_jsonable</code>) for diagnostics or non-identity storage; never an input to <a class="term-ref" href="#term-identity-hash">identity hash</a> computation.</td></tr>
+    <tr><td><dfn class="term-name" id="term-conformance-corpus">Conformance Corpus</dfn></td><td>A small immutable package-data set that pins representative JSON input together with its canonical text, exact UTF-8 bytes, and full SHA-256 digest for the general canonical and identity lanes.</td></tr>
   </tbody>
 </table>
 </div>
@@ -56,6 +58,7 @@
 <ul>
   <li><span class="must">Validates</span> <a class="term-ref" href="#term-strict-json">strict JSON</a> and the <span class="key">exact</span> <a class="term-ref" href="#term-identity-document">identity document</a> <span class="key">shape</span> <code>{schema, schema_version, payload}</code>.</li>
   <li><span class="must">Rejects</span> non-string object keys, non-finite numbers, and implicit object conversion.</li>
+  <li><span class="must">Decodes one complete value</span> from strict UTF-8 bytes under explicit byte and structural-depth limits, rejecting byte-order marks, duplicate decoded keys, malformed syntax, trailing data, and multiple values with typed non-echoing diagnostics.</li>
   <li><span class="must">Rejects</span> all unordered collections (sets, and every non-list/dict container) — <span class="key">ordering is the caller's responsibility</span>; <a class="term-ref" href="#term-payload">payloads</a> contain only already-ordered lists.</li>
   <li><span class="must">Renders</span> <a class="term-ref" href="#term-canonical-identity-json">canonical identity JSON</a> as UTF-8 from the <span class="key">complete</span> <a class="term-ref" href="#term-identity-document">identity document</a>, without lossy normalization.</li>
   <li><span class="must">Computes the full</span> <a class="term-ref" href="#term-identity-hash">identity hash</a> — a lowercase <span class="key">64-character SHA-256</span> value over <a class="term-ref" href="#term-canonical-identity-json">canonical identity JSON</a>.</li>
@@ -104,13 +107,13 @@
   <tbody>
     <tr>
       <td><a class="term-ref" href="#term-strict-json">Strict JSON</a></td>
-      <td><code>validate_strict_json</code>, <code>StrictJsonError</code></td>
-      <td>Validation returns the value unchanged; rejection raises <code>StrictJsonError</code> carrying the path to the first offending value.</td>
+      <td><code>validate_strict_json</code>, <code>StrictJsonError</code>, <code>decode_strict_json_bytes</code>, <code>StrictJsonDecodeError</code>, <code>JsonByteLimitError</code>, <code>JsonDepthLimitError</code>, <code>InvalidUtf8Error</code>, <code>JsonSyntaxError</code>, <code>DuplicateJsonKeyError</code>, <code>NonFiniteJsonNumberError</code></td>
+      <td>Materialized-value validation returns the value unchanged. Bytes-first decoding accepts one complete strict-JSON UTF-8 value under mandatory byte and depth limits. Each rejection category has a typed error with bounded non-echoing diagnostics.</td>
     </tr>
     <tr>
       <td><a class="term-ref" href="#term-canonical-json">Canonical JSON</a></td>
-      <td><code>canonical_json</code>, <code>json_hash</code></td>
-      <td>General-purpose deterministic rendering and <a class="term-ref" href="#term-hash">hash</a> over already-JSON-safe values, distinct from <a class="term-ref" href="#term-canonical-identity-json">canonical identity JSON</a>; the lanes compose at the call site as <code>json_hash(serializer.to_jsonable(x))</code>.</td>
+      <td><code>canonical_json</code>, <code>canonical_json_bytes</code>, <code>json_hash</code></td>
+      <td>General-purpose deterministic text, exact UTF-8 bytes, and <a class="term-ref" href="#term-hash">hash</a> over already-JSON-safe values, distinct from <a class="term-ref" href="#term-canonical-identity-json">canonical identity JSON</a>; the lanes compose at the call site as <code>json_hash(serializer.to_jsonable(x))</code>.</td>
     </tr>
     <tr>
       <td><a class="term-ref" href="#term-identity-document">Identity Document</a></td>
@@ -119,8 +122,8 @@
     </tr>
     <tr>
       <td><a class="term-ref" href="#term-canonical-identity-json">Canonical Identity JSON</a></td>
-      <td><code>canonical_identity_json</code></td>
-      <td>Deterministic compact sorted-key rendering; deliberately not RFC 8785 (JCS).</td>
+      <td><code>canonical_identity_json</code>, <code>canonical_identity_json_bytes</code></td>
+      <td>Deterministic compact sorted-key rendering and its exact UTF-8 bytes; deliberately not RFC 8785 (JCS).</td>
     </tr>
     <tr>
       <td><a class="term-ref" href="#term-identity-hash">Identity Hash</a></td>
@@ -128,9 +131,19 @@
       <td><code>identity_document_hash</code> takes a validated document; <code>compute_identity_hash</code> validates a raw mapping and hashes it in one call. The same operation as <code>json_hash</code>, restricted to validated identity documents.</td>
     </tr>
     <tr>
+      <td><a class="term-ref" href="#term-sha256-digest">Full SHA-256 Digest</a></td>
+      <td><code>Sha256Digest</code>, <code>Sha256DigestError</code></td>
+      <td><code>Sha256Digest.parse</code> accepts only the complete lowercase hexadecimal spelling. Full canonical and identity hash functions return this nominal string subtype; strict Pydantic fields validate and preserve it; display prefixes remain ordinary strings.</td>
+    </tr>
+    <tr>
       <td><a class="term-ref" href="#term-identity-hash-prefix">Identity Hash Prefix</a></td>
       <td><code>identity_hash_prefix</code></td>
       <td>Display-only projection of an already-computed <a class="term-ref" href="#term-identity-hash">identity hash</a>.</td>
+    </tr>
+    <tr>
+      <td><a class="term-ref" href="#term-conformance-corpus">Conformance Corpus</a></td>
+      <td><code>ConformanceLane</code>, <code>ConformanceVector</code>, <code>load_conformance_corpus</code></td>
+      <td>The public loader returns immutable vectors backed by bundled package data; consumers reproduce outputs through the public canonical and identity APIs.</td>
     </tr>
     <tr>
       <td><a class="term-ref" href="#term-diagnostic-normalized-json">Diagnostic Normalized JSON</a></td>

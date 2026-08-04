@@ -21,6 +21,7 @@ from dr_serialize import (
     Jsonable,
     JsonEncodeError,
     canonical_json,
+    canonical_json_bytes,
     json_hash,
 )
 from dr_serialize.canonical import SHA256_HEX_LENGTH
@@ -35,6 +36,22 @@ def test_canonical_json_sorts_keys_and_compacts() -> None:
     assert canonical_json(value) == (
         '{"a":[1,2],"b":1,"c":{"y":true,"z":null}}'
     )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        {},
+        None,
+        {"nested": [1, {"x": True}]},
+        "héllo 日本語 🎯",
+        'line one\nline two\t"quoted" \\backslash',
+        9007199254740992,
+        1e300,
+    ],
+)
+def test_canonical_bytes_are_exact_text_utf8(value: Jsonable) -> None:
+    assert canonical_json_bytes(value) == canonical_json(value).encode("utf-8")
 
 
 def test_canonical_json_rejects_nan() -> None:
@@ -100,6 +117,11 @@ class TestCanonicalTypedErrors:
         with pytest.raises(JsonEncodeError):
             json_hash(value)
 
+    def test_canonical_bytes_preserve_rejection(self) -> None:
+        value = cast("Jsonable", {"k": object()})
+        with pytest.raises(JsonEncodeError):
+            canonical_json_bytes(value)
+
     def test_hash_length_validation_stays_value_error(self) -> None:
         with pytest.raises(ValueError, match="hash length"):
             json_hash({"a": 1}, length=0)
@@ -160,6 +182,7 @@ def test_golden_hashing_case_reproduces(name: str) -> None:
     case = _golden_cases()[name]
     value = case["value"]
     assert canonical_json(value) == case["canonical_json"]
+    assert canonical_json_bytes(value) == case["canonical_json"].encode()
     assert json_hash(value) == case["hash"]
     assert (
         json_hash(value, length=GOLDEN_TRUNCATED_LENGTH)

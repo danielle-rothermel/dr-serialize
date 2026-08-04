@@ -36,13 +36,16 @@ from __future__ import annotations
 
 import copy
 import hashlib
-import json
 import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from dr_serialize._encoding import TEXT_ENCODING
-from dr_serialize.canonical import SHA256_HEX_LENGTH
+from dr_serialize.canonical import canonical_json, canonical_json_bytes
+from dr_serialize.digests import (
+    SHA256_HEX_LENGTH,
+    Sha256Digest,
+    Sha256DigestError,
+)
 from dr_serialize.errors import SerializationError, detail_repr
 from dr_serialize.jsonable import Jsonable
 
@@ -338,27 +341,30 @@ def canonical_identity_json(document: IdentityDocument) -> str:
     validated strict JSON, so serialization cannot silently coerce a
     runtime value onto an identity.
     """
-    return json.dumps(
-        document.to_json_dict(),
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    )
+    return canonical_json(document.to_json_dict())
 
 
-def identity_document_hash(document: IdentityDocument) -> str:
+def canonical_identity_json_bytes(
+    document: IdentityDocument,
+    /,
+) -> bytes:
+    """Return the exact UTF-8 bytes of Canonical Identity JSON."""
+    return canonical_json_bytes(document.to_json_dict())
+
+
+def identity_document_hash(document: IdentityDocument) -> Sha256Digest:
     """Return the full Identity Hash of a validated Identity Document.
 
     The full 64-character lowercase SHA-256 hex of the Canonical Identity
     JSON UTF-8 bytes. There is deliberately no truncation or prefix
     parameter on this path; use :func:`identity_hash_prefix` for display.
     """
-    return hashlib.sha256(
-        canonical_identity_json(document).encode(TEXT_ENCODING)
-    ).hexdigest()
+    return Sha256Digest(
+        hashlib.sha256(canonical_identity_json_bytes(document)).hexdigest()
+    )
 
 
-def compute_identity_hash(document: dict[Any, Any]) -> str:
+def compute_identity_hash(document: dict[Any, Any]) -> Sha256Digest:
     """Validate a dict and return its full Identity Hash.
 
     Convenience one-shot over :func:`validate_identity_document` and
@@ -367,7 +373,7 @@ def compute_identity_hash(document: dict[Any, Any]) -> str:
     return identity_document_hash(validate_identity_document(document))
 
 
-def identity_hash_prefix(hash_hex: str, length: int) -> str:
+def identity_hash_prefix(hash_hex: Sha256Digest | str, length: int) -> str:
     """Return a leading slice of an Identity Hash, for **display only**.
 
     This is a presentation helper and never establishes identity, equality,
@@ -375,14 +381,13 @@ def identity_hash_prefix(hash_hex: str, length: int) -> str:
     Identity Hash; it is intentionally not part of the hashing path. The
     input must be a full 64-character lowercase SHA-256 hex string.
     """
-    if len(hash_hex) != SHA256_HEX_LENGTH:
-        raise ValueError(
-            f"expected a {SHA256_HEX_LENGTH}-character identity hash, "
-            f"got length {len(hash_hex)}"
-        )
+    try:
+        digest = Sha256Digest.parse(hash_hex)
+    except Sha256DigestError as error:
+        raise ValueError(f"invalid identity hash: {error.reason}") from error
     if length < 1 or length > SHA256_HEX_LENGTH:
         raise ValueError(
             f"display prefix length must be between 1 and "
             f"{SHA256_HEX_LENGTH}, got {length}"
         )
-    return hash_hex[:length]
+    return digest[:length]
