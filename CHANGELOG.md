@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Exact UTF-8 byte access for canonical JSON and Canonical Identity JSON.
+- Bounded bytes-first strict JSON decoding with typed, non-echoing failures
+  for byte and depth limits, invalid UTF-8, malformed input, duplicate keys,
+  and non-finite numbers.
+- The nominal `Sha256Digest` validation boundary for full lowercase SHA-256
+  values; full canonical and identity hashes now return this string subtype
+  without changing their values, and strict Pydantic fields preserve it.
+
 ## [0.1.0] - 2026-07-24
 
 Initial release.

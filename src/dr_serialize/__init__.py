@@ -6,9 +6,10 @@ normalized JSON -- JSON-safe ``Jsonable`` data -- under explicit
 :class:`SerializationLimits`, through an ordered, pluggable handler
 chain (:mod:`dr_serialize.serialization`).
 
-**Canonical JSON** (deterministic, policy-free): :func:`canonical_json`
-and :func:`json_hash` turn already-JSON-safe values into stable
-canonical text and hashes (:mod:`dr_serialize.canonical`).
+**Canonical JSON** (deterministic, policy-free): :func:`canonical_json`,
+:func:`canonical_json_bytes`, and :func:`json_hash` turn already-JSON-safe
+values into stable canonical text, bytes, and hashes
+(:mod:`dr_serialize.canonical`).
 
 **Identity lane** (strict, policy-free): :func:`validate_strict_json`,
 :class:`IdentityDocument`, :func:`canonical_identity_json`, and
@@ -27,7 +28,22 @@ authoritative vocabulary for the identity contract -- terms, guarantees,
 scope, and exported-name mapping -- lives in ``.defs/vocab.html``.
 """
 
-from dr_serialize.canonical import canonical_json, json_hash
+from dr_serialize.canonical import (
+    canonical_json,
+    canonical_json_bytes,
+    json_hash,
+)
+from dr_serialize.decoding import (
+    DuplicateJsonKeyError,
+    InvalidUtf8Error,
+    JsonByteLimitError,
+    JsonDepthLimitError,
+    JsonSyntaxError,
+    NonFiniteJsonNumberError,
+    StrictJsonDecodeError,
+    decode_strict_json_bytes,
+)
+from dr_serialize.digests import Sha256Digest, Sha256DigestError
 from dr_serialize.errors import (
     JsonEncodeError,
     JsonPath,
@@ -47,6 +63,7 @@ from dr_serialize.identity import (
     StrictJsonError,
     build_identity_document,
     canonical_identity_json,
+    canonical_identity_json_bytes,
     compute_identity_hash,
     identity_document_hash,
     identity_hash_prefix,
@@ -72,26 +89,38 @@ __all__ = [
     "POSTGRES_JSONB_MAX_BYTES",
     "POSTGRES_JSONB_PAYLOAD_MAX_BYTES",
     "ConversionContext",
+    "DuplicateJsonKeyError",
     "IdentityDocument",
     "IdentityDocumentError",
+    "InvalidUtf8Error",
+    "JsonByteLimitError",
+    "JsonDepthLimitError",
     "JsonEncodeError",
     "JsonPath",
+    "JsonSyntaxError",
     "Jsonable",
     "JsonableHandle",
     "JsonableHandler",
     "MaxDepthExceededError",
     "ModelDumpError",
+    "NonFiniteJsonNumberError",
     "ObjectVarsSerializationError",
     "PayloadTooLargeError",
     "SerializationError",
     "SerializationLimits",
     "Serializer",
+    "Sha256Digest",
+    "Sha256DigestError",
+    "StrictJsonDecodeError",
     "StrictJsonError",
     "ValueTransformError",
     "build_identity_document",
     "canonical_identity_json",
+    "canonical_identity_json_bytes",
     "canonical_json",
+    "canonical_json_bytes",
     "compute_identity_hash",
+    "decode_strict_json_bytes",
     "detail_repr",
     "identity_document_hash",
     "identity_hash_prefix",

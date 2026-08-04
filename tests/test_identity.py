@@ -23,6 +23,7 @@ from dr_serialize import (
     StrictJsonError,
     build_identity_document,
     canonical_identity_json,
+    canonical_identity_json_bytes,
     compute_identity_hash,
     identity_document_hash,
     identity_hash_prefix,
@@ -413,6 +414,17 @@ def test_canonical_identity_json_is_compact_sorted() -> None:
     )
 
 
+def test_canonical_identity_bytes_are_exact_text_utf8() -> None:
+    doc = build_identity_document(
+        schema="example.unicode",
+        schema_version=2,
+        payload={"text": "héllo 日本語 🎯"},
+    )
+    assert canonical_identity_json_bytes(doc) == canonical_identity_json(
+        doc
+    ).encode("utf-8")
+
+
 def test_identity_document_hash_is_full_lowercase_sha256() -> None:
     doc = build_identity_document(
         schema="s", schema_version=1, payload={"k": "v"}
@@ -538,6 +550,11 @@ def test_identity_hash_prefix_rejects_non_identity_hash() -> None:
         identity_hash_prefix("tooshort", 4)
 
 
+def test_identity_hash_prefix_rejects_uppercase_digest() -> None:
+    with pytest.raises(ValueError, match="identity hash"):
+        identity_hash_prefix("A" * SHA256_HEX_LENGTH, 4)
+
+
 # --------------------------------------------------------------------------
 # Golden vectors: committed for cross-repository reuse
 # --------------------------------------------------------------------------
@@ -553,6 +570,9 @@ def test_golden_identity_case_reproduces(name: str) -> None:
     document = case["document"]
     doc = validate_identity_document(document)
     assert canonical_identity_json(doc) == case["canonical_json"]
+    assert (
+        canonical_identity_json_bytes(doc) == case["canonical_json"].encode()
+    )
     assert identity_document_hash(doc) == case["identity_hash"]
     assert compute_identity_hash(document) == case["identity_hash"]
 

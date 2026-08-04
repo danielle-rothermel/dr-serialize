@@ -19,12 +19,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+from typing import overload
 
 from dr_serialize._encoding import TEXT_ENCODING
+from dr_serialize.digests import SHA256_HEX_LENGTH, Sha256Digest
 from dr_serialize.errors import JsonEncodeError, detail_repr, preview_repr
 from dr_serialize.jsonable import Jsonable, find_json_failure
-
-SHA256_HEX_LENGTH = 64
 
 
 def canonical_json(value: Jsonable) -> str:
@@ -49,14 +49,27 @@ def canonical_json(value: Jsonable) -> str:
         ) from error
 
 
+def canonical_json_bytes(value: Jsonable, /) -> bytes:
+    """Return the exact UTF-8 bytes of :func:`canonical_json`."""
+    return canonical_json(value).encode(TEXT_ENCODING)
+
+
+@overload
+def json_hash(value: Jsonable, *, length: None = None) -> Sha256Digest: ...
+
+
+@overload
+def json_hash(value: Jsonable, *, length: int) -> str: ...
+
+
 def json_hash(
     value: Jsonable,
     *,
     length: int | None = None,
-) -> str:
-    hash_value = hashlib.sha256(
-        canonical_json(value).encode(TEXT_ENCODING)
-    ).hexdigest()
+) -> Sha256Digest | str:
+    hash_value = Sha256Digest(
+        hashlib.sha256(canonical_json_bytes(value)).hexdigest()
+    )
     if length is None:
         return hash_value
     if length < 1 or length > SHA256_HEX_LENGTH:
