@@ -56,8 +56,13 @@ class TestToJsonableInvariants:
             ({"a": 1, "b": {"c": 2}}, lambda r: r == {"a": 1, "b": {"c": 2}}),
             ([1, [2, 3]], lambda r: r == [1, [2, 3]]),
             ((1, 2), lambda r: r == [1, 2]),
-            ({1, 2}, lambda r: sorted(r) == [1, 2]),
-            (frozenset({3}), lambda r: r == [3]),
+            ({"beta", "alpha"}, lambda r: r == ["alpha", "beta"]),
+            ({"x10", "x2", "x1"}, lambda r: r == ["x1", "x10", "x2"]),
+            (
+                frozenset({"delta", "charlie"}),
+                lambda r: r == ["charlie", "delta"],
+            ),
+            (frozenset({"b", "a", "c"}), lambda r: r == ["a", "b", "c"]),
             ({1: "one"}, lambda r: r == {"1": "one"}),
         ],
         ids=[
@@ -69,8 +74,10 @@ class TestToJsonableInvariants:
             "nested_dict",
             "nested_list",
             "tuple_to_list",
-            "set_to_list",
-            "frozenset_to_list",
+            "set_orders_strings_by_canonical_text",
+            "set_orders_by_canonical_text_not_numeric_collation",
+            "frozenset_orders_strings_by_canonical_text",
+            "frozenset_orders_by_canonical_text",
             "int_dict_key_to_str",
         ],
     )
@@ -387,3 +394,97 @@ class TestMetadataAndEdgePaths:
 
         result = to_jsonable(async_gen(), limits=DEFAULT_LIMITS)
         assert result == "<async_generator>"
+
+
+class TestSetNormalization:
+    def test_set_members_are_ordered_by_canonical_text(self) -> None:
+        value = {"beta", "alpha", "10", "2", "gamma"}
+        assert assert_to_jsonable(value) == [
+            "10",
+            "2",
+            "alpha",
+            "beta",
+            "gamma",
+        ]
+
+    def test_set_ordering_is_independent_of_construction_order(self) -> None:
+        members = ["delta", "alpha", "charlie", "bravo"]
+        forward = assert_to_jsonable(set(members))
+        reverse = assert_to_jsonable({*members[::-1]})
+        assert forward == reverse == sorted(members)
+
+    def test_nested_set_members_are_ordered(self) -> None:
+        value = {(2, "b"), (1, "a")}
+        assert assert_to_jsonable(value) == [[1, "a"], [2, "b"]]
+
+    def test_lists_and_tuples_retain_original_order(self) -> None:
+        assert assert_to_jsonable(["b", "a", "c"]) == ["b", "a", "c"]
+        assert assert_to_jsonable(("b", "a", "c")) == ["b", "a", "c"]
+
+    def test_list_inside_set_member_retains_its_order(self) -> None:
+        value = {("z", "a"), ("m",)}
+        assert assert_to_jsonable(value) == [["m"], ["z", "a"]]
+
+    def test_non_finite_float_in_set_raises(self) -> None:
+        with pytest.raises(JsonEncodeError) as exc_info:
+            to_jsonable({float("nan")}, limits=DEFAULT_LIMITS)
+
+        exc = exc_info.value
+        assert exc.path == (0,)
+        assert exc.type_name == "float"
+        assert isinstance(exc.underlying, ValueError)
+
+    def test_non_finite_float_in_list_still_normalizes(self) -> None:
+        result = to_jsonable([float("inf")], limits=DEFAULT_LIMITS)
+        assert isinstance(result, list)
+        assert result[0] == float("inf")
+
+    def test_unserializable_set_member_reports_indexed_path(self) -> None:
+        # A lambda falls through every handler unconverted, so it reaches
+        # ordering time inside the set handler still unserializable.
+        with pytest.raises(JsonEncodeError) as exc_info:
+            to_jsonable({lambda: None}, limits=DEFAULT_LIMITS)
+
+        exc = exc_info.value
+        assert exc.path == (0,)
+        assert isinstance(exc.underlying, TypeError)
+
+    def test_max_depth_enforced_through_set_members(self) -> None:
+        limits = SerializationLimits(max_depth=3, max_bytes=1_000_000)
+        deep_member = (((("x",),),),)
+        with pytest.raises(MaxDepthExceededError):
+            to_jsonable({deep_member}, limits=limits)
+
+    def test_set_member_error_path_starts_at_member_index(self) -> None:
+        with pytest.raises(JsonEncodeError) as exc_info:
+            to_jsonable({("outer", (lambda: None,))}, limits=DEFAULT_LIMITS)
+
+        assert exc_info.value.path == (0, 1, 0)
+
+    def test_nested_non_finite_float_in_set_reports_full_path(self) -> None:
+        value = {"a": {"b": {"c": {float("nan")}}}}
+        with pytest.raises(JsonEncodeError) as exc_info:
+            to_jsonable(value, limits=DEFAULT_LIMITS)
+
+        exc = exc_info.value
+        assert exc.path == ("a", "b", "c", 0)
+        assert exc.type_name == "float"
+        assert isinstance(exc.underlying, ValueError)
+
+    def test_nested_unserializable_set_member_reports_full_path(self) -> None:
+        value = {"outer": [{"inner": {lambda: None}}]}
+        with pytest.raises(JsonEncodeError) as exc_info:
+            to_jsonable(value, limits=DEFAULT_LIMITS)
+
+        exc = exc_info.value
+        assert exc.path == ("outer", 0, "inner", 0)
+        assert isinstance(exc.underlying, TypeError)
+
+    def test_nested_set_member_error_path_includes_member_interior(
+        self,
+    ) -> None:
+        value = {"k": [{("outer", (lambda: None,))}]}
+        with pytest.raises(JsonEncodeError) as exc_info:
+            to_jsonable(value, limits=DEFAULT_LIMITS)
+
+        assert exc_info.value.path == ("k", 0, 0, 1, 0)

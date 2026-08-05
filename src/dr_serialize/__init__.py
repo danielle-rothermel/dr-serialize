@@ -32,6 +32,7 @@ authoritative vocabulary and exported-name mapping live in
 from dr_serialize.canonical import (
     canonical_json,
     canonical_json_bytes,
+    canonical_sorted_values,
     json_hash,
 )
 from dr_serialize.decoding import (
@@ -120,6 +121,7 @@ __all__ = [
     "canonical_identity_json_bytes",
     "canonical_json",
     "canonical_json_bytes",
+    "canonical_sorted_values",
     "compute_identity_hash",
     "decode_strict_json_bytes",
     "detail_repr",

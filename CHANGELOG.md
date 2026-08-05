@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Bounded bytes-first strict JSON decoding with typed, non-echoing failures
   for byte and depth limits, invalid UTF-8, malformed input, duplicate keys,
   and non-finite numbers.
+- `canonical_sorted_values`, a policy-free primitive that orders
+  already-JSON-safe values by their canonical JSON text, projecting a
+  logically unordered collection into one deterministic JSON array while
+  preserving duplicates.
 - The nominal `Sha256Digest` validation boundary for full lowercase SHA-256
   values; full canonical and identity hashes now return this string subtype
   without changing their values, and strict Pydantic fields preserve it.
@@ -28,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Bound canonical text, bytes, and hashes to the documented
   `dr-serialize Canonical JSON Text profile v1`, with runtime rejection of
   values outside finite strict JSON before encoding.
+- Normalize `set` and `frozenset` deterministically: members are converted
+  through the handler chain and then ordered by canonical JSON text, so a
+  set's normalized JSON is byte-identical across processes regardless of
+  `PYTHONHASHSEED`. Lists and tuples still retain their original order, and
+  non-finite numbers inside a set are now rejected with `JsonEncodeError`
+  even though normalization still passes them through elsewhere.
 - Made `IdentityDocument` own its payload privately; every public payload or
   document mapping is now a fresh deep copy, so caller mutation cannot change
   canonical identity bytes or hashes.

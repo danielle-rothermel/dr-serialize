@@ -19,6 +19,7 @@ from typing import Any
 import pydantic
 
 from dr_serialize._encoding import TEXT_ENCODING
+from dr_serialize.canonical import canonical_sorted_values
 from dr_serialize.errors import (
     DEBUG_DETAIL_LIMIT,
     JsonEncodeError,
@@ -208,10 +209,32 @@ def _jsonable_scalar(x: Any, ctx: ConversionContext) -> JsonableHandle:
 
 
 def _jsonable_sequence(x: Any, ctx: ConversionContext) -> JsonableHandle:
-    if isinstance(x, (list, tuple, set, frozenset)):
+    if isinstance(x, (list, tuple)):
         return True, [
             ctx.convert(item, index) for index, item in enumerate(x)
         ]
+    return False, None
+
+
+def _jsonable_unordered_set(x: Any, ctx: ConversionContext) -> JsonableHandle:
+    # Hash iteration order is not stable across processes, so converted
+    # members are ordered by canonical JSON text. Member paths in errors
+    # raised during conversion refer to iteration order, not output position.
+    if isinstance(x, (set, frozenset)):
+        converted = [
+            ctx.convert(item, index) for index, item in enumerate(x)
+        ]
+        try:
+            ordered = canonical_sorted_values(converted)
+        except JsonEncodeError as error:
+            raise JsonEncodeError(
+                path=(*ctx.path, *error.path),
+                type_name=error.type_name,
+                detail=error.detail,
+                underlying=error.underlying,
+                value_preview=error.value_preview,
+            ) from error
+        return True, ordered
     return False, None
 
 
@@ -293,6 +316,7 @@ def _jsonable_object_vars(x: Any, ctx: ConversionContext) -> JsonableHandle:
 _PRIMARY_HANDLERS: tuple[JsonableHandler, ...] = (
     _jsonable_scalar,
     _jsonable_sequence,
+    _jsonable_unordered_set,
     _jsonable_mapping,
     _jsonable_bytes,
 )

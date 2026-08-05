@@ -45,6 +45,10 @@ only-include = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not subprocess'"
+markers = [
+    "subprocess: spawns fresh interpreters (cross-process determinism)",
+]
 
 [tool.pyright]
 venvPath = "."
