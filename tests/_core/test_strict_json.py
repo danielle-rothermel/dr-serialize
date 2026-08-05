@@ -67,6 +67,23 @@ def test_broken_repr_cannot_replace_strict_json_error() -> None:
     assert exc_info.value.detail == "<repr failed for BadRepr: RuntimeError>"
 
 
+def test_str_subclass_repr_cannot_replace_strict_json_error() -> None:
+    class RaisingSlice(str):
+        __slots__ = ()
+
+        def __getitem__(self, key: object) -> str:
+            raise LookupError("slice failed")
+
+    class BadSliceRepr:
+        def __repr__(self) -> str:
+            return RaisingSlice("rendered")
+
+    with pytest.raises(StrictJsonError) as exc_info:
+        validate_strict_json(BadSliceRepr())
+
+    assert exc_info.value.detail == "rendered"
+
+
 def test_broken_path_repr_cannot_replace_strict_json_error() -> None:
     class BadReprStr(str):
         __slots__ = ()

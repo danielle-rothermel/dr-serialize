@@ -131,6 +131,23 @@ class TestCanonicalTypedErrors:
             "<repr failed for BadRepr: RuntimeError>"
         )
 
+    def test_str_subclass_repr_cannot_replace_json_encode_error(self) -> None:
+        class RaisingSlice(str):
+            __slots__ = ()
+
+            def __getitem__(self, key: object) -> str:
+                raise LookupError("slice failed")
+
+        class BadSliceRepr:
+            def __repr__(self) -> str:
+                return RaisingSlice("rendered")
+
+        with pytest.raises(JsonEncodeError) as exc_info:
+            canonical_json(cast("Jsonable", BadSliceRepr()))
+
+        assert exc_info.value.detail == "rendered"
+        assert exc_info.value.value_preview == "rendered"
+
     def test_broken_path_repr_cannot_replace_json_encode_error(self) -> None:
         class BadReprStr(str):
             __slots__ = ()

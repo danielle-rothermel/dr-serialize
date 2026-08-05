@@ -28,6 +28,18 @@ class LongRepr:
         return "x" * (DEBUG_DETAIL_LIMIT + 1)
 
 
+class RaisingSlice(str):
+    __slots__ = ()
+
+    def __getitem__(self, key: object) -> str:
+        raise LookupError("slice failed")
+
+
+class RaisingSliceRepr:
+    def __repr__(self) -> str:
+        return RaisingSlice("rendered")
+
+
 @pytest.mark.parametrize(
     ("value", "error_name"),
     [
@@ -49,3 +61,8 @@ def test_successful_repr_is_truncated_to_each_public_limit() -> None:
     value = LongRepr()
     assert preview_repr(value) == "x" * MESSAGE_PREVIEW
     assert detail_repr(value) == "x" * DEBUG_DETAIL_LIMIT
+
+
+@pytest.mark.parametrize("render", [preview_repr, detail_repr])
+def test_str_subclass_repr_cannot_override_bounding(render: Any) -> None:
+    assert render(RaisingSliceRepr()) == "rendered"

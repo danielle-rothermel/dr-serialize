@@ -17,7 +17,8 @@ def _bounded_repr(x: Any, limit: int) -> str:
         rendered = (
             f"<repr failed for {type(x).__name__}: {type(error).__name__}>"
         )
-    return rendered[:limit]
+    # repr may legally return a str subclass with an overridden __getitem__.
+    return str.__getitem__(rendered, slice(limit))
 
 
 def preview_repr(x: Any) -> str:
