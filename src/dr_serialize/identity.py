@@ -1,9 +1,9 @@
 """Identity lane: strict JSON values, Identity Documents, the Identity Hash.
 
 This module implements the identity lane of the identity contract; the
-authoritative vocabulary -- terms, guarantees, scope, and exported-name
-mapping -- lives in ``.defs/vocab.html``. The lane owns three things and
-nothing else:
+authoritative vocabulary and exported-name mapping live in
+``.defs/terms.toml`` and its rendered terms reference. The lane owns three
+things and nothing else:
 
 1. **Strict recursive JSON value validation** -- accept only ``null``,
    ``bool``, ``str``, finite numbers, lists of accepted values, and dicts

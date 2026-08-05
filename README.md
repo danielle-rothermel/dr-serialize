@@ -26,11 +26,9 @@ Raw mapping --> IdentityDocument --> canonical_identity_json --> identity_docume
   text's UTF-8 bytes - no coercion, and a diagnostic normalized JSON value
   never feeds it.
 
-The [vocabulary sheet](https://danielle-rothermel.github.io/dr-serialize/)
-(source: `.defs/vocab.html`) is the
-authoritative statement of the identity contract this repo implements:
-the terms, the guarantees, what is in and out of scope, and the mapping
-from each term to the exported names.
+The [terms reference](https://danielle-rothermel.github.io/dr-serialize/)
+renders the authoritative vocabulary in `.defs/terms.toml`, including its
+categories, relationships, definitions, and mappings to exported names.
 
 Normalization and canonical JSON text generation compose at your call site,
 so hashes never silently depend on serialization policy:
@@ -144,12 +142,12 @@ The identity lane is the strict, policy-free path for cross-repo domain
 identity: validate a strict JSON value, wrap it in the exact three-field
 [Identity Document](https://danielle-rothermel.github.io/dr-serialize/#term-identity-document)
 `{schema, schema_version, payload}`, render its
-[Canonical Identity JSON Text](https://danielle-rothermel.github.io/dr-serialize/#term-canonical-identity-json),
+[Canonical Identity JSON Text](https://danielle-rothermel.github.io/dr-serialize/#term-canonical-identity-json-text),
 and hash that text's UTF-8 bytes into the full
 [Identity Hash](https://danielle-rothermel.github.io/dr-serialize/#term-identity-hash). The
-[vocabulary sheet](https://danielle-rothermel.github.io/dr-serialize/) defines each term and the guarantees
-that bind this lane; the owning domain chooses the schema, version, and
-complete payload - dr-serialize only validates.
+[terms reference](https://danielle-rothermel.github.io/dr-serialize/) defines each term;
+the owning domain chooses the schema, version, and complete payload -
+dr-serialize only validates.
 
 ```python
 from dr_serialize import (

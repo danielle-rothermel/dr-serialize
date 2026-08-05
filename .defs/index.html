@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="doc.css">
+<title>dr-serialize · Terms</title>
+<style>
+  .terms-page { width: 100%; max-width: 1480px; }
+  .terms-page h1 { margin-bottom: 24px; }
+  .terms-graph {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1480 / 840;
+    margin: 0 0 28px;
+    border: 0;
+  }
+  .terms-shell { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  .terms-table { border: 0; font-size: 14.5px; }
+  .terms-table thead,
+  .terms-table tbody { display: block; }
+  .terms-table tr { display: grid; grid-template-columns: minmax(280px, 31%) minmax(0, 1fr); }
+  .terms-table th,
+  .terms-table td { border: 0; }
+  .terms-table th { padding: 13px 20px; }
+  .terms-table tbody tr { border-top: 1px solid var(--line); }
+  .terms-table tbody tr:nth-child(even) { background: #fbfcfd; }
+  .terms-table tbody td { padding: 20px; }
+  .terms-table tbody td + td { border-left: 1px solid var(--line); }
+  .term-name { margin: 0; font: 700 17px/1.35 var(--font-prose); }
+  dfn.term-name { font-style: normal; }
+  .term-categories { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  .term-category { padding: 3px 10px; border: 1px solid; border-radius: 999px; font: 650 11px/1.5 var(--font-system); }
+  .term-category[data-category="normalization"] { border-color: #9bc4ef; background: #e8f2ff; color: #145a9d; }
+  .term-category[data-category="canonicalization"] { border-color: #e7bf62; background: #fff4d6; color: #8a5a00; }
+  .term-category[data-category="identity"] { border-color: #bba5ed; background: #f0eaff; color: #6442a3; }
+  .term-category:not([data-category="normalization"]):not([data-category="canonicalization"]):not([data-category="identity"]) {
+    border-color: #c8d0dc;
+    background: #f2f4f7;
+    color: #465166;
+  }
+  .term-relationships { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px 18px; margin-top: 20px; }
+  .relationship-label,
+  .symbols-label { margin-bottom: 4px; color: #707b8d; font: 700 10px/1.4 var(--font-system); letter-spacing: .1em; text-transform: uppercase; }
+  .relationship-values { display: flex; flex-wrap: wrap; gap: 3px 10px; }
+  .relationship-values a { color: #334155; font-weight: 600; text-decoration: none; }
+  .relationship-values a:hover,
+  .relationship-values a:focus-visible { color: var(--accent); text-decoration: underline; }
+  .term-definition { margin: 0; color: #263246; line-height: 1.55; }
+  .vocab-ref { color: var(--accent); text-decoration-line: underline; text-decoration-style: dashed; text-underline-offset: 2px; }
+  .term-symbols { margin-top: 17px; }
+  .symbol-list { display: flex; flex-wrap: wrap; gap: 7px 14px; }
+  .symbol-list code { font-size: 11px; }
+  .defs-error { grid-column: 1 / -1; color: var(--red); }
+
+  @media (max-width: 760px) {
+    .terms-table thead { display: none; }
+    .terms-table,
+    .terms-table tbody,
+    .terms-table tr,
+    .terms-table tbody td { display: block; width: 100%; min-width: 0; }
+    .terms-table tbody td { overflow-wrap: anywhere; }
+    .terms-table tbody td + td { border-top: 1px solid var(--line); border-left: 0; }
+  }
+
+  @media (max-width: 480px) {
+    .term-relationships { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main class="terms-page">
+<h1>dr-serialize terms</h1>
+<object
+  class="terms-graph"
+  data="all-terms.svg"
+  type="image/svg+xml"
+  aria-label="Composition, type hierarchy, and category routing for dr-serialize terms"
+>
+  <a href="all-terms.svg">Open the dr-serialize terms graph</a>
+</object>
+<div class="terms-shell">
+  <table class="terms-table">
+    <thead>
+      <tr>
+        <th scope="col">Term · Categories · Relationships</th>
+        <th scope="col">Definition · Exported symbols</th>
+      </tr>
+    </thead>
+    <tbody data-defs-file="terms.toml" data-defs-kind="terms-reference"></tbody>
+  </table>
+</div>
+<script type="module" src="defs-render.js"></script>
+</main>
+</body>
+</html>

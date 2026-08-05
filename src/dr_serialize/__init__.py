@@ -24,8 +24,8 @@ Normalization and canonical JSON text generation compose at the call site --
 ``json_hash(serializer.to_jsonable(x))`` -- so hash stability
 never depends on handler policy. Typed errors for every lane live in
 :mod:`dr_serialize.errors` and :mod:`dr_serialize.identity`. The
-authoritative vocabulary for the identity contract -- terms, guarantees,
-scope, and exported-name mapping -- lives in ``.defs/vocab.html``.
+authoritative vocabulary and exported-name mapping live in
+``.defs/terms.toml`` and its rendered terms reference.
 """
 
 from dr_serialize.canonical import (

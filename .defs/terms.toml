@@ -50,6 +50,7 @@ A deterministic fixed-length value computed by a declared algorithm over \
 exact declared input bytes; its specific role and semantics come from the \
 qualified term."""
 categories = ["canonicalization", "identity"]
+exported_symbols = ["Sha256Digest", "Sha256DigestError"]
 
 [[terms]]
 name = "strict JSON value"
@@ -59,7 +60,18 @@ numbers, ordered arrays of strict JSON values, and string-keyed objects whose \
 values are strict JSON values, recursively. It excludes non-finite numbers, \
 reference cycles, unordered collections, and values that require conversion \
 into JSON."""
-exported_symbols = ["validate_strict_json", "StrictJsonError"]
+exported_symbols = [
+  "validate_strict_json",
+  "StrictJsonError",
+  "decode_strict_json_bytes",
+  "StrictJsonDecodeError",
+  "JsonByteLimitError",
+  "JsonDepthLimitError",
+  "InvalidUtf8Error",
+  "JsonSyntaxError",
+  "DuplicateJsonKeyError",
+  "NonFiniteJsonNumberError",
+]
 categories = ["identity"]
 
 [[terms]]
@@ -68,7 +80,7 @@ definition = """
 The single deterministic UTF-8 JSON text selected for a JSON value, using \
 compact separators and sorted object keys. The same accepted value always \
 produces the same text and bytes."""
-exported_symbols = ["canonical_json", "json_hash"]
+exported_symbols = ["canonical_json", "canonical_json_bytes", "json_hash"]
 categories = ["canonicalization"]
 
 [[terms]]
@@ -102,7 +114,7 @@ is_a = ["document"]
 name = "canonical identity JSON text"
 definition = """
 The canonical JSON text of a validated identity document."""
-exported_symbols = ["canonical_identity_json"]
+exported_symbols = ["canonical_identity_json", "canonical_identity_json_bytes"]
 categories = ["canonicalization", "identity"]
 is_a = ["canonical JSON text"]
 
@@ -153,24 +165,3 @@ exported_symbols = [
 ]
 categories = ["normalization"]
 part_of = ["normalization"]
-
-[[terms]]
-name = "error diagnostics"
-definition = """
-Structured failure information that identifies the kind of failure, locates \
-the offending value within the input, and preserves bounded detail suitable \
-for persistence. Error diagnostics apply consistently across normalization, \
-canonicalization, and identity."""
-exported_symbols = [
-  "SerializationError",
-  "JsonEncodeError",
-  "PayloadTooLargeError",
-  "MaxDepthExceededError",
-  "ModelDumpError",
-  "ObjectVarsSerializationError",
-  "ValueTransformError",
-  "JsonPath",
-  "preview_repr",
-  "detail_repr",
-]
-categories = ["normalization", "canonicalization", "identity"]
