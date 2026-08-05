@@ -1,5 +1,3 @@
-"""Bounded bytes-first strict JSON decoding."""
-
 from dr_serialize.decoding.decoder import decode_strict_json_bytes
 from dr_serialize.decoding.errors import (
     DuplicateJsonKeyError,

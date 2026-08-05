@@ -1,5 +1,3 @@
-"""Shared error base, paths, and bounded diagnostic rendering."""
-
 from __future__ import annotations
 
 from typing import Any
@@ -17,7 +15,7 @@ def _bounded_repr(x: Any, limit: int) -> str:
         rendered = (
             f"<repr failed for {type(x).__name__}: {type(error).__name__}>"
         )
-    # repr may legally return a str subclass with an overridden __getitem__.
+    # Bypass overridden slicing on a str subclass returned by repr().
     return str.__getitem__(rendered, slice(limit))
 
 
@@ -30,8 +28,6 @@ def detail_repr(x: Any) -> str:
 
 
 class SerializationError(Exception):
-    """Base for JSON-safe serialization failures."""
-
     path: JsonPath
     detail: str
 

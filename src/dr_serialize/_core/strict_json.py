@@ -1,5 +1,3 @@
-"""Validation at the finite strict JSON value boundary."""
-
 from __future__ import annotations
 
 from typing import Any, cast
@@ -13,12 +11,10 @@ from dr_serialize._core.json_values import Jsonable, _find_strict_json_failure
 
 
 class StrictJsonError(SerializationError):
-    """A value is not a strict JSON value.
+    """A strict JSON validation failure.
 
-    Raised by :func:`validate_strict_json` (and therefore by document
-    validation and hashing) when a value is not JSON, has a non-string
-    object key, is a non-finite number, or forms a reference cycle. The
-    ``path`` locates the exact offending leaf or key JsonPath-style.
+    ``path`` identifies the first rejected value or key; no coercion is
+    attempted.
     """
 
     def __init__(
@@ -48,14 +44,10 @@ class StrictJsonError(SerializationError):
 
 
 def validate_strict_json(value: Any) -> Jsonable:
-    """Return ``value`` if it is a strict JSON value, else raise.
+    """Validate without coercion and return the original strict JSON value.
 
-    Accepts, recursively: ``None``, ``bool``, ``int``, finite ``float``,
-    ``str``, ``list`` of accepted values, and ``dict`` with ``str`` keys and
-    accepted values. Rejects every other runtime type, non-string dict keys,
-    non-finite numbers (``NaN``/``Inf``), and reference cycles, raising
-    :class:`StrictJsonError` with the JsonPath-style ``path`` to the first
-    offending value or key. No coercion or normalization is performed.
+    Rejects non-string keys, non-finite numbers, reference cycles, and non-JSON
+    runtime types; ``StrictJsonError.path`` identifies the first failure.
     """
     return _validate_strict_json(value, ())
 

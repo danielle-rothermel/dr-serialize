@@ -1,5 +1,3 @@
-"""Strict identity documents, canonical representations, and hashes."""
-
 from dr_serialize.identity.canonical_json import (
     canonical_identity_json,
     canonical_identity_json_bytes,

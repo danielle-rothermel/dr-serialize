@@ -1,5 +1,3 @@
-"""SHA-256 hashing over canonical JSON text."""
-
 from __future__ import annotations
 
 import hashlib

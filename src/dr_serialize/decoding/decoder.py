@@ -1,5 +1,3 @@
-"""Bounded bytes-first strict JSON decoding."""
-
 from __future__ import annotations
 
 import json
@@ -50,11 +48,12 @@ def decode_strict_json_bytes(
     max_bytes: int,
     max_depth: int,
 ) -> Jsonable:
-    """Decode one bounded strict-JSON UTF-8 value without coercion.
+    """Decode one complete UTF-8 strict JSON value under explicit bounds.
 
-    Structural parsing is iterative, so ``max_depth`` is enforced before
-    nesting can consume the Python call stack. Diagnostics contain only
-    bounded structural metadata and never echo the input.
+    The byte limit is checked before decoding and depth is enforced
+    iteratively. Failure messages, structured diagnostics, and exception cause
+    and context do not echo or retain input; traceback locals are outside this
+    guarantee.
     """
     _validate_limit("max_bytes", max_bytes)
     _validate_limit("max_depth", max_depth)
@@ -67,8 +66,8 @@ def decode_strict_json_bytes(
     else:
         invalid_utf8_offset = None
     if invalid_utf8_offset is not None:
-        # Raise outside the except block so neither __cause__ nor __context__
-        # retains the payload-bearing UnicodeDecodeError.
+        # Leave the except scope so exception context cannot retain the
+        # input-bearing UnicodeDecodeError.
         raise InvalidUtf8Error(byte_offset=invalid_utf8_offset)
     if text.startswith("\ufeff"):
         _raise_syntax(text, 0, "byte-order mark is not permitted")
@@ -95,9 +94,6 @@ class _StrictJsonParser:
             if not self.frames and self.root is not _UNSET:
                 if self.index != len(self.text):
                     _raise_syntax(self.text, self.index, "trailing data")
-                # Every accepted token and container is constructed here as
-                # a strict Jsonable value; no recursive validation pass is
-                # needed after the iterative parse.
                 return cast("Jsonable", self.root)
             if self.index == len(self.text):
                 reason = (
@@ -242,8 +238,8 @@ class _StrictJsonParser:
         except json.JSONDecodeError:
             value = None
         if value is None:
-            # Raise outside the except block so neither __cause__ nor
-            # __context__ retains JSONDecodeError.doc.
+            # Leave the except scope so exception context cannot retain
+            # JSONDecodeError.doc, which contains the input text.
             _raise_syntax(self.text, start, "malformed string")
         return cast("str", value)
 

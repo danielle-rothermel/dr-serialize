@@ -1,5 +1,3 @@
-"""Boundary tests for Canonical JSON Text profile v1."""
-
 from __future__ import annotations
 
 import os

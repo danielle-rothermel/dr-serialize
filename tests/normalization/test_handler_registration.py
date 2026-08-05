@@ -1,5 +1,3 @@
-"""Contract tests for the normalization consumer handler API."""
-
 from __future__ import annotations
 
 import math
@@ -58,13 +56,14 @@ def direct_handler(x: Any, ctx: ConversionContext) -> JsonableHandle:
     return False, None
 
 
-def test_handler_intercepts_before_fallbacks() -> None:
+def test_handler_is_instance_scoped_and_runs_before_fallbacks() -> None:
     with_handler = Serializer(
         limits=DEFAULT_LIMITS, handlers=(marker_handler,)
     )
     assert with_handler.to_jsonable(Marker("t")) == {"marker": "t"}
 
-    # A serializer constructed after consumer registration remains plain.
+    # Handler policy is instance-scoped; another Serializer does not
+    # inherit it.
     plain = Serializer(limits=DEFAULT_LIMITS)
     assert plain.to_jsonable(Marker("t")) == {"tag": "t"}
 

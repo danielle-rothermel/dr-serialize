@@ -1,5 +1,3 @@
-"""Frozen bounds for dr-serialize Canonical JSON Text profile v1."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Final

@@ -1,10 +1,3 @@
-"""Contract tests for canonical identity rendering and hashing.
-
-The golden fixture in ``tests/fixtures/identity_golden.json`` is committed
-for reuse by other repositories. Byte-identical canonical JSON text and
-identical hashes are the cross-repository acceptance gate.
-"""
-
 from __future__ import annotations
 
 import itertools
@@ -31,11 +24,6 @@ from dr_serialize._core.digests import SHA256_HEX_LENGTH
 GOLDEN_FIXTURE = (
     Path(__file__).parents[1] / "fixtures" / "identity_golden.json"
 )
-
-
-# --------------------------------------------------------------------------
-# Canonical Identity JSON Text and Identity Hash
-# --------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -103,20 +91,12 @@ def test_compute_identity_hash_one_shot_matches_two_step() -> None:
 def test_identity_document_hash_has_no_truncation_parameter() -> None:
     import inspect
 
-    # The identity path exposes no truncation/prefix parameter; the only
-    # parameter is the validated document.
     params = list(inspect.signature(identity_document_hash).parameters)
     assert params == ["document"]
     doc = build_identity_document(schema="s", schema_version=1, payload={})
-    # Passing a length keyword is a plain TypeError at runtime.
     kwargs: dict[str, Any] = {"document": doc, "length": 16}
     with pytest.raises(TypeError):
         identity_document_hash(**kwargs)
-
-
-# --------------------------------------------------------------------------
-# Equivalence: equivalent documents -> identical JSON text + identical hash
-# --------------------------------------------------------------------------
 
 
 def _permuted_dicts(
@@ -173,11 +153,6 @@ def test_schema_version_bump_changes_identity() -> None:
     assert identity_document_hash(v1) != identity_document_hash(v2)
 
 
-# --------------------------------------------------------------------------
-# Display-only prefix helper
-# --------------------------------------------------------------------------
-
-
 @pytest.mark.parametrize("length", [1, 32, SHA256_HEX_LENGTH])
 def test_identity_hash_prefix_is_leading_slice(length: int) -> None:
     doc = build_identity_document(schema="s", schema_version=1, payload={})
@@ -206,11 +181,7 @@ def test_identity_hash_prefix_rejects_uppercase_digest() -> None:
         identity_hash_prefix("A" * SHA256_HEX_LENGTH, 4)
 
 
-# --------------------------------------------------------------------------
-# Golden vectors: committed for cross-repository reuse
-# --------------------------------------------------------------------------
-
-
+# Golden vectors are shared as cross-repository compatibility gates.
 def _golden_cases() -> dict[str, dict[str, Any]]:
     return json.loads(GOLDEN_FIXTURE.read_text())["cases"]
 

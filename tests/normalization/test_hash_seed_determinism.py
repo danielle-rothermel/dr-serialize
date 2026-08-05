@@ -1,11 +1,3 @@
-"""Cross-process determinism of set normalization under PYTHONHASHSEED.
-
-Fresh interpreters are the only way to vary string hash randomization, so
-these tests spawn ``sys.executable`` with explicit seeds. The subprocess
-timeout is a watchdog against a hung child, never evidence of success:
-every assertion is on exact output bytes.
-"""
-
 from __future__ import annotations
 
 import os
@@ -53,7 +45,9 @@ def _normalize_set_with_seed(seed: str) -> str:
         "PYTHONPATH": str(SOURCE_ROOT),
         "PYTHONDONTWRITEBYTECODE": "1",
     }
-    completed = subprocess.run(  # noqa: S603
+    # A fresh interpreter varies string hash randomization; timeout is a
+    # watchdog.
+    completed = subprocess.run(  # noqa: S603 -- fixed interpreter and in-repo code
         [sys.executable, "-c", NORMALIZE_SET_SCRIPT],
         capture_output=True,
         check=True,

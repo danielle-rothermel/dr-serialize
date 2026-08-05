@@ -1,5 +1,3 @@
-"""The exact validated Identity Document shape and snapshot semantics."""
-
 from __future__ import annotations
 
 import copy
@@ -20,22 +18,12 @@ IDENTITY_DOCUMENT_FIELDS = ("schema", "schema_version", "payload")
 
 @dataclass(frozen=True, slots=True, init=False)
 class IdentityDocument:
-    """A validated, self-describing, versioned Identity Document.
+    """An exact three-field identity document using deep-copy boundaries.
 
-    Construction itself validates, so every
-    ``IdentityDocument`` -- whether built via :func:`build_identity_document`,
-    :func:`validate_identity_document`, or the exported constructor directly
-    -- always holds a complete three-field document validated against the
-    Canonical JSON Text profile. The owning domain chooses ``schema``,
-    ``schema_version``, and the complete ``payload``; dr-serialize validates
-    them.
-
-    **Snapshot semantics.** The constructor takes a deep copy of ``payload``
-    after validation and stores it privately, so the document owns an
-    independent snapshot: later mutation of the caller's original object
-    cannot affect the document or its Identity Hash. The public
-    :attr:`payload` and :meth:`to_json_dict` each return a fresh deep copy,
-    so mutating any returned alias never touches the stored payload.
+    Construction validates the complete document against strict JSON and
+    Canonical JSON Text profile v1. Construction and payload access apply
+    ``copy.deepcopy``; accepted custom container subclasses control whether
+    that protocol yields isolation.
     """
 
     schema: str
@@ -48,19 +36,10 @@ class IdentityDocument:
         schema_version: int,
         payload: Jsonable,
     ) -> None:
-        """Reject any document the validators would reject.
+        """Validate the public constructor around payload deep-copying.
 
-        The public constructor is exported, so it must enforce the same
-        invariant as :func:`build_identity_document` /
-        :func:`validate_identity_document`: ``schema`` is a string,
-        ``schema_version`` is a real int (not bool), and ``payload`` is
-        a strict JSON value within the frozen canonical profile. Without this,
-        a directly constructed document
-        with, for example, int/enum dict keys would be handed straight to
-        ``json.dumps`` and have its keys silently coerced to strings,
-        producing a valid-looking Identity Hash that collides with the
-        string-keyed document. Validating here raises the typed
-        :class:`IdentityDocumentError` / :class:`StrictJsonError` instead.
+        Strict validation prevents ``json.dumps`` from silently coercing
+        non-string keys into colliding identity documents.
         """
         if not isinstance(schema, str):
             raise IdentityDocumentError(
@@ -78,24 +57,20 @@ class IdentityDocument:
             )
         _validate_strict_json(payload, ("payload",))
         _validate_canonical_profile(schema, schema_version, payload)
-        owned_payload = copy.deepcopy(payload)
-        _validate_strict_json(owned_payload, ("payload",))
-        _validate_canonical_profile(schema, schema_version, owned_payload)
+        stored_payload = copy.deepcopy(payload)
+        _validate_strict_json(stored_payload, ("payload",))
+        _validate_canonical_profile(schema, schema_version, stored_payload)
         object.__setattr__(self, "schema", schema)
         object.__setattr__(self, "schema_version", schema_version)
-        object.__setattr__(self, "_payload", owned_payload)
+        object.__setattr__(self, "_payload", stored_payload)
 
     @property
     def payload(self) -> Jsonable:
-        """Return a fresh deep copy of the owned identity payload."""
+        """Return ``copy.deepcopy`` applied to the stored identity payload."""
         return copy.deepcopy(self._payload)
 
     def to_json_dict(self) -> dict[str, Jsonable]:
-        """Return the exact three-field document as a plain dict.
-
-        The ``payload`` is deep-copied, so mutating the returned mapping (or
-        any nested container) never affects this document or its hash.
-        """
+        """Return the exact document using the payload copy protocol."""
         return {
             "schema": self.schema,
             "schema_version": self.schema_version,
@@ -106,15 +81,10 @@ class IdentityDocument:
 def validate_identity_document(
     document: dict[Any, Any],
 ) -> IdentityDocument:
-    """Validate a dict as an exact-shape Identity Document.
+    """Validate an exact ``schema``, ``schema_version``, ``payload`` mapping.
 
-    Requires exactly the fields ``schema`` (str), ``schema_version`` (int,
-    not bool), and ``payload`` (a strict JSON value). The complete prospective
-    document must also satisfy the frozen Canonical JSON Text profile. Missing
-    fields, extra fields, wrong field types, and profile-bound violations raise
-    :class:`IdentityDocumentError`; values inside the payload that are not
-    strict JSON values raise :class:`StrictJsonError` with a
-    ``("payload", ...)`` path.
+    Envelope and profile failures raise ``IdentityDocumentError``; payload
+    values outside strict JSON raise ``StrictJsonError``.
     """
     if not isinstance(document, dict):
         raise IdentityDocumentError(
@@ -151,12 +121,6 @@ def build_identity_document(
     schema_version: int,
     payload: Any,
 ) -> IdentityDocument:
-    """Validate and construct an :class:`IdentityDocument` from parts.
-
-    A thin convenience over :func:`validate_identity_document` for callers
-    that already hold the three fields separately. The owning domain still
-    chooses every value; dr-serialize only validates.
-    """
     return validate_identity_document(
         {
             "schema": schema,

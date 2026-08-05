@@ -1,5 +1,3 @@
-"""Validated full SHA-256 digest values shared across hashing areas."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Self
@@ -15,8 +13,6 @@ _LOWERCASE_HEX = frozenset("0123456789abcdef")
 
 
 class Sha256DigestError(ValueError):
-    """A value is not a full lowercase SHA-256 digest."""
-
     def __init__(self, *, reason: str, length: int | None) -> None:
         self.reason = reason
         self.length = length
@@ -24,7 +20,7 @@ class Sha256DigestError(ValueError):
 
 
 class Sha256Digest(str):
-    """A full 64-character lowercase hexadecimal SHA-256 digest."""
+    """A validated 64-character lowercase SHA-256 hexadecimal digest."""
 
     __slots__ = ()
 
@@ -48,7 +44,6 @@ class Sha256Digest(str):
 
     @classmethod
     def parse(cls, value: str, /) -> Self:
-        """Validate ``value`` and return its nominal digest value."""
         return cls(value)
 
     @classmethod
@@ -57,7 +52,6 @@ class Sha256Digest(str):
         _source_type: Any,
         _handler: GetCoreSchemaHandler,
     ) -> CoreSchema:
-        """Provide strict validation and serialization for Pydantic fields."""
         return core_schema.no_info_after_validator_function(
             cls,
             core_schema.str_schema(

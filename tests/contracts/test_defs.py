@@ -1,5 +1,3 @@
-"""Semantic checks for the authoritative .defs TOML files."""
-
 from __future__ import annotations
 
 import re
@@ -135,7 +133,7 @@ def test_relationship_graph_is_acyclic() -> None:
     )
 
 
-def test_exported_symbols_are_unique_and_public() -> None:
+def test_exported_symbols_are_unique_and_exactly_public() -> None:
     terms = _load_toml("terms.toml")["terms"]
     symbol_terms: dict[str, list[str]] = defaultdict(list)
     for term in terms:
@@ -152,12 +150,10 @@ def test_exported_symbols_are_unique_and_public() -> None:
         f"{duplicate_symbols}"
     )
 
-    missing_public_symbols = {
-        symbol: names[0]
-        for symbol, names in symbol_terms.items()
-        if symbol not in dr_serialize.__all__
-    }
-    assert not missing_public_symbols, (
-        "Mapped symbols must be present in dr_serialize.__all__: "
-        f"{missing_public_symbols}"
+    mapped_symbols = set(symbol_terms)
+    public_symbols = set(dr_serialize.__all__)
+    assert mapped_symbols == public_symbols, (
+        "Exported-symbol mappings must exactly cover dr_serialize.__all__. "
+        f"Unmapped public names: {sorted(public_symbols - mapped_symbols)}. "
+        f"Mapped non-public names: {sorted(mapped_symbols - public_symbols)}."
     )

@@ -1,5 +1,3 @@
-"""Contract tests for Identity Document construction and validation."""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
@@ -39,11 +37,6 @@ class _MisleadingAbsInt(int):
 class _RaisingAbsInt(int):
     def __abs__(self) -> int:
         raise RuntimeError("absolute value failed")
-
-
-# --------------------------------------------------------------------------
-# Exact shape and field validation
-# --------------------------------------------------------------------------
 
 
 def test_validate_identity_document_accepts_exact_shape() -> None:
@@ -98,8 +91,8 @@ def test_document_rejects_extra_field() -> None:
 
 
 def test_extra_field_with_non_string_key_raises_identity_error() -> None:
-    # A malformed document mixing str and non-str keys must not blow up in
-    # ``sorted()``; it must raise the typed IdentityDocumentError.
+    # Mixed key types must produce IdentityDocumentError, not leak TypeError
+    # from diagnostic key sorting.
     with pytest.raises(IdentityDocumentError) as exc_info:
         validate_identity_document(
             cast(
@@ -116,8 +109,8 @@ def test_extra_field_with_non_string_key_raises_identity_error() -> None:
 
 
 def test_missing_field_with_non_string_key_raises_identity_error() -> None:
-    # Missing-field path also sorts caller-supplied keys; a mixed-key
-    # document must raise IdentityDocumentError, not TypeError.
+    # Mixed key types must produce IdentityDocumentError, not leak TypeError
+    # from diagnostic key sorting.
     with pytest.raises(IdentityDocumentError) as exc_info:
         validate_identity_document(
             cast("Any", {"schema": "s", "payload": {}, 42: "x"})
@@ -171,11 +164,6 @@ def test_document_rejects_non_finite_in_payload() -> None:
             payload={"x": float("inf")},
         )
     assert exc_info.value.path == ("payload", "x")
-
-
-# --------------------------------------------------------------------------
-# Canonical profile validation
-# --------------------------------------------------------------------------
 
 
 def test_document_accepts_exact_canonical_depth_limit() -> None:
@@ -269,11 +257,6 @@ def test_broken_path_repr_cannot_replace_identity_document_error() -> None:
     assert exc_info.value.path == ("payload", key)
 
 
-# --------------------------------------------------------------------------
-# Copy and alias isolation
-# --------------------------------------------------------------------------
-
-
 def test_document_revalidates_deep_copied_payload() -> None:
     class InvalidDeepCopyList(list[Jsonable]):
         def __deepcopy__(self, _memo: dict[int, Any]) -> Any:
@@ -310,7 +293,6 @@ def test_mutating_original_payload_does_not_change_document() -> None:
     canonical_before = canonical_identity_json(doc)
     hash_before = identity_document_hash(doc)
 
-    # Mutate the caller's original dict after construction.
     payload["a"] = 999
     payload["nested"]["b"] = 999
     payload["new"] = "added"
@@ -350,18 +332,7 @@ def test_mutating_to_json_dict_result_does_not_change_document() -> None:
     assert identity_document_hash(doc) == hash_before
 
 
-# --------------------------------------------------------------------------
-# Direct IdentityDocument(...) construction is validated too
-# --------------------------------------------------------------------------
-
-
 def test_direct_construction_rejects_non_string_key_payload() -> None:
-    """The exported constructor validates the payload like the builders.
-
-    A directly constructed document with non-string dict keys must raise a
-    typed :class:`StrictJsonError` at construction, not silently coerce the
-    keys via ``json.dumps`` when hashed or canonicalized.
-    """
     with pytest.raises(StrictJsonError) as exc_info:
         IdentityDocument(
             schema="s",
@@ -393,21 +364,12 @@ def test_direct_construction_rejects_bad_schema_types() -> None:
 
 
 def test_int_key_payload_cannot_collide_with_string_key_document() -> None:
-    """The int/enum-key coercion collision is impossible by construction.
-
-    Previously an int-keyed ``{1: 'x', 2: 'y'}`` payload hashed identically
-    to the string-keyed ``{'1': 'x', '2': 'y'}`` document, because
-    ``json.dumps`` coerced the keys. The int-keyed document must now fail to
-    construct at all, so no collision can occur.
-    """
     string_keyed = IdentityDocument(
         schema="s",
         schema_version=1,
         payload={"1": "x", "2": "y"},
     )
-    # The string-keyed document hashes fine.
     assert len(identity_document_hash(string_keyed)) == SHA256_HEX_LENGTH
-    # The int-keyed document cannot be constructed, so it cannot collide.
     with pytest.raises(StrictJsonError):
         IdentityDocument(
             schema="s",
@@ -416,19 +378,7 @@ def test_int_key_payload_cannot_collide_with_string_key_document() -> None:
         )
 
 
-# --------------------------------------------------------------------------
-# Separation from the diagnostic normalization lane
-# --------------------------------------------------------------------------
-
-
 def test_identity_path_does_not_coerce_via_diagnostic_normalization() -> None:
-    """A value the Serializer would normalize is rejected, not coerced.
-
-    The diagnostic lane (Serializer.to_jsonable) turns arbitrary objects
-    into JSON-safe data; the identity path must never do that. A plain
-    object with a ``__dict__`` would be normalized diagnostically but must
-    be rejected here so it cannot silently collapse onto an identity.
-    """
     import pydantic
 
     from dr_serialize import Serializer, postgres_jsonb_limits
@@ -439,11 +389,9 @@ def test_identity_path_does_not_coerce_via_diagnostic_normalization() -> None:
 
     model = Model(name="n", count=1)
 
-    # Diagnostic lane accepts and normalizes it.
     normalized = Serializer(limits=postgres_jsonb_limits()).to_jsonable(model)
     assert normalized == {"name": "n", "count": 1}
 
-    # Identity path rejects the un-normalized model outright.
     with pytest.raises(StrictJsonError):
         validate_strict_json(model)
     with pytest.raises(StrictJsonError):

@@ -1,5 +1,3 @@
-"""Contract tests for bounded diagnostic representations."""
-
 from __future__ import annotations
 
 from typing import Any

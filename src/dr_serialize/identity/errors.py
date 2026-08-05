@@ -1,5 +1,3 @@
-"""Typed failures for identity document validation."""
-
 from __future__ import annotations
 
 from typing import Any
@@ -12,13 +10,9 @@ from dr_serialize._core.diagnostics import (
 
 
 class IdentityDocumentError(SerializationError):
-    """An Identity Document does not have the exact three-field shape.
+    """An identity-envelope or canonical-profile validation failure.
 
-    Raised by :func:`validate_identity_document` when the document is not a
-    mapping, is missing a required field, carries an extra field, or has a
-    field of the wrong type, or exceeds the frozen Canonical JSON Text profile.
-    Values inside the payload that are not strict JSON values raise
-    :class:`StrictJsonError` instead.
+    Payload values outside strict JSON raise ``StrictJsonError`` instead.
     """
 
     def __init__(

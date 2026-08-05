@@ -1,5 +1,3 @@
-"""Contract tests for bounded bytes-first strict JSON decoding."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -458,7 +456,7 @@ def test_error_constructor_diagnostics_shape_is_exact(
         ),
     ],
 )
-def test_public_decoder_errors_do_not_retain_secret(
+def test_decoder_error_message_diagnostics_and_chain_exclude_secret(
     data: bytes,
     max_bytes: int | None,
     max_depth: int,

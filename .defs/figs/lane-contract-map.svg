@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1360" role="img" aria-labelledby="title desc">
-  <title id="title">dr-serialize semantic lane contract map</title>
-  <desc id="desc">A newcomer-oriented map of three semantic lanes and their representative public APIs: policy-driven normalization from arbitrary Python values to diagnostic Jsonable data, deterministic Canonical JSON Text utilities over already-Jsonable values, and the strict policy-free identity lane from bounded strict JSON byte decoding or caller-selected schema, version, and payload to a full SHA-256 identity hash. Strict byte decoding is an input boundary to identity, not a fourth semantic lane. A lower band shows the permitted explicit composition from normalization into general canonical hashing and forbids feeding normalized diagnostic data into identity hashing.</desc>
+  <title id="title">dr-serialize functional area contract map</title>
+  <desc id="desc">A newcomer-oriented map of four functional areas and their representative public APIs: policy-driven normalization from arbitrary Python values to diagnostic JSON-shaped data, deterministic Canonical JSON Text utilities over finite strict values, bounded strict JSON byte decoding with typed failures, and policy-free identity from caller-selected schema, version, and payload to a full SHA-256 identity hash. Decoding and identity are separate areas shown in one sequential column. A lower band shows that composition from normalization into general canonical hashing is conditional on strict validation, which can reject the normalized value, and forbids feeding normalized diagnostic data into identity hashing.</desc>
   <defs>
     <style>
       .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
@@ -49,11 +49,10 @@
 
   <rect width="1600" height="1360" fill="#f4f6f9"/>
 
-  <!-- Header -->
   <g class="sans">
-    <text x="54" y="68" class="label" fill="#6f42c1">DR-SERIALIZE · SEMANTIC LANE CONTRACT MAP</text>
-    <text x="54" y="116" class="h1 ink">Choose the surface by what your data means</text>
-    <text x="54" y="150" class="dek muted">Normalize runtime values, stabilize JSON-safe data, or establish domain identity.</text>
+    <text x="54" y="68" class="label" fill="#6f42c1">DR-SERIALIZE · FUNCTIONAL AREA CONTRACT MAP</text>
+    <text x="54" y="116" class="h1 ink">Choose the area by what your data means</text>
+    <text x="54" y="150" class="dek muted">Normalize runtime values into JSON-shaped data, stabilize finite strict JSON, decode, or establish domain identity.</text>
 
     <g transform="translate(1050 52)">
       <rect x="0" y="0" width="146" height="30" rx="15" class="soft-amber"/>
@@ -68,7 +67,6 @@
     </g>
   </g>
 
-  <!-- Lane 1: normalization -->
   <g transform="translate(54 188)" class="sans">
     <rect width="472" height="820" rx="16" class="card" filter="url(#shadow)"/>
     <rect width="472" height="8" rx="4" fill="#9a6700"/>
@@ -98,8 +96,8 @@
     <circle cx="35" cy="510" r="4" fill="#9a6700"/>
     <text x="48" y="515" class="body ink">Applies an ordered, extensible handler policy.</text>
     <circle cx="35" cy="541" r="4" fill="#9a6700"/>
-    <text x="48" y="546" class="body ink">May be lossy: tuple/set → list, keys → str,</text>
-    <text x="48" y="568" class="body ink">bytes and runtime-only values → placeholders.</text>
+    <text x="48" y="546" class="body ink">May be lossy: tuple → list; direct sets → sorted lists;</text>
+    <text x="48" y="568" class="body ink">model/handler list conversions must sort at that boundary.</text>
     <circle cx="35" cy="597" r="4" fill="#9a6700"/>
     <text x="48" y="602" class="body ink">Enforces explicit max_depth and max_bytes.</text>
     <text x="48" y="624" class="small muted">postgres_jsonb_limits() is a shipped preset.</text>
@@ -110,16 +108,15 @@
     <text x="40" y="730" class="section ink">Diagnostic Normalized JSON Value</text>
     <text x="40" y="754" class="mono code-small ink">Jsonable = None | bool | int | float | str</text>
     <text x="40" y="776" class="mono code-small ink">         | list[Jsonable] | dict[str, Jsonable]</text>
-    <text x="28" y="812" class="small" fill="#7a5200">Policy-bearing · bounded · JSON-safe · potentially lossy</text>
+    <text x="28" y="812" class="small" fill="#7a5200">Bounded · JSON-shaped · potentially lossy · NaN/∞ may survive</text>
   </g>
 
-  <!-- Lane 2: canonical utilities -->
   <g transform="translate(564 188)" class="sans">
     <rect width="472" height="820" rx="16" class="card" filter="url(#shadow)"/>
     <rect width="472" height="8" rx="4" fill="#6f42c1"/>
     <circle cx="34" cy="48" r="19" class="soft-purple"/>
     <text x="34" y="54" text-anchor="middle" class="section" fill="#5d35aa">2</text>
-    <text x="66" y="47" class="lane-title ink">Stabilize JSON-safe data</text>
+    <text x="66" y="47" class="lane-title ink">Stabilize finite strict JSON</text>
     <text x="66" y="70" class="small muted">General Canonical JSON Text + fingerprints</text>
 
     <line x1="24" y1="92" x2="448" y2="92" class="rule"/>
@@ -159,24 +156,23 @@
     <text x="28" y="812" class="small" fill="#5d35aa">Deterministic · policy-free · general purpose · not domain identity</text>
   </g>
 
-  <!-- Lane 3: identity -->
   <g transform="translate(1074 188)" class="sans">
     <rect width="472" height="820" rx="16" class="card" filter="url(#shadow)"/>
     <rect width="472" height="8" rx="4" fill="#2b8a3e"/>
     <circle cx="34" cy="48" r="19" class="soft-green"/>
-    <text x="34" y="54" text-anchor="middle" class="section" fill="#247534">3</text>
-    <text x="66" y="47" class="lane-title ink">Establish domain identity</text>
-    <text x="66" y="70" class="small muted">For stable cross-repo identity, keys, and references</text>
+    <text x="34" y="54" text-anchor="middle" class="section" fill="#247534">3+4</text>
+    <text x="66" y="47" class="lane-title ink">Decode strictly; establish identity</text>
+    <text x="66" y="70" class="small muted">Separate functional areas connected by strict JSON values</text>
 
     <line x1="24" y1="92" x2="448" y2="92" class="rule"/>
-    <text x="28" y="119" class="label" fill="#2b8a3e">BOUNDED STRICT JSON INPUT</text>
+    <text x="28" y="119" class="label" fill="#2b8a3e">STRICT DECODING AREA · BOUNDED INPUT</text>
     <rect x="24" y="132" width="424" height="86" rx="10" class="node"/>
     <text x="40" y="157" class="mono code-small ink">decode_strict_json_bytes(data: bytes, *,</text>
     <text x="54" y="180" class="mono code-small ink">max_bytes: int, max_depth: int) → Jsonable</text>
     <text x="40" y="202" class="small muted">Strict JSON Value · typed errors · or caller-supplied values</text>
 
     <path d="M236 218 V240" class="arrow"/>
-    <text x="28" y="262" class="label" fill="#2b8a3e">VALIDATED DOCUMENT</text>
+    <text x="28" y="262" class="label" fill="#2b8a3e">IDENTITY AREA · VALIDATED DOCUMENT</text>
     <rect x="24" y="275" width="424" height="190" rx="10" class="code-box"/>
     <text x="40" y="301" class="mono code ink">@dataclass(frozen=True, slots=True)</text>
     <text x="40" y="325" class="mono code ink">class IdentityDocument:</text>
@@ -195,7 +191,7 @@
     <circle cx="35" cy="566" r="4" fill="#2b8a3e"/>
     <text x="48" y="571" class="body ink">No coercion, handlers, truncation, or cycles.</text>
     <circle cx="35" cy="597" r="4" fill="#2b8a3e"/>
-    <text x="48" y="602" class="body ink">Private copy-in + fresh copy-out preserve the snapshot.</text>
+    <text x="48" y="602" class="body ink">Deepcopy on construction/access; custom types may alias.</text>
 
     <path d="M236 620 V646" class="arrow"/>
     <text x="28" y="668" class="label" fill="#2b8a3e">IDENTITY API + OUTPUT</text>
@@ -207,17 +203,15 @@
     <text x="40" y="791" class="mono code-small" fill="#247534">identity_hash_prefix(Sha256Digest | str, n) -&gt; str</text>
   </g>
 
-  <!-- Composition rules -->
   <g transform="translate(54 1040)" class="sans">
     <rect width="1492" height="266" rx="16" class="card"/>
     <text x="28" y="38" class="lane-title ink">How the surfaces relate</text>
     <text x="28" y="62" class="small muted">Cross a boundary only when the call site says so.</text>
 
-    <!-- Allowed composition -->
     <rect x="24" y="82" width="905" height="158" rx="12" fill="#f8fbff" stroke="#b8cbe1" stroke-width="1.4"/>
     <rect x="40" y="98" width="96" height="24" rx="12" class="soft-blue"/>
-    <text x="88" y="115" text-anchor="middle" class="chip" fill="#1866b4">PERMITTED</text>
-    <text x="151" y="116" class="section ink">Explicit normalization → general hash</text>
+    <text x="88" y="115" text-anchor="middle" class="chip" fill="#1866b4">CONDITIONAL</text>
+    <text x="151" y="116" class="section ink">Normalization → strict validation → general hash</text>
 
     <rect x="42" y="137" width="176" height="58" rx="9" class="soft-amber" stroke="#d6ad55"/>
     <text x="130" y="161" text-anchor="middle" class="mono code-small ink">value: Any</text>
@@ -228,14 +222,13 @@
     <text x="406" y="161" text-anchor="middle" class="mono code-small ink">diagnostic: Jsonable</text>
     <text x="406" y="181" text-anchor="middle" class="small muted">policy-derived output</text>
     <path d="M532 166 H592" class="arrow-blue"/>
-    <text x="562" y="151" text-anchor="middle" class="small" fill="#1866b4">explicit</text>
+    <text x="562" y="151" text-anchor="middle" class="small" fill="#1866b4">validate strict</text>
     <rect x="594" y="137" width="298" height="58" rx="9" class="soft-purple" stroke="#a78ad3"/>
-    <text x="743" y="161" text-anchor="middle" class="mono code-small ink">json_hash(diagnostic)</text>
-    <text x="743" y="181" text-anchor="middle" class="small muted">general fingerprint, not identity</text>
+    <text x="743" y="161" text-anchor="middle" class="mono code-small ink">validate_strict_json → json_hash</text>
+    <text x="743" y="181" text-anchor="middle" class="small muted">general fingerprint or strict rejection</text>
     <rect x="42" y="207" width="850" height="22" rx="5" class="code-box"/>
-    <text x="467" y="223" text-anchor="middle" class="mono code-small ink">hash_value = json_hash(serializer.to_jsonable(value))</text>
+    <text x="467" y="223" text-anchor="middle" class="mono code-small ink">hash_value = json_hash(validate_strict_json(serializer.to_jsonable(value)))</text>
 
-    <!-- Forbidden crossing -->
     <rect x="947" y="82" width="521" height="158" rx="12" fill="#fffafa" stroke="#e3aaa4" stroke-width="1.4"/>
     <rect x="963" y="98" width="104" height="24" rx="12" class="soft-red"/>
     <text x="1015" y="115" text-anchor="middle" class="chip" fill="#c0392b">FORBIDDEN</text>
@@ -252,7 +245,6 @@
     <text x="963" y="221" class="small" fill="#a63227">Policy changes or lossy coercion must never redefine identity.</text>
   </g>
 
-  <!-- Footer -->
   <g class="sans">
     <text x="54" y="1337" class="small muted">Decoder diagnostics are bounded and non-echoing; other typed diagnostics are structurally persistable, not secret-safe.</text>
     <text x="1546" y="1337" text-anchor="end" class="mono code-small quiet">Source: dr_serialize normalization, canonical, decoding, identity, _core</text>

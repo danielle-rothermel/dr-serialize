@@ -1,11 +1,3 @@
-"""Contract tests for the policy-driven normalization engine.
-
-Deliberately not covered here:
-- Full round-trip / lossless serialization
-- Exhaustive Python type zoo (datetime, Decimal, UUID)
-- Exact preview truncation byte lengths
-"""
-
 from __future__ import annotations
 
 from typing import Any
@@ -24,14 +16,14 @@ from dr_serialize import (
     postgres_jsonb_limits,
 )
 from tests.normalization.support import (
+    AttributeBackedObject,
     SerializedNameModel,
-    SimpleObject,
     assert_diagnostics,
     assert_to_jsonable,
-    bad_pydantic_model,
     large_payload,
     nested_list,
     to_jsonable,
+    unserializable_pydantic_model,
 )
 
 DEFAULT_LIMITS = postgres_jsonb_limits()
@@ -64,7 +56,7 @@ class TestToJsonableInvariants:
             "int_dict_key_to_str",
         ],
     )
-    def test_happy_path(
+    def test_builtin_values_normalize_as_expected(
         self,
         input_value: Any,
         expected: Any,
@@ -77,11 +69,11 @@ class TestBuiltinTransforms:
         ("type_value", "expected_substring"),
         [
             (int, "int"),
-            (SimpleObject, "SimpleObject"),
+            (AttributeBackedObject, "AttributeBackedObject"),
         ],
         ids=["builtin_type", "local_class"],
     )
-    def test_plain_type(
+    def test_type_objects_normalize_to_class_placeholders(
         self,
         type_value: type,
         expected_substring: str,
@@ -98,17 +90,17 @@ class TestBuiltinTransforms:
         assert result["name"] == "N"
         assert vars(model)["name"] == "n"
 
-    def test_bytes(self) -> None:
+    def test_bytes_normalize_to_length_placeholder(self) -> None:
         assert assert_to_jsonable(b"hello") == "<bytes len=5>"
 
-    def test_generator(self) -> None:
+    def test_generator_normalizes_to_runtime_type_placeholder(self) -> None:
         def gen() -> Any:
             yield 1
 
         result = assert_to_jsonable(gen())
         assert result == "<generator>"
 
-    def test_coroutine(self) -> None:
+    def test_coroutine_normalizes_to_runtime_type_placeholder(self) -> None:
         async def coro() -> None:
             return None
 
@@ -118,8 +110,8 @@ class TestBuiltinTransforms:
         finally:
             coroutine.close()
 
-    def test_simple_object_vars(self) -> None:
-        result = assert_to_jsonable(SimpleObject())
+    def test_plain_object_normalizes_from_instance_attributes(self) -> None:
+        result = assert_to_jsonable(AttributeBackedObject())
         assert result == {"a": 1, "label": "test"}
 
 
@@ -218,7 +210,7 @@ class TestGuardrails:
 class TestStructuredErrors:
     def test_model_dump_error(self) -> None:
         with pytest.raises(ModelDumpError) as exc_info:
-            to_jsonable(bad_pydantic_model(), limits=DEFAULT_LIMITS)
+            to_jsonable(unserializable_pydantic_model(), limits=DEFAULT_LIMITS)
         assert_diagnostics(
             exc_info.value,
             {"path", "detail", "value_preview", "underlying"},

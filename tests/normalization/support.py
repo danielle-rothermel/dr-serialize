@@ -1,5 +1,3 @@
-"""Shared helpers and minimal fixtures for normalization contract tests."""
-
 from __future__ import annotations
 
 import json
@@ -17,7 +15,7 @@ from dr_serialize import (
 _JSON_TYPES = (type(None), bool, int, float, str, list, dict)
 
 
-def assert_json_dumps(value: Any) -> None:
+def assert_json_encodable(value: Any) -> None:
     json.dumps(value, ensure_ascii=False)
 
 
@@ -38,7 +36,6 @@ def assert_only_json_types(value: Any) -> None:
 
 
 def to_jsonable(value: Any, *, limits: SerializationLimits) -> Any:
-    """Function-style adapter over Serializer for terse test call sites."""
     return Serializer(limits=limits).to_jsonable(value)
 
 
@@ -48,7 +45,7 @@ def assert_to_jsonable(
     limits: SerializationLimits | None = None,
 ) -> Any:
     result = to_jsonable(value, limits=limits or postgres_jsonb_limits())
-    assert_json_dumps(result)
+    assert_json_encodable(result)
     assert_only_json_types(result)
     return result
 
@@ -86,15 +83,15 @@ class SerializedNameModel(pydantic.BaseModel):
         return value.upper()
 
 
-class BadModel(pydantic.BaseModel):
+class UnserializableFieldModel(pydantic.BaseModel):
     x: object
 
 
-def bad_pydantic_model() -> BadModel:
-    return BadModel(x=object())
+def unserializable_pydantic_model() -> UnserializableFieldModel:
+    return UnserializableFieldModel(x=object())
 
 
-class SimpleObject:
+class AttributeBackedObject:
     def __init__(self) -> None:
         self.a = 1
         self.label = "test"

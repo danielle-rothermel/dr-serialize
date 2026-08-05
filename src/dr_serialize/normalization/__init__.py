@@ -1,5 +1,3 @@
-"""Policy-driven normalization of Python values into JSON-safe data."""
-
 from dr_serialize.normalization.errors import (
     MaxDepthExceededError,
     ModelDumpError,

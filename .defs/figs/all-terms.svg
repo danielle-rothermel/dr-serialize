@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="840" viewBox="0 0 1480 840" role="img" aria-labelledby="title desc" data-defs-reference="../terms.toml" data-prototype-kind="category-membership-composition-type-hierarchy-graph" data-reference-completeness="selected">
-  <metadata id="defs-reference">{"terms":["normalization","canonicalization","identity","document","payload","hash","strict JSON value","canonical JSON text","identity payload","identity document","canonical identity JSON text","identity hash","identity hash prefix","diagnostic normalized JSON value","serialization limits"],"categories":["normalization","canonicalization","identity"],"memberships":[{"term":"normalization","category":"normalization"},{"term":"canonicalization","category":"canonicalization"},{"term":"identity","category":"identity"},{"term":"document","category":"identity"},{"term":"hash","category":"canonicalization"},{"term":"hash","category":"identity"},{"term":"strict JSON value","category":"identity"},{"term":"canonical JSON text","category":"canonicalization"},{"term":"canonical identity JSON text","category":"identity"},{"term":"diagnostic normalized JSON value","category":"normalization"},{"term":"serialization limits","category":"normalization"}],"edges":[{"kind":"part_of","from":"payload","to":"document"},{"kind":"part_of","from":"identity payload","to":"identity document"},{"kind":"is_a","from":"identity document","to":"document"},{"kind":"is_a","from":"canonical identity JSON text","to":"canonical JSON text"},{"kind":"is_a","from":"identity hash","to":"hash"},{"kind":"part_of","from":"identity hash prefix","to":"identity hash"}]}</metadata>
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="840" viewBox="0 0 1480 840" role="img" aria-labelledby="title desc" data-defs-reference="../terms.toml" data-prototype-kind="category-membership-composition-type-hierarchy-graph" data-reference-completeness="selected-memberships-and-relationships">
+  <metadata id="defs-reference">{"terms":["normalization","canonicalization","identity","document","payload","hash","strict JSON value","canonical JSON text","identity payload","identity document","canonical identity JSON text","identity hash","identity hash prefix","diagnostic normalized JSON value","serialization limits","canonical value ordering","error diagnostics"],"categories":["normalization","canonicalization","identity"],"memberships":[{"term":"normalization","category":"normalization"},{"term":"canonicalization","category":"canonicalization"},{"term":"identity","category":"identity"},{"term":"document","category":"identity"},{"term":"hash","category":"canonicalization"},{"term":"hash","category":"identity"},{"term":"strict JSON value","category":"identity"},{"term":"canonical JSON text","category":"canonicalization"},{"term":"canonical identity JSON text","category":"identity"},{"term":"diagnostic normalized JSON value","category":"normalization"},{"term":"serialization limits","category":"normalization"},{"term":"canonical value ordering","category":"canonicalization"},{"term":"error diagnostics","category":"normalization"},{"term":"error diagnostics","category":"canonicalization"},{"term":"error diagnostics","category":"identity"}],"edges":[{"kind":"part_of","from":"payload","to":"document"},{"kind":"part_of","from":"identity payload","to":"identity document"},{"kind":"is_a","from":"identity document","to":"document"},{"kind":"is_a","from":"canonical identity JSON text","to":"canonical JSON text"},{"kind":"is_a","from":"identity hash","to":"hash"},{"kind":"part_of","from":"identity hash prefix","to":"identity hash"}]}</metadata>
   <title id="title">Composition, Type Hierarchy, and Category Routing</title>
-  <desc id="desc">A selected compact graph of fifteen vocabulary terms and eleven displayed category memberships, combining three name-only composition cards with three neutral dashed type-hierarchy arrows from general types to specializations. Eight colored category routes and three category-hub self-membership markers are shown.</desc>
+  <desc id="desc">A compact graph of all seventeen vocabulary terms with selected category memberships and selected composition and type-hierarchy relationships. Omitted memberships and relationships from the authoritative terms file are not shown.</desc>
   <defs>
     <filter id="surface-shadow" x="-10%" y="-10%" width="120%" height="125%">
       <feDropShadow dx="0" dy="5" stdDeviation="12" flood-color="#243248" flood-opacity="0.08"/>
@@ -82,14 +82,13 @@
   <rect width="1480" height="840" fill="#f1f4f8"/>
   <rect x="16" y="8" width="1448" height="816" rx="22" fill="url(#surface-wash)" stroke="#d8dfe8" filter="url(#surface-shadow)"/>
   <text x="52" y="84" class="system title">Composition, Type Hierarchy, and Category Routing</text>
-  <text x="52" y="111" class="system subtitle">15 terms · 11 displayed memberships · 8 category routes · aligned dashed arrows show general → specialized type</text>
+  <text x="52" y="111" class="system subtitle">17 terms · selected memberships + relationships · omitted routes and edges are not shown</text>
   <line x1="52" y1="136" x2="1428" y2="136" stroke="#e2e7ee"/>
 
   <ellipse cx="220" cy="610" rx="215" ry="190" fill="url(#normalization-wash)"/>
   <ellipse cx="555" cy="360" rx="535" ry="245" fill="url(#canonicalization-wash)"/>
   <ellipse cx="1040" cy="510" rx="405" ry="300" fill="url(#identity-wash)"/>
 
-  <!-- Membership and hierarchy routes stay behind nodes; metadata declares exactly this visible projection. -->
   <g id="edge-layer" aria-hidden="true">
     <g id="visible-membership-connectors">
       <path d="M 220 506 C 220 522 220 536 220 550" class="connector connector-normalization" data-term="serialization limits" data-category="normalization"/>
@@ -100,6 +99,10 @@
       <path d="M 880 333 C 930 333 977 333 1025 333" class="connector connector-identity" data-term="canonical identity JSON text" data-category="identity"/>
       <path d="M 1210 305 C 1221 286 1238 269 1264 256" class="connector connector-identity" data-term="strict JSON value" data-category="identity"/>
       <path d="M 1145 377 L 1145 420" class="connector connector-identity" data-term="document" data-category="identity"/>
+      <path d="M 330 272 C 360 340 470 385 575 420" class="connector connector-canonicalization" data-term="canonical value ordering" data-category="canonicalization"/>
+      <path d="M 370 586 C 620 586 735 300 950 243" class="connector connector-normalization" data-term="error diagnostics" data-category="normalization"/>
+      <path d="M 330 200 C 500 150 790 150 950 225" class="connector connector-canonicalization" data-term="error diagnostics" data-category="canonicalization"/>
+      <path d="M 1080 305 C 1060 285 1040 270 1025 256" class="connector connector-identity" data-term="error diagnostics" data-category="identity"/>
     </g>
     <g id="visible-type-hierarchy-routes">
       <path d="M 725 256 L 725 305" class="is-a-route" data-relation="is_a" data-from="canonical identity JSON text" data-to="canonical JSON text"/>
@@ -108,7 +111,6 @@
     </g>
   </g>
 
-  <!-- Name-only composition cards keep structural parts nested while category and type routes attach to outer cards. -->
   <g class="composition-node" data-map-term="identity hash" tabindex="0" role="group" aria-labelledby="label-identity-hash">
     <rect x="540" y="620" width="350" height="150" rx="22" class="composition-shell" filter="url(#composition-shadow)"/>
     <text id="label-identity-hash" x="568" y="656" class="system composition-label">Identity Hash</text>
@@ -139,9 +141,8 @@
     </g>
   </g>
 
-  <!-- Each category term doubles as its category hub and self-membership marker. -->
   <g class="hub-node hub-normalization" data-map-term="normalization" data-term="normalization" data-category="normalization" tabindex="0" role="group" aria-labelledby="label-normalization">
-    <title>The policy-driven transformation of arbitrary values into a bounded, JSON-safe representation for diagnostics or non-identity storage. Normalization may be lossy, and its conversion choices are deliberately separate from identity.</title>
+    <title>The policy-driven transformation of arbitrary values into a bounded, JSON-encodable representation for diagnostics or non-identity storage. Normalization may be lossy, non-finite floats may survive outside canonical set ordering, and its conversion choices are deliberately separate from identity.</title>
     <rect x="70" y="550" width="300" height="72" rx="36" class="hub-shell"/>
     <circle cx="110" cy="586" r="10" class="hub-core"/>
     <text id="label-normalization" x="133" y="593" class="system hub-label">Normalization</text>
@@ -165,12 +166,12 @@
     <text id="label-serialization-limits" x="220" y="484" text-anchor="middle" class="system term-label">Serialization Limits</text>
   </g>
   <g class="term-node" data-map-term="diagnostic normalized JSON value" tabindex="0" role="group" aria-labelledby="label-diagnostic-normalized-json-value">
-    <title>The potentially lossy, size- and depth-bounded JSON-safe value produced by normalization for diagnostics or non-identity storage. It is not an identity payload and never supplies input to identity hashing.</title>
+    <title>The potentially lossy, size- and depth-bounded JSON-shaped value produced by normalization for diagnostics or non-identity storage. Non-finite floats may survive outside canonical set ordering. It is not an identity payload and never supplies input to identity hashing.</title>
     <rect x="55" y="670" width="330" height="56" rx="12" class="term-card" filter="url(#card-shadow)"/>
     <text id="label-diagnostic-normalized-json-value" x="220" y="704" text-anchor="middle" class="system term-label">Diagnostic Normalized JSON Value</text>
   </g>
   <g class="term-node" data-map-term="canonical JSON text" tabindex="0" role="group" aria-labelledby="label-canonical-json-text">
-    <title>The single deterministic UTF-8 JSON text selected for a JSON value, using compact separators and sorted object keys. The same accepted value always produces the same text and bytes.</title>
+    <title>The single deterministic UTF-8 JSON text selected for a JSON value, using compact separators, sorted object keys, and profile-defined structural and numeric bounds. The same accepted value always produces the same text and bytes.</title>
     <rect x="600" y="200" width="250" height="56" rx="12" class="term-card" filter="url(#card-shadow)"/>
     <text id="label-canonical-json-text" x="725" y="234" text-anchor="middle" class="system term-label">Canonical JSON Text</text>
   </g>
@@ -188,5 +189,15 @@
     <title>A value drawn only from the JSON data model: null, booleans, strings, finite numbers, ordered arrays of strict JSON values, and string-keyed objects whose values are strict JSON values, recursively. It excludes non-finite numbers, reference cycles, unordered collections, and values that require conversion into JSON.</title>
     <rect x="1230" y="200" width="200" height="56" rx="12" class="term-card" filter="url(#card-shadow)"/>
     <text id="label-strict-json-value" x="1330" y="234" text-anchor="middle" class="system term-label">Strict JSON Value</text>
+  </g>
+  <g class="term-node" data-map-term="canonical value ordering" tabindex="0" role="group" aria-labelledby="label-canonical-value-ordering">
+    <title>The ordering of already-JSON-safe values by their Canonical JSON Text representation under a declared profile, projecting a logically unordered collection into one deterministic JSON array. It preserves duplicates, never normalizes, coerces, deduplicates, or selects domain fields, and is never applied to semantically ordered arrays.</title>
+    <rect x="425" y="420" width="300" height="56" rx="12" class="term-card" filter="url(#card-shadow)"/>
+    <text id="label-canonical-value-ordering" x="575" y="454" text-anchor="middle" class="system term-label">Canonical Value Ordering</text>
+  </g>
+  <g class="term-node" data-map-term="error diagnostics" tabindex="0" role="group" aria-labelledby="label-error-diagnostics">
+    <title>Structured context attached to a failure so callers can inspect its location and cause without parsing an exception message. Its disclosure guarantees depend on the boundary that produced it.</title>
+    <rect x="950" y="200" width="260" height="56" rx="12" class="term-card" filter="url(#card-shadow)"/>
+    <text id="label-error-diagnostics" x="1080" y="234" text-anchor="middle" class="system term-label">Error Diagnostics</text>
   </g>
 </svg>

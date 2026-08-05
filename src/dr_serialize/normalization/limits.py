@@ -1,41 +1,29 @@
-"""Normalization limits as explicit, injectable configuration.
-
-Postgres JSONB ships as *a* preset, not *the* truth: consumers with other
-storage ceilings (or none) construct their own ``SerializationLimits``.
-"""
-
 from __future__ import annotations
 
 from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, model_validator
 
-# PostgreSQL jsonb/text per-value maximum (~1 GiB; see PG MaxAllocSize).
-POSTGRES_JSONB_MAX_BYTES = 1 << 30  # 1_073_741_824
+# Policy approximation of PostgreSQL's documented 1 GB field limit.
+POSTGRES_JSONB_MAX_BYTES = 1 << 30
 
-# Empirical headroom for compact JSON text → jsonb binary expansion.
-# PG does not define this; 25% is a conservative upper bound for structured
-# telemetry JSON (see depesz.com JSON vs JSONB sizing benchmarks).
+# Policy reserve for JSON-text-to-JSONB expansion; PostgreSQL defines no
+# fixed expansion ratio.
 POSTGRES_JSONB_TEXT_TO_BINARY_OVERHEAD_RATIO = 0.25
 
 POSTGRES_JSONB_PAYLOAD_MAX_BYTES = POSTGRES_JSONB_MAX_BYTES - int(
     POSTGRES_JSONB_MAX_BYTES * POSTGRES_JSONB_TEXT_TO_BINARY_OVERHEAD_RATIO
-)  # 805_306_368 bytes (~768 MiB)
+)
 
-# Practical JSON nesting guard. Postgres has no fixed cap, but 100 matches
-# common JSON storage limits and catches runaway recursion.
+# Library policy guard against runaway nesting.
 DEFAULT_MAX_DEPTH = 100
 
 
 class SerializationLimits(BaseModel):
-    """Depth and size ceilings enforced by ``to_jsonable``.
+    """Validated normalization depth and size bounds.
 
-    All configured limits are non-negative. When ``hard_max_bytes`` is
-    present, ``max_bytes`` cannot exceed it.
-
-    ``hard_max_bytes`` is the storage backend's absolute per-value ceiling,
-    reported in oversize diagnostics alongside the configured ``max_bytes``;
-    when omitted it defaults to ``max_bytes``.
+    ``hard_max_bytes`` records the storage ceiling reported in diagnostics;
+    when omitted, diagnostics use ``max_bytes``.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -63,7 +51,10 @@ class SerializationLimits(BaseModel):
 def postgres_jsonb_limits(
     max_bytes: int = POSTGRES_JSONB_PAYLOAD_MAX_BYTES,
 ) -> SerializationLimits:
-    """Postgres JSONB preset, optionally with a tighter payload ceiling."""
+    """Return the Postgres JSONB preset.
+
+    It has a configurable payload ceiling up to the Postgres hard maximum.
+    """
     return SerializationLimits(
         max_depth=DEFAULT_MAX_DEPTH,
         max_bytes=max_bytes,

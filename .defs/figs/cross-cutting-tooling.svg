@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1660" role="img" aria-labelledby="title desc">
   <title id="title">Cross-cutting and general-purpose tooling in dr-serialize</title>
-  <desc id="desc">A source-grounded map of selected public helper APIs, internal foundational contracts, and private mechanisms across normalization, Canonical JSON Text, and identity. It includes the public bounded strict JSON byte-decoding boundary and its typed errors, exact canonical byte helpers, and the public Sha256Digest contract.</desc>
+  <desc id="desc">A source-grounded map of selected public helper APIs, internal foundational contracts, and private mechanisms across normalization, Canonical JSON Text, strict decoding, and identity. It includes the public bounded strict JSON byte-decoding area and its typed errors, the bounded Canonical JSON Text profile validator, exact canonical byte helpers, and the public Sha256Digest contract.</desc>
   <defs>
     <style>
       .bg { fill: #f4f6f9; }
@@ -49,9 +49,8 @@
 
   <rect class="bg" width="1800" height="1660"/>
 
-  <!-- Header -->
   <text x="70" y="62" class="title ink">Cross-cutting tooling: small public seams, guarded internals</text>
-  <text x="70" y="96" class="dek muted">Shared helpers span two separate lanes and the Canonical JSON Text utility surface.</text>
+  <text x="70" y="96" class="dek muted">Shared helpers span normalization, Canonical JSON Text, strict decoding, and identity.</text>
   <rect x="1456" y="42" width="274" height="34" rx="17" class="surface-strong"/>
   <text x="1593" y="64" text-anchor="middle" class="mono-small muted">Python 3.12+ · selected API map</text>
 
@@ -66,7 +65,6 @@
     <text x="665" y="18" text-anchor="middle" class="label candidate-text">CONDITIONAL CANDIDATE</text>
   </g>
 
-  <!-- Cross-lane matrix -->
   <rect x="60" y="170" width="1680" height="535" rx="14" class="surface"/>
   <text x="90" y="208" class="section ink">Which helpers actually cross implementation surfaces?</text>
   <text x="90" y="234" class="small muted">Dots mean direct source use; labels name the consumer. A dash means the lane intentionally has a different mechanism.</text>
@@ -78,15 +76,14 @@
   <text x="1388" y="213" text-anchor="middle" class="label lane-text">CANONICAL JSON TEXT</text>
   <text x="1388" y="232" text-anchor="middle" class="mono-small lane-text">canonical bytes · json_hash</text>
   <rect x="1500" y="190" width="210" height="54" rx="10" class="lane-fill"/>
-  <text x="1605" y="213" text-anchor="middle" class="label lane-text">IDENTITY</text>
-  <text x="1605" y="232" text-anchor="middle" class="mono-small lane-text">strict decode · hash</text>
+  <text x="1605" y="213" text-anchor="middle" class="label lane-text">DECODING + IDENTITY</text>
+  <text x="1605" y="232" text-anchor="middle" class="mono-small lane-text">strict bytes · document · hash</text>
 
-  <!-- Row 1 -->
   <rect x="84" y="260" width="986" height="66" rx="9" class="cell"/>
   <rect x="98" y="272" width="72" height="20" rx="10" class="public-fill"/>
   <text x="134" y="286" text-anchor="middle" class="label public-text">PUBLIC</text>
   <text x="184" y="287" class="mono-strong ink">Jsonable = None | bool | int | float | str | list[Jsonable] | dict[str, Jsonable]</text>
-  <text x="184" y="311" class="small muted">The boundary vocabulary: normalization produces it; deterministic and identity code consume it.</text>
+  <text x="184" y="311" class="small muted">Normalization may produce non-finite floats; canonical and identity consumers require strict finite values.</text>
   <rect x="1080" y="260" width="196" height="66" rx="9" class="cell"/>
   <circle cx="1100" cy="281" r="6" class="use-dot"/>
   <text x="1116" y="286" class="small ink">produces</text>
@@ -97,10 +94,9 @@
   <text x="1310" y="308" class="mono-small muted">canonical_json(value)</text>
   <rect x="1500" y="260" width="210" height="66" rx="9" class="cell"/>
   <circle cx="1520" cy="281" r="6" class="use-dot"/>
-  <text x="1536" y="286" class="small ink">payload contract</text>
-  <text x="1520" y="308" class="mono-small muted">IdentityDocument.payload</text>
+  <text x="1536" y="286" class="small ink">decode output + payload</text>
+  <text x="1520" y="308" class="mono-small muted">Jsonable · IdentityDocument</text>
 
-  <!-- Row 2 -->
   <rect x="84" y="334" width="986" height="66" rx="9" class="cell"/>
   <rect x="98" y="346" width="72" height="20" rx="10" class="public-fill"/>
   <text x="134" y="360" text-anchor="middle" class="label public-text">PUBLIC</text>
@@ -116,10 +112,9 @@
   <text x="1310" y="382" class="mono-small muted">JsonEncodeError.path</text>
   <rect x="1500" y="334" width="210" height="66" rx="9" class="cell"/>
   <circle cx="1520" cy="355" r="6" class="use-dot"/>
-  <text x="1536" y="360" class="small ink">value + shape errors</text>
-  <text x="1520" y="382" class="mono-small muted">StrictJsonError.path</text>
+  <text x="1536" y="360" class="small ink">decode + identity errors</text>
+  <text x="1520" y="382" class="mono-small muted">typed paths and metadata</text>
 
-  <!-- Row 3 -->
   <rect x="84" y="408" width="986" height="66" rx="9" class="cell"/>
   <rect x="98" y="420" width="72" height="20" rx="10" class="public-fill"/>
   <text x="134" y="434" text-anchor="middle" class="label public-text">PUBLIC</text>
@@ -135,10 +130,9 @@
   <text x="1310" y="456" class="mono-small muted">JsonEncodeError fields</text>
   <rect x="1500" y="408" width="210" height="66" rx="9" class="cell"/>
   <circle cx="1520" cy="429" r="6" class="use-dot"/>
-  <text x="1536" y="434" class="small ink">detail only</text>
-  <text x="1520" y="456" class="mono-small muted">all identity failures</text>
+  <text x="1536" y="434" class="small ink">boundary-specific details</text>
+  <text x="1520" y="456" class="mono-small muted">bounded decode · identity detail</text>
 
-  <!-- Row 4 -->
   <rect x="84" y="482" width="986" height="66" rx="9" class="cell"/>
   <rect x="98" y="494" width="144" height="20" rx="10" class="foundation-fill"/>
   <text x="170" y="508" text-anchor="middle" class="label foundation-text">FOUNDATIONAL</text>
@@ -154,29 +148,27 @@
   <text x="1310" y="530" class="mono-small muted">canonical_json_bytes</text>
   <rect x="1500" y="482" width="210" height="66" rx="9" class="cell"/>
   <circle cx="1520" cy="503" r="6" class="use-dot"/>
-  <text x="1536" y="508" class="small ink">exact identity bytes</text>
-  <text x="1520" y="530" class="mono-small muted">canonical_identity_json_bytes</text>
+  <text x="1536" y="508" class="small ink">UTF-8 input + identity bytes</text>
+  <text x="1520" y="530" class="mono-small muted">decoder · canonical identity</text>
 
-  <!-- Row 5 -->
   <rect x="84" y="556" width="986" height="66" rx="9" class="cell"/>
   <rect x="98" y="568" width="144" height="20" rx="10" class="foundation-fill"/>
   <text x="170" y="582" text-anchor="middle" class="label foundation-text">FOUNDATIONAL</text>
-  <text x="256" y="583" class="mono-strong ink">find_json_failure(value, path=(), *, reject_non_finite=False) → (JsonPath, Any) | None</text>
-  <text x="256" y="607" class="small muted">Cycle-safe first-failure location for json.dumps-compatible diagnostics; not package-exported.</text>
+  <text x="256" y="583" class="mono-strong ink">find_json_failure(...) · _find_canonical_json_failure(...)</text>
+  <text x="256" y="607" class="small muted">Separate first-failure paths for normalization probes and the bounded canonical profile; neither is exported.</text>
   <rect x="1080" y="556" width="196" height="66" rx="9" class="cell"/>
   <circle cx="1100" cy="577" r="6" class="use-dot"/>
   <text x="1116" y="582" class="small ink">probe failures</text>
   <text x="1100" y="604" class="mono-small muted">Serializer.to_jsonable</text>
   <rect x="1290" y="556" width="196" height="66" rx="9" class="cell"/>
   <circle cx="1310" cy="577" r="6" class="use-dot"/>
-  <text x="1326" y="582" class="small ink">strict encode failures</text>
-  <text x="1310" y="604" class="mono-small muted">reject_non_finite=True</text>
+  <text x="1326" y="582" class="small ink">bounded profile</text>
+  <text x="1310" y="604" class="mono-small muted">_find_canonical_json_failure</text>
   <rect x="1500" y="556" width="210" height="66" rx="9" class="cell"/>
-  <circle cx="1520" cy="577" r="6" class="no-dot"/>
-  <text x="1536" y="582" class="small quiet">separate validator</text>
-  <text x="1520" y="604" class="mono-small muted">_validate_strict_json</text>
+  <circle cx="1520" cy="577" r="6" class="use-dot"/>
+  <text x="1536" y="582" class="small ink">separate bounded paths</text>
+  <text x="1520" y="604" class="mono-small muted">parser · strict + profile</text>
 
-  <!-- Row 6 -->
   <rect x="84" y="630" width="986" height="58" rx="9" class="cell"/>
   <rect x="98" y="641" width="72" height="20" rx="10" class="public-fill"/>
   <text x="134" y="655" text-anchor="middle" class="label public-text">PUBLIC</text>
@@ -193,7 +185,6 @@
   <text x="1536" y="655" class="small ink">full identity result</text>
   <text x="1520" y="675" class="mono-small muted">identity_document_hash</text>
 
-  <!-- Public toolbox -->
   <text x="70" y="755" class="section ink">What helper-shaped tooling can consumers use today?</text>
   <text x="70" y="781" class="small muted">Every item below is re-exported from dr_serialize.</text>
 
@@ -202,7 +193,7 @@
     <rect x="18" y="16" width="126" height="22" rx="11" class="public-fill"/>
     <text x="81" y="31" text-anchor="middle" class="label public-text">BOUNDARY TYPES</text>
     <text x="18" y="62" class="mono-strong ink">Jsonable</text>
-    <text x="18" y="84" class="mono-small muted">recursive JSON-safe union</text>
+    <text x="18" y="84" class="mono-small muted">recursive JSON-shaped union</text>
     <text x="276" y="62" class="mono-strong ink">JsonPath</text>
     <text x="276" y="84" class="mono-small muted">tuple[str | int, ...]</text>
     <text x="18" y="112" class="small muted">They make lane composition and error locations type-visible.</text>
@@ -278,7 +269,6 @@
     <text x="18" y="132" class="mono-small ink">invalid value → Sha256DigestError</text>
   </g>
 
-  <!-- API horizon -->
   <rect x="60" y="1280" width="1680" height="300" rx="14" class="surface"/>
   <text x="90" y="1320" class="section ink">What remains internal—and what might plausibly surface later?</text>
   <text x="90" y="1346" class="small muted">Promotion requires a stable consumer need and a contract worth freezing; internal reuse alone is insufficient.</text>
@@ -308,13 +298,12 @@
     <text x="20" y="27" class="label foundation-text">FOUNDATIONAL INTERNAL — KEEP UNEXPORTED</text>
     <text x="20" y="53" class="mono-small ink">TEXT_ENCODING · _convert_node · primary/fallback tables</text>
     <text x="20" y="81" class="label private-text">PRIVATE MECHANISMS</text>
-    <text x="20" y="107" class="mono-small ink">find_json_failure · _validate_strict_json · _validate_handler_output</text>
+    <text x="20" y="107" class="mono-small ink">find_json_failure · _find_canonical_json_failure · _validate_strict_json</text>
     <text x="20" y="129" class="mono-small ink">_validate_handler_output_depth · _encoded_preview_slices</text>
     <text x="20" y="151" class="mono-small ink">_top_level_key_sizes · _format_top_level_sizes</text>
     <text x="20" y="166" class="tiny muted">Invariant ownership and implementation detail—not consumer capability.</text>
   </g>
 
-  <!-- Bottom thesis and provenance -->
   <rect x="70" y="1600" width="1660" height="2" class="anchor-fill"/>
   <line x1="70" y1="1575" x2="70" y2="1628" class="anchor" stroke-width="5"/>
   <text x="88" y="1602" class="card-title ink">Decision rule: expose capabilities; hide mechanisms and invariants until an external contract is demonstrably needed.</text>

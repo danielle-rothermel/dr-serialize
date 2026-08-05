@@ -1,5 +1,3 @@
-"""Focused contracts for deterministic unordered collection normalization."""
-
 from __future__ import annotations
 
 import pytest

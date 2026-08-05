@@ -6,13 +6,14 @@
 | [Repo Definitions](https://danielle-rothermel.github.io/dr-serialize/) |
 | --- |
 
-**dr-serialize makes Python values JSON-safe and produces deterministic JSON
-text, bytes, hashes, and identities.** Its functionality is organized into four
-areas supported by shared infrastructure:
+**dr-serialize normalizes Python values into JSON-encodable data and produces
+deterministic JSON text, bytes, hashes, and identities.** Its functionality is
+organized into four areas supported by shared infrastructure:
 
 - **[Normalization](https://github.com/danielle-rothermel/dr-serialize/tree/main/src/dr_serialize/normalization)**
-  converts Python values into JSON-safe data through bounded, extensible
-  conversion rules for diagnostics and storage.
+  converts Python values into bounded, JSON-shaped data through extensible
+  conversion rules for diagnostics and storage. Non-finite floats may survive
+  normalization outside canonical set ordering.
 - **[Canonical JSON](https://github.com/danielle-rothermel/dr-serialize/tree/main/src/dr_serialize/canonical)**
   renders bounded finite strict JSON values as deterministic text and exact
   UTF-8 bytes, projects unordered collections into stable arrays, and produces
@@ -38,7 +39,9 @@ implementation details.
 
 Normalization is policy-driven and may be lossy. A `Serializer` combines
 explicit depth and size limits with an ordered chain of consumer handlers, and
-produces `Jsonable` data for diagnostics or storage rather than identity.
+produces JSON-encodable, `Jsonable`-shaped data for diagnostics or storage
+rather than identity. Non-finite floats may survive normal conversion outside
+canonical set ordering.
 
 ```python
 class SerializationLimits(BaseModel):
@@ -118,7 +121,8 @@ stable array. It does not reorder arrays whose existing order is meaningful.
 ## Strict decoding
 
 Strict decoding accepts exactly one bounded UTF-8 JSON value without coercion.
-Its failures expose structural metadata without retaining or echoing the input.
+Failure messages, structured diagnostics, and exception cause and context do
+not echo or retain input. Traceback locals are outside this guarantee.
 
 ```python
 def decode_strict_json_bytes(
@@ -146,8 +150,10 @@ class NonFiniteJsonNumberError(StrictJsonDecodeError): ...
 
 The owning domain supplies every identity-bearing fact. dr-serialize validates
 the fixed document envelope against the same complete Canonical JSON Text
-profile, owns an isolated payload snapshot, and derives canonical identity
-bytes and a full hash without normalization.
+profile, applies `copy.deepcopy` during construction and payload access, and
+derives canonical identity bytes and a full hash without normalization.
+Accepted custom container subclasses control whether the deep-copy protocol
+yields alias isolation.
 
 ```python
 class IdentityDocument:

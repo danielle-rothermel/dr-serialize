@@ -1,5 +1,3 @@
-"""Contract tests for canonical JSON value ordering."""
-
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -62,8 +60,8 @@ class TestCanonicalSortedValues:
         ]
 
     def test_canonical_sorted_values_orders_non_ascii_by_escapes(self) -> None:
-        # "é" canonicalizes to "é", whose leading backslash sorts before
-        # every ASCII letter -- escape order, not human collation.
+        # Non-ASCII strings are escaped, so "\\u00e9" sorts before ASCII
+        # letters; this is canonical-text order, not human collation.
         assert canonical_sorted_values(["é", "z", "a"]) == ["é", "a", "z"]
 
     def test_canonical_sorted_values_consumes_generator_once(

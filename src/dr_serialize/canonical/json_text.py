@@ -1,5 +1,3 @@
-"""The frozen dr-serialize Canonical JSON Text profile v1."""
-
 from __future__ import annotations
 
 import json
@@ -17,14 +15,10 @@ from dr_serialize.canonical.profile import (
 
 
 def canonical_json(value: Jsonable) -> str:
-    """Render ``value`` using dr-serialize Canonical JSON Text profile v1.
+    """Render a strict JSON value with Canonical JSON Text profile v1.
 
-    Runtime validation rejects values outside strict ``Jsonable`` or profile
-    v1's frozen depth and integer bounds before encoding. Unsupported types,
-    non-string object keys, and reference cycles carry an underlying
-    :class:`TypeError`; non-finite numbers and profile-bound violations carry
-    an underlying :class:`ValueError`. The whole-value encoder remains
-    :func:`json.dumps` with the profile's fixed flags.
+    Validates the frozen depth and integer bounds before encoding with the
+    profile's fixed ``json.dumps`` flags.
     """
     failure = _find_canonical_json_failure(value)
     if failure is not None:
@@ -66,5 +60,4 @@ def canonical_json(value: Jsonable) -> str:
 
 
 def canonical_json_bytes(value: Jsonable, /) -> bytes:
-    """Return the exact UTF-8 bytes of :func:`canonical_json`."""
     return canonical_json(value).encode(TEXT_ENCODING)

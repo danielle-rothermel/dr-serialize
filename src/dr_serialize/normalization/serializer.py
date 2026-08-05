@@ -1,13 +1,3 @@
-"""Policy-driven normalization with an ordered, pluggable handler chain.
-
-A :class:`Serializer` bundles limits with a tuple of consumer handlers.
-Consumer handlers run after the built-in scalar/container handlers and
-before the fallback handlers (plain types, Pydantic models, generators,
-``__dict__`` walks), so a consumer handler can intercept any
-non-primitive value. Handlers recurse via
-:meth:`ConversionContext.convert`, which owns depth and path bookkeeping.
-"""
-
 from __future__ import annotations
 
 import inspect
@@ -44,11 +34,11 @@ type JsonableHandler = Callable[[Any, ConversionContext], JsonableHandle]
 
 @dataclass(frozen=True, slots=True)
 class ConversionContext:
-    """Per-node conversion state handed to handlers.
+    """Library-owned recursion state passed to consumer handlers.
 
-    ``path`` locates the current value for error construction.
-    :meth:`convert` recurses into children; depth and path bookkeeping
-    is owned by the library, not the handler.
+    Handlers use ``convert`` for children requiring normalization so handler
+    policy, depth, and error paths propagate. Direct ``Jsonable`` outputs are
+    validated by ``Serializer``.
     """
 
     serializer: Serializer
@@ -64,13 +54,13 @@ class ConversionContext:
 
 @dataclass(frozen=True, slots=True)
 class Serializer:
-    """JSON-safe converter: limits plus an ordered consumer-handler chain."""
-
     limits: SerializationLimits
     handlers: tuple[JsonableHandler, ...] = ()
 
     def to_jsonable(self, x: Any) -> Jsonable:
-        """Convert ``x`` to a JSON-safe value, enforcing ``self.limits``."""
+        """Normalize ``x`` and enforce depth plus final UTF-8 encoded size
+        limits.
+        """
         value = _convert_node(self, x, 0, ())
         try:
             encoded = json.dumps(value, ensure_ascii=False)
@@ -214,9 +204,9 @@ def _jsonable_sequence(x: Any, ctx: ConversionContext) -> JsonableHandle:
 
 
 def _jsonable_unordered_set(x: Any, ctx: ConversionContext) -> JsonableHandle:
-    # Hash iteration order is not stable across processes, so converted
-    # members are ordered by canonical JSON text. Member paths in errors
-    # raised during conversion refer to iteration order, not output position.
+    # Hash iteration order varies across processes, so sort converted members
+    # by canonical JSON text. Conversion-error paths retain input iteration
+    # indexes, not sorted positions.
     if isinstance(x, (set, frozenset)):
         converted = [ctx.convert(item, index) for index, item in enumerate(x)]
         try:
@@ -266,10 +256,9 @@ def _jsonable_pydantic_model(x: Any, ctx: ConversionContext) -> JsonableHandle:
                 value_preview=preview_repr(x),
                 detail=detail_repr(x),
             ) from error
-        # Dumps are not guaranteed JSON-safe (custom field serializers can
-        # emit arbitrary objects) and would otherwise bypass depth limits;
-        # re-converting outside the try keeps SerializationErrors raised
-        # during recursion from being relabeled as ModelDumpError.
+        # Re-convert because custom field serializers may emit non-Jsonable
+        # values or exceed depth limits. Keep this outside the try so recursive
+        # SerializationErrors are not relabeled as ModelDumpError.
         return True, _convert_node(ctx.serializer, dumped, ctx.depth, ctx.path)
     return False, None
 

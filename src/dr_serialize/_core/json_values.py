@@ -1,12 +1,3 @@
-"""JSON value types and neutral failure classification shared by all areas.
-
-The normalization engine (:class:`~dr_serialize.normalization.Serializer`)
-produces ``Jsonable``; the Canonical JSON Text utilities
-(:func:`~dr_serialize.canonical.canonical_json`,
-:func:`~dr_serialize.canonical.json_hash`) and the identity area
-(:mod:`dr_serialize.identity`) consume it.
-"""
-
 from __future__ import annotations
 
 import math
@@ -61,7 +52,6 @@ def find_json_failure(
     *,
     reject_non_finite: bool = False,
 ) -> tuple[JsonPath, Any] | None:
-    """Locate the first leaf ``json.dumps`` would reject, or ``None``."""
     failure = _walk_json_failure(
         value,
         path,
@@ -76,7 +66,6 @@ def _find_strict_json_failure(
     value: Any,
     path: JsonPath = (),
 ) -> _JsonFailure | None:
-    """Locate the first value outside the strict JSON data model."""
     return _walk_json_failure(
         value,
         path,
@@ -91,7 +80,6 @@ def _find_bounded_strict_json_failure(
     max_container_depth: int,
     max_integer_digits: int,
 ) -> _JsonFailure | None:
-    """Locate the first strict JSON or selected profile-bound failure."""
     return _walk_json_failure(
         value,
         path,
@@ -109,13 +97,11 @@ def _walk_json_failure(  # noqa: PLR0911,PLR0912 -- exhaustive JSON value walk
     max_container_depth: int | None = None,
     max_integer_digits: int | None = None,
 ) -> _JsonFailure | None:
-    """Iteratively walk a JSON-shaped value in depth-first order.
+    """Walk iteratively while preserving recursive first-failure order.
 
-    ``active_container_ids`` holds every container on the current path.
-    Re-entering one is a reference cycle; completing a frame removes it so a
-    repeated shared subtree remains valid. Iterator frames preserve the
-    recursive walk's first-failure order, including validating each object key
-    immediately before its value.
+    Only containers on the active path count as cycles, so repeated shared
+    subtrees remain valid; object keys are checked immediately before their
+    values.
     """
     integer_limit = (
         10**max_integer_digits if max_integer_digits is not None else None

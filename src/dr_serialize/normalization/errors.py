@@ -1,5 +1,3 @@
-"""Typed failures raised by policy-driven normalization."""
-
 from __future__ import annotations
 
 from typing import Any, ClassVar
@@ -92,8 +90,6 @@ class PayloadTooLargeError(SerializationError):
 
 
 class ValueTransformError(SerializationError):
-    """Base for failures inside a value-transforming handler."""
-
     message_prefix: ClassVar[str] = "value transform failed"
 
     def __init__(

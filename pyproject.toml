@@ -1,7 +1,7 @@
 [project]
 name = "dr-serialize"
 version = "0.1.1"
-description = "Canonical JSON Text hashing and JSON-safe serialization with pluggable handlers and configurable limits."
+description = "Canonical JSON Text, identity hashing, strict JSON decoding, and bounded policy-driven normalization."
 readme = "README.md"
 license = "MIT"
 authors = [

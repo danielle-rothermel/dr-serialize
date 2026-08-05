@@ -36,7 +36,6 @@ jobs:
       - run: uv run ty check
       - run: uv run pytest
       - run: uv build
-      # Publishes via PyPI Trusted Publishing (OIDC) — no API token.
-      # Requires this repo/workflow to be registered as a (pending)
-      # publisher for the dr-serialize project on pypi.org.
+      # PyPI Trusted Publishing must authorize this repository and workflow;
+      # no API token is used.
       - uses: pypa/gh-action-pypi-publish@release/v1

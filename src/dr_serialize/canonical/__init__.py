@@ -1,5 +1,3 @@
-"""Canonical JSON text, value ordering, and hashing."""
-
 from dr_serialize.canonical.errors import JsonEncodeError
 from dr_serialize.canonical.hashing import json_hash
 from dr_serialize.canonical.json_text import (

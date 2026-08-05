@@ -1,5 +1,3 @@
-"""Typed failures raised by strict JSON byte decoding."""
-
 from __future__ import annotations
 
 from typing import Any
@@ -8,14 +6,10 @@ from dr_serialize._core.diagnostics import SerializationError
 
 
 class StrictJsonDecodeError(SerializationError):
-    """Base class for strict JSON byte-decoding failures."""
-
     path = ()
 
 
 class JsonByteLimitError(StrictJsonDecodeError):
-    """The encoded input exceeds its explicit byte limit."""
-
     def __init__(self, *, size_bytes: int, max_bytes: int) -> None:
         self.size_bytes = size_bytes
         self.max_bytes = max_bytes
@@ -34,8 +28,6 @@ class JsonByteLimitError(StrictJsonDecodeError):
 
 
 class JsonDepthLimitError(StrictJsonDecodeError):
-    """The input nesting exceeds its explicit structural depth limit."""
-
     def __init__(
         self,
         *,
@@ -62,8 +54,6 @@ class JsonDepthLimitError(StrictJsonDecodeError):
 
 
 class InvalidUtf8Error(StrictJsonDecodeError):
-    """The input is not valid UTF-8."""
-
     def __init__(self, *, byte_offset: int) -> None:
         self.byte_offset = byte_offset
         self.detail = "input is not valid UTF-8"
@@ -78,8 +68,6 @@ class InvalidUtf8Error(StrictJsonDecodeError):
 
 
 class JsonSyntaxError(StrictJsonDecodeError):
-    """The input is malformed, incomplete, or contains trailing data."""
-
     def __init__(
         self,
         *,
@@ -109,8 +97,6 @@ class JsonSyntaxError(StrictJsonDecodeError):
 
 
 class DuplicateJsonKeyError(StrictJsonDecodeError):
-    """An object contains the same decoded key more than once."""
-
     def __init__(self, *, byte_offset: int) -> None:
         self.byte_offset = byte_offset
         self.detail = "object contains a duplicate key"
@@ -127,8 +113,6 @@ class DuplicateJsonKeyError(StrictJsonDecodeError):
 
 
 class NonFiniteJsonNumberError(StrictJsonDecodeError):
-    """The input contains a non-finite numeric value."""
-
     def __init__(self, *, byte_offset: int) -> None:
         self.byte_offset = byte_offset
         self.detail = "input contains a non-finite number"

@@ -1,9 +1,3 @@
-"""Contract tests for Canonical JSON Text and hashes.
-
-The golden fixture in ``tests/fixtures/hashing_golden.json`` pins exact
-canonical text and hash values as the compatibility gate.
-"""
-
 from __future__ import annotations
 
 import json
@@ -25,6 +19,7 @@ from dr_serialize._core.digests import SHA256_HEX_LENGTH
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+# Cross-repository compatibility vectors pin exact canonical text and hashes.
 GOLDEN_FIXTURE = Path(__file__).parents[1] / "fixtures" / "hashing_golden.json"
 GOLDEN_TRUNCATED_LENGTH = 16
 
