@@ -16,6 +16,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   values; full canonical and identity hashes now return this string subtype
   without changing their values, and strict Pydantic fields preserve it.
 
+### Changed
+
+- Reject negative serialization limits and configurations where `max_bytes`
+  exceeds the optional `hard_max_bytes` diagnostic ceiling.
+- Validate consumer handler results as already-normalized JSON values,
+  preserving valid values while enforcing their shape and depth.
+- Clarify that strict decoder diagnostics are bounded, non-echoing, and safe
+  to persist except for traceback locals, while other serialization
+  diagnostics may contain payload-derived or underlying-exception data.
+- Bound canonical text, bytes, and hashes to the documented
+  `dr-serialize Canonical JSON Text profile v1`, with runtime rejection of
+  values outside finite strict JSON before encoding.
+- Made `IdentityDocument` own its payload privately; every public payload or
+  document mapping is now a fresh deep copy, so caller mutation cannot change
+  canonical identity bytes or hashes.
+
 ## [0.1.0] - 2026-07-24
 
 Initial release.
@@ -25,7 +41,7 @@ Initial release.
 - Normalization lane: `Serializer.to_jsonable` with an ordered, pluggable
   handler chain and explicit `SerializationLimits` (including the
   `postgres_jsonb_limits` preset).
-- Canonical JSON utilities: `canonical_json` and `json_hash` for
+- Canonical JSON Text utilities: `canonical_json` and `json_hash` for
   deterministic text and SHA-256 hashes over already-JSON-safe values.
 - Identity lane (`dr_serialize.identity`): `validate_strict_json`, the
   exact three-field `IdentityDocument`, `canonical_identity_json`, the

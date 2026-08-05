@@ -1,5 +1,5 @@
 {
-  "note": "Identity Document golden vectors. Cross-repo reusable. Profile: compact sorted-key UTF-8 JSON (json.dumps sort_keys=True, separators=(\",\",\":\"), ensure_ascii=True, allow_nan=False). NOT RFC 8785. identity_hash = full lowercase sha256 hex of the canonical bytes.",
+  "note": "Identity Document golden vectors. Cross-repo reusable. dr-serialize Canonical JSON Text profile v1: finite strict JSON input, sorted object keys, preserved list order, compact separators, ASCII escaping, and UTF-8 output bytes. Not RFC 8785. Incompatible profiles require separately named APIs. identity_hash = full lowercase sha256 hex of the canonical identity JSON text's UTF-8 bytes.",
   "cases": {
     "minimal_empty_payload": {
       "document": {

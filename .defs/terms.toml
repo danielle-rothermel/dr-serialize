@@ -1,0 +1,167 @@
+#:schema ./terms.schema.json
+
+# Shared vocabulary for dr-serialize. See terms.schema.json for the entry
+# schema and the danielle-defs skill for authoring rules.
+
+[[terms]]
+name = "normalization"
+definition = """
+The policy-driven transformation of arbitrary values into a bounded, \
+JSON-safe representation for diagnostics or non-identity storage. \
+Normalization may be lossy, and its conversion choices are deliberately \
+separate from identity."""
+categories = ["normalization"]
+
+[[terms]]
+name = "canonicalization"
+definition = """
+The transformation of an accepted JSON value into the one JSON representation \
+selected by a declared deterministic profile. It preserves the accepted value \
+while eliminating incidental variation in formatting and object-key order."""
+categories = ["canonicalization"]
+
+[[terms]]
+name = "identity"
+definition = """
+The caller-defined set of domain facts that determines whether two objects are \
+considered the same across processes and storage. Identity includes only \
+deliberately selected domain facts and excludes incidental runtime or storage \
+state."""
+categories = ["identity"]
+
+[[terms]]
+name = "document"
+definition = """
+A complete serialized structure governed by a declared schema."""
+categories = ["identity"]
+
+[[terms]]
+name = "payload"
+definition = """
+The data carried inside a document, distinct from the document-level metadata \
+that declares how the data is interpreted."""
+categories = ["identity"]
+part_of = ["document"]
+
+[[terms]]
+name = "hash"
+definition = """
+A deterministic fixed-length value computed by a declared algorithm over \
+exact declared input bytes; its specific role and semantics come from the \
+qualified term."""
+categories = ["canonicalization", "identity"]
+exported_symbols = ["Sha256Digest", "Sha256DigestError"]
+
+[[terms]]
+name = "strict JSON value"
+definition = """
+A value drawn only from the JSON data model: null, booleans, strings, finite \
+numbers, ordered arrays of strict JSON values, and string-keyed objects whose \
+values are strict JSON values, recursively. It excludes non-finite numbers, \
+reference cycles, unordered collections, and values that require conversion \
+into JSON."""
+exported_symbols = [
+  "validate_strict_json",
+  "StrictJsonError",
+  "decode_strict_json_bytes",
+  "StrictJsonDecodeError",
+  "JsonByteLimitError",
+  "JsonDepthLimitError",
+  "InvalidUtf8Error",
+  "JsonSyntaxError",
+  "DuplicateJsonKeyError",
+  "NonFiniteJsonNumberError",
+]
+categories = ["identity"]
+
+[[terms]]
+name = "canonical JSON text"
+definition = """
+The single deterministic UTF-8 JSON text selected for a JSON value, using \
+compact separators and sorted object keys. The same accepted value always \
+produces the same text and bytes."""
+exported_symbols = ["canonical_json", "canonical_json_bytes", "json_hash"]
+categories = ["canonicalization"]
+
+[[terms]]
+name = "identity payload"
+definition = """
+Domain data that is a strict JSON value, deliberately selected to contain \
+exactly the facts that determine an object's identity. It excludes incidental \
+runtime and storage state and remains the owning domain's responsibility."""
+categories = ["identity"]
+is_a = ["payload"]
+part_of = ["identity document"]
+
+[[terms]]
+name = "identity document"
+definition = """
+A complete, self-describing, versioned strict JSON value with exactly the \
+shape {schema, schema_version, payload}. The schema names the governing domain \
+schema, the schema version selects its version, and the payload carries the \
+identity-defining domain facts."""
+exported_symbols = [
+  "IdentityDocument",
+  "build_identity_document",
+  "validate_identity_document",
+  "IDENTITY_DOCUMENT_FIELDS",
+  "IdentityDocumentError",
+]
+categories = ["identity"]
+is_a = ["document"]
+
+[[terms]]
+name = "canonical identity JSON text"
+definition = """
+The canonical JSON text of a validated identity document."""
+exported_symbols = ["canonical_identity_json", "canonical_identity_json_bytes"]
+categories = ["canonicalization", "identity"]
+is_a = ["canonical JSON text"]
+
+[[terms]]
+name = "identity hash"
+definition = """
+The full 64-character lowercase SHA-256 hash of the canonical identity JSON text \
+of an identity document."""
+exported_symbols = ["identity_document_hash", "compute_identity_hash"]
+categories = ["canonicalization", "identity"]
+is_a = ["hash"]
+
+[[terms]]
+name = "identity hash prefix"
+definition = """
+Display-only leading characters of an identity hash that never establish \
+identity, equality, storage keys, or references."""
+exported_symbols = ["identity_hash_prefix"]
+categories = ["identity"]
+part_of = ["identity hash"]
+
+[[terms]]
+name = "diagnostic normalized JSON value"
+definition = """
+The potentially lossy, size- and depth-bounded JSON-safe value \
+produced by normalization for diagnostics or non-identity storage. It is not \
+an identity payload and never supplies input to identity hashing."""
+exported_symbols = [
+  "Serializer",
+  "Jsonable",
+  "JsonableHandler",
+  "JsonableHandle",
+  "ConversionContext",
+]
+categories = ["normalization"]
+
+[[terms]]
+name = "serialization limits"
+definition = """
+Explicit bounds on nesting depth and encoded size that constrain \
+normalization. They distinguish the selected operating limit from any \
+absolute storage ceiling so a violation can report both accurately."""
+exported_symbols = [
+  "SerializationLimits",
+  "postgres_jsonb_limits",
+  "POSTGRES_JSONB_MAX_BYTES",
+  "POSTGRES_JSONB_PAYLOAD_MAX_BYTES",
+]
+categories = ["normalization"]
+part_of = ["normalization"]

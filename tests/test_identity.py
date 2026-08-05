@@ -1,10 +1,10 @@
 """Contract tests for the identity path.
 
-Covers strict JSON validation and its rejection classes, the exact
-three-field Identity Document, Canonical Identity JSON, and the full
+Covers strict JSON value validation and its rejection classes, the exact
+three-field Identity Document, Canonical Identity JSON Text, and the full
 Identity Hash. The golden fixture in ``tests/fixtures/identity_golden.json``
-is committed for reuse by other repos; byte-identical canonical JSON and
-identical hashes are the cross-repository acceptance gate.
+is committed for reuse by other repos; byte-identical canonical JSON text
+and identical hashes are the cross-repository acceptance gate.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ GOLDEN_FIXTURE = (
 
 
 # --------------------------------------------------------------------------
-# Strict JSON validation: acceptance
+# Strict JSON value validation: acceptance
 # --------------------------------------------------------------------------
 
 
@@ -74,7 +74,7 @@ def test_validate_strict_json_accepts_numeric_string_keys() -> None:
 
 
 # --------------------------------------------------------------------------
-# Strict JSON validation: rejection, one test per invalid class
+# Strict JSON value validation: rejection, one test per invalid class
 # --------------------------------------------------------------------------
 
 
@@ -314,6 +314,24 @@ def test_mutating_original_payload_does_not_change_document() -> None:
     assert identity_document_hash(doc) == hash_before
 
 
+def test_mutating_public_payload_does_not_change_document() -> None:
+    doc = IdentityDocument(
+        "s",
+        1,
+        {"nested": {"items": [1, 2]}},
+    )
+    canonical_before = canonical_identity_json_bytes(doc)
+    hash_before = identity_document_hash(doc)
+
+    public_payload = cast("dict[str, Any]", doc.payload)
+    public_payload["nested"]["items"].append(3)
+    public_payload["injected"] = True
+
+    assert doc.payload == {"nested": {"items": [1, 2]}}
+    assert canonical_identity_json_bytes(doc) == canonical_before
+    assert identity_document_hash(doc) == hash_before
+
+
 def test_mutating_to_json_dict_result_does_not_change_document() -> None:
     doc = IdentityDocument(
         schema="s", schema_version=1, payload={"nested": {"b": 2}}
@@ -398,7 +416,7 @@ def test_int_key_payload_cannot_collide_with_string_key_document() -> None:
 
 
 # --------------------------------------------------------------------------
-# Canonical Identity JSON and Identity Hash
+# Canonical Identity JSON Text and Identity Hash
 # --------------------------------------------------------------------------
 
 
@@ -460,7 +478,7 @@ def test_identity_document_hash_has_no_truncation_parameter() -> None:
 
 
 # --------------------------------------------------------------------------
-# Equivalence: equivalent documents -> byte-identical JSON + identical hash
+# Equivalence: equivalent documents -> identical JSON text + identical hash
 # --------------------------------------------------------------------------
 
 

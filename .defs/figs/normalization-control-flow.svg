@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1680" role="img" aria-labelledby="svg-title svg-desc">
+  <title id="svg-title">What is the normalization control flow?</title>
+  <desc id="svg-desc">A code-forward control-flow diagram of dr-serialize normalization. It shows the public Serializer, SerializationLimits, ConversionContext, and handler types; root entry; the per-node depth guard and ordered primary, consumer, and fallback handler chain; child recursion and Pydantic same-node re-conversion; final JSON encoding and UTF-8 size probes; success and typed error exits; and a warning that normalization is policy-driven, potentially lossy, and not an identity contract.</desc>
+
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#24324a" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7b879b"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1866b4"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c0392b"/>
+    </marker>
+    <style>
+      text { fill: #1b2333; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .title { font-size: 38px; font-weight: 700; letter-spacing: -0.5px; }
+      .dek { fill: #5b6577; font-size: 18px; }
+      .eyebrow { fill: #6f42c1; font-size: 12px; font-weight: 700; letter-spacing: 1.4px; }
+      .section { font-size: 20px; font-weight: 700; }
+      .section-no { fill: #1866b4; font-size: 26px; font-weight: 700; }
+      .card-title { font-size: 17px; font-weight: 700; }
+      .label { font-size: 14px; font-weight: 700; }
+      .body { font-size: 15px; }
+      .small { fill: #5b6577; font-size: 13px; }
+      .micro { fill: #5b6577; font-size: 11.5px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; }
+      .mono-small { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+      .mono-bold { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; font-weight: 700; }
+      .muted { fill: #5b6577; }
+      .accent { fill: #1866b4; }
+      .anchor { fill: #6f42c1; }
+      .green { fill: #2b8a3e; }
+      .amber { fill: #9a6700; }
+      .red { fill: #c0392b; }
+      .card { fill: #ffffff; stroke: #e3e8ef; stroke-width: 1.5; rx: 12; }
+      .code { fill: #f8f9fc; stroke: #e3e8ef; stroke-width: 1.2; rx: 8; }
+      .node { fill: #fbfcfe; stroke: #9aa7bd; stroke-width: 1.5; rx: 10; }
+      .node-blue { fill: #e9f2fb; stroke: #1866b4; stroke-width: 1.5; rx: 10; }
+      .node-purple { fill: #f4eefb; stroke: #6f42c1; stroke-width: 1.5; rx: 10; }
+      .node-green { fill: #e8f5ec; stroke: #2b8a3e; stroke-width: 1.5; rx: 10; }
+      .node-amber { fill: #fff6e0; stroke: #9a6700; stroke-width: 1.5; rx: 10; }
+      .node-red { fill: #fdeceb; stroke: #c0392b; stroke-width: 1.5; rx: 10; }
+      .rule { stroke: #e3e8ef; stroke-width: 2; }
+      .flow { fill: none; stroke: #7b879b; stroke-width: 2; marker-end: url(#arrow); }
+      .flow-blue { fill: none; stroke: #1866b4; stroke-width: 2.2; marker-end: url(#arrow-blue); }
+      .flow-red { fill: none; stroke: #c0392b; stroke-width: 1.8; marker-end: url(#arrow-red); }
+      .flow-dashed { fill: none; stroke: #6f42c1; stroke-width: 2; stroke-dasharray: 7 6; marker-end: url(#arrow); }
+      .hairline { stroke: #e3e8ef; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1920" height="1680" fill="#f4f6f9"/>
+
+  <!-- Header -->
+  <text x="72" y="70" class="eyebrow">DR-SERIALIZE · NORMALIZATION LANE</text>
+  <text x="72" y="116" class="title">What is the normalization control flow?</text>
+  <text x="72" y="148" class="dek">An ordered policy walk at every node, followed by a whole-payload encoding and size probe.</text>
+  <rect x="1538" y="70" width="310" height="58" class="node-amber"/>
+  <text x="1560" y="94" class="label amber">DIAGNOSTIC NORMALIZATION</text>
+  <text x="1560" y="115" class="small">extensible · bounded · potentially lossy</text>
+
+  <!-- Public contracts -->
+  <text x="72" y="206" class="section-no">1</text>
+  <text x="106" y="204" class="section">What enters the engine?</text>
+  <line x1="72" y1="220" x2="1848" y2="220" class="rule"/>
+
+  <g filter="url(#shadow)">
+    <rect x="72" y="242" width="548" height="300" class="card"/>
+    <rect x="640" y="242" width="500" height="300" class="card"/>
+    <rect x="1160" y="242" width="688" height="300" class="card"/>
+  </g>
+
+  <text x="96" y="274" class="eyebrow">PUBLIC VALUE OBJECT</text>
+  <text x="96" y="302" class="card-title">Serializer</text>
+  <rect x="96" y="320" width="500" height="190" class="code"/>
+  <text x="114" y="348" class="mono-bold">@dataclass(frozen=True, slots=True)</text>
+  <text x="114" y="374" class="mono"><tspan class="anchor">class</tspan> Serializer:</text>
+  <text x="130" y="400" class="mono">limits: SerializationLimits</text>
+  <text x="130" y="426" class="mono">handlers: tuple[JsonableHandler, ...] = ()</text>
+  <text x="130" y="466" class="mono"><tspan class="anchor">def</tspan> to_jsonable(self, x: Any) -&gt; Jsonable: ...</text>
+  <text x="96" y="530" class="small">Limits are explicit; handler policy is per Serializer instance.</text>
+
+  <text x="664" y="274" class="eyebrow">VALIDATED CONFIGURATION</text>
+  <text x="664" y="302" class="card-title">SerializationLimits</text>
+  <rect x="664" y="320" width="452" height="190" class="code"/>
+  <text x="682" y="348" class="mono"><tspan class="anchor">class</tspan> SerializationLimits(BaseModel):</text>
+  <text x="698" y="378" class="mono">model_config = frozen + extra="forbid"</text>
+  <text x="698" y="408" class="mono">max_depth: StrictInt = 100</text>
+  <text x="698" y="438" class="mono">max_bytes: StrictInt</text>
+  <text x="698" y="468" class="mono">hard_max_bytes: StrictInt | None = None</text>
+  <text x="664" y="518" class="small">All numeric limits are nonnegative; zero is valid.</text>
+  <text x="664" y="534" class="small">max_bytes gates size; hard_max_bytes is diagnostic and ≥ max_bytes.</text>
+
+  <text x="1184" y="274" class="eyebrow">HANDLER CAPABILITY</text>
+  <text x="1184" y="302" class="card-title">ConversionContext and public handler stubs</text>
+  <rect x="1184" y="320" width="640" height="190" class="code"/>
+  <text x="1202" y="348" class="mono">type JsonableHandle = tuple[bool, Any]</text>
+  <text x="1202" y="374" class="mono">type JsonableHandler = Callable[[Any, ConversionContext], JsonableHandle]</text>
+  <text x="1202" y="408" class="mono-bold">@dataclass(frozen=True, slots=True)</text>
+  <text x="1202" y="434" class="mono"><tspan class="anchor">class</tspan> ConversionContext:</text>
+  <text x="1218" y="460" class="mono">serializer: Serializer   depth: int   path: JsonPath</text>
+  <text x="1218" y="486" class="mono"><tspan class="anchor">def</tspan> convert(child: Any, key: str | int | None = None) -&gt; Jsonable: ...</text>
+  <text x="1184" y="530" class="small">Return (False, None) to continue; (True, value) claims this node.</text>
+
+  <!-- Main per-node flow -->
+  <text x="72" y="600" class="section-no">2</text>
+  <text x="106" y="598" class="section">How is each node decided?</text>
+  <line x1="72" y1="614" x2="1848" y2="614" class="rule"/>
+
+  <rect x="72" y="642" width="270" height="104" class="node-blue"/>
+  <text x="92" y="670" class="eyebrow">ROOT ENTRY</text>
+  <text x="92" y="698" class="mono-bold">to_jsonable(x)</text>
+  <text x="92" y="724" class="mono-small">_convert_node(self, x, 0, ())</text>
+  <path d="M342 694 H382" class="flow-blue"/>
+
+  <rect x="392" y="642" width="1016" height="594" class="card" filter="url(#shadow)"/>
+  <rect x="392" y="642" width="1016" height="58" rx="12" fill="#eef1f6"/>
+  <text x="420" y="678" class="mono-bold">_convert_node(serializer, x, depth, path) -&gt; Jsonable</text>
+
+  <rect x="420" y="722" width="960" height="72" class="node-amber"/>
+  <text x="442" y="750" class="label amber">A · DEPTH GUARD RUNS BEFORE EVERY HANDLER</text>
+  <text x="442" y="776" class="mono">if depth &gt; limits.max_depth: raise MaxDepthExceededError(path=path, ...)</text>
+  <path d="M900 794 V826" class="flow"/>
+
+  <text x="420" y="838" class="label">B · CALL IN THIS EXACT ORDER; THE FIRST handled=True WINS</text>
+
+  <rect x="420" y="858" width="288" height="326" class="node-blue"/>
+  <text x="442" y="888" class="eyebrow">1 · PRIMARY BUILT-INS</text>
+  <text x="442" y="916" class="label accent">Runs before consumer handlers.</text>
+  <line x1="442" y1="930" x2="686" y2="930" class="hairline"/>
+  <text x="442" y="956" class="mono-small">scalar</text>
+  <text x="510" y="956" class="small">None / bool / int / float / str → itself</text>
+  <text x="442" y="988" class="mono-small">sequence</text>
+  <text x="442" y="1008" class="small">list / tuple / set / frozenset → list</text>
+  <text x="442" y="1028" class="small">each item via ctx.convert(item, index)</text>
+  <text x="442" y="1060" class="mono-small">mapping</text>
+  <text x="442" y="1080" class="small">dict → {str(key):</text>
+  <text x="482" y="1100" class="small">ctx.convert(value, str(key))}</text>
+  <text x="442" y="1126" class="mono-small">bytes</text>
+  <text x="510" y="1126" class="small">→ "&lt;bytes len=N&gt;"</text>
+  <rect x="442" y="1140" width="244" height="36" rx="6" fill="#fff6e0" stroke="#ead39b"/>
+  <text x="454" y="1155" class="micro amber">Set order is not promised; stringified dict keys</text>
+  <text x="454" y="1169" class="micro amber">can collide. Neither behavior is identity-safe.</text>
+
+  <path d="M708 1020 H742" class="flow"/>
+
+  <rect x="752" y="858" width="288" height="326" class="node-purple"/>
+  <text x="774" y="888" class="eyebrow">2 · CONSUMER HANDLERS</text>
+  <text x="774" y="916" class="label anchor">serializer.handlers, tuple order</text>
+  <line x1="774" y1="930" x2="1018" y2="930" class="hairline"/>
+  <text x="774" y="960" class="mono-small">handled, value = handler(x, ctx)</text>
+  <text x="774" y="996" class="mono-small">if handled:</text>
+  <text x="792" y="1020" class="mono-small">return _validate_handler_output</text>
+  <text x="774" y="1054" class="small">Library read-only validation checks the</text>
+  <text x="774" y="1074" class="small">handled result as Jsonable under depth.</text>
+  <rect x="774" y="1092" width="244" height="42" rx="6" fill="#ffffff" stroke="#cab8df"/>
+  <text x="790" y="1118" class="mono-bold anchor">ctx.convert(child, key)</text>
+  <text x="774" y="1153" class="micro">ctx.convert normalizes arbitrary children;</text>
+  <text x="774" y="1170" class="micro">handlers may raise ValueTransformError.</text>
+
+  <path d="M1040 1020 H1074" class="flow"/>
+
+  <rect x="1084" y="858" width="296" height="326" class="node"/>
+  <text x="1106" y="888" class="eyebrow">3 · FALLBACK BUILT-INS</text>
+  <text x="1106" y="916" class="label">Still first-match wins.</text>
+  <line x1="1106" y1="930" x2="1358" y2="930" class="hairline"/>
+  <text x="1106" y="958" class="mono-small">type</text>
+  <text x="1160" y="958" class="small">→ "&lt;class module.name&gt;"</text>
+  <text x="1106" y="990" class="mono-small">BaseModel</text>
+  <text x="1106" y="1010" class="small">model_dump(mode="json")</text>
+  <text x="1106" y="1030" class="small">then re-convert at the same depth + path</text>
+  <text x="1106" y="1062" class="mono-small">coroutine / asyncgen / generator</text>
+  <text x="1106" y="1082" class="small">→ "&lt;runtime_type_name&gt;"</text>
+  <text x="1106" y="1114" class="mono-small">non-callable object with __dict__</text>
+  <text x="1106" y="1134" class="small">→ dict; each attribute recurses</text>
+  <rect x="1106" y="1146" width="252" height="28" rx="6" fill="#eef1f6"/>
+  <text x="1118" y="1165" class="micro">No match → return x unchanged</text>
+
+  <!-- Recursive ownership sidecar -->
+  <rect x="1440" y="642" width="408" height="594" class="card" filter="url(#shadow)"/>
+  <text x="1464" y="678" class="eyebrow">RECURSION OWNERSHIP</text>
+  <text x="1464" y="700" class="card-title">Handlers choose children;</text>
+  <text x="1464" y="722" class="card-title">the library owns depth + path.</text>
+
+  <rect x="1464" y="734" width="360" height="104" class="node-purple"/>
+  <text x="1484" y="764" class="mono-bold anchor">ctx.convert(child, key)</text>
+  <text x="1484" y="794" class="mono-small">child_path = path                 if key is None</text>
+  <text x="1484" y="816" class="mono-small">             (*path, key)         otherwise</text>
+
+  <path d="M1644 838 V868" class="flow-blue"/>
+  <rect x="1464" y="868" width="360" height="74" class="node-blue"/>
+  <text x="1484" y="897" class="mono-small">_convert_node(serializer, child,</text>
+  <text x="1484" y="921" class="mono-bold">              depth + 1, child_path)</text>
+
+  <path d="M1464 905 H1422 V790 H1380" class="flow-blue"/>
+  <text x="1428" y="884" class="micro accent" transform="rotate(-90 1428 884)">next node</text>
+
+  <rect x="1464" y="974" width="360" height="128" class="node-amber"/>
+  <text x="1484" y="1002" class="label amber">PYDANTIC IS A SAME-NODE RE-ENTRY</text>
+  <text x="1484" y="1030" class="mono-small">dumped = x.model_dump(mode="json")</text>
+  <text x="1484" y="1056" class="mono-small">_convert_node(serializer, dumped,</text>
+  <text x="1484" y="1080" class="mono-bold">              ctx.depth, ctx.path)</text>
+  <text x="1484" y="1124" class="small">The dump is not trusted as JSON-safe; its children</text>
+  <text x="1484" y="1145" class="small">then recurse normally and consume depth.</text>
+  <path d="M1464 1038 H1422 V820 H1380" class="flow-dashed"/>
+
+  <rect x="1464" y="1170" width="360" height="44" class="node-green"/>
+  <text x="1484" y="1198" class="label green">A handled value is validated, then returned.</text>
+
+  <!-- Whole-payload gates -->
+  <text x="72" y="1298" class="section-no">3</text>
+  <text x="106" y="1296" class="section">What must the root result pass?</text>
+  <line x1="72" y1="1312" x2="1848" y2="1312" class="rule"/>
+
+  <rect x="72" y="1342" width="304" height="108" class="node"/>
+  <text x="94" y="1372" class="eyebrow">ROOT NODE RESULT</text>
+  <text x="94" y="1400" class="mono-bold">value: Jsonable</text>
+  <text x="94" y="1427" class="small">Claimed type; final probe verifies encodability.</text>
+  <path d="M376 1396 H430" class="flow"/>
+
+  <rect x="440" y="1342" width="400" height="108" class="node-blue"/>
+  <text x="462" y="1372" class="eyebrow">ENCODING PROBE</text>
+  <text x="462" y="1397" class="mono-bold">encoded = json.dumps(</text>
+  <text x="478" y="1418" class="mono-bold">value, ensure_ascii=False)</text>
+  <text x="462" y="1439" class="small">Probe only: unsorted; default spacing; NaN / Infinity allowed.</text>
+  <path d="M840 1396 H894" class="flow"/>
+
+  <rect x="904" y="1342" width="390" height="108" class="node-blue"/>
+  <text x="926" y="1372" class="eyebrow">BYTE MEASUREMENT</text>
+  <text x="926" y="1400" class="mono-bold">size_bytes = len(encoded.encode("utf-8"))</text>
+  <text x="926" y="1427" class="small">Compare to limits.max_bytes using strict greater-than.</text>
+  <path d="M1294 1396 H1348" class="flow"/>
+
+  <rect x="1358" y="1342" width="490" height="108" class="node-green"/>
+  <text x="1380" y="1372" class="eyebrow">SUCCESS · DIAGNOSTIC NORMALIZED JSON VALUE</text>
+  <text x="1380" y="1400" class="mono-bold green">return value: Jsonable</text>
+  <text x="1380" y="1427" class="small">Returns normalized Python data — not the encoded JSON string.</text>
+
+  <!-- Typed exits and boundary truth -->
+  <text x="72" y="1510" class="section-no">4</text>
+  <text x="106" y="1508" class="section">Where do typed failures leave?</text>
+  <line x1="72" y1="1524" x2="1848" y2="1524" class="rule"/>
+
+  <rect x="72" y="1550" width="1142" height="84" class="node-red"/>
+  <text x="94" y="1578" class="label red">TYPED SERIALIZATION EXITS</text>
+  <text x="94" y="1605" class="mono-small">depth → MaxDepthExceededError   model_dump → ModelDumpError   __dict__ walk → ObjectVarsSerializationError</text>
+  <text x="94" y="1627" class="mono-small">json.dumps TypeError → JsonEncodeError   size_bytes &gt; max_bytes → PayloadTooLargeError   consumer → ValueTransformError subclass</text>
+
+  <rect x="1238" y="1550" width="610" height="84" class="node-amber"/>
+  <text x="1260" y="1578" class="label amber">BOUNDARY TRUTH</text>
+  <text x="1260" y="1603" class="small">Normalization is handler-policy-dependent and may coerce, redact, or reorder.</text>
+  <text x="1260" y="1625" class="small">It is not deterministic normalization and must not establish strict identity.</text>
+
+  <text x="72" y="1667" class="micro">Source: src/dr_serialize/serialization.py, limits.py, jsonable.py, README.md</text>
+  <text x="1848" y="1649" text-anchor="end" class="micro">json.dumps ValueError passes through; arbitrary handler exceptions usually pass through.</text>
+  <text x="1848" y="1667" text-anchor="end" class="micro">An enclosing __dict__ fallback wraps non-SerializationError exceptions.</text>
+</svg>

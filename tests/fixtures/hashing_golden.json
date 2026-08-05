@@ -1,4 +1,5 @@
 {
+  "note": "dr-serialize Canonical JSON Text profile v1: finite strict JSON input, sorted object keys, preserved list order, compact separators, ASCII escaping, and UTF-8 output bytes. Not RFC 8785. Incompatible profiles require separately named APIs.",
   "cases": {
     "empty_dict": {
       "value": {},
@@ -55,6 +56,12 @@
       "canonical_json": "[0.1,2.5,-0.001,1e+300,1.0]",
       "hash": "efcf49b64755fbf4caade6e70d43e01d5213101e9e482f82469e7f68b73c7194",
       "truncated_hash": "efcf49b64755fbf4"
+    },
+    "negative_zero": {
+      "value": -0.0,
+      "canonical_json": "-0.0",
+      "hash": "c26617c7ccbcaa6631b45d851b8cf56e21d2ca624bdb1193afdbd4b560702cec",
+      "truncated_hash": "c26617c7ccbcaa66"
     },
     "unicode_text": {
       "value": "h\u00e9llo w\u00f6rld \u2014 \u65e5\u672c\u8a9e \ud83c\udfaf",
