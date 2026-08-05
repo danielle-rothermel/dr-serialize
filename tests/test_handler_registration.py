@@ -89,26 +89,20 @@ def test_scalars_bypass_consumer_handlers() -> None:
 
 
 def test_handler_recurses_via_ctx_convert() -> None:
-    serializer = Serializer(
-        limits=DEFAULT_LIMITS, handlers=(wrapper_handler,)
-    )
+    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(wrapper_handler,))
     result = serializer.to_jsonable(Wrapper(Marker("deep")))
     assert result == {"inner": {"tag": "deep"}}
 
 
 def test_valid_direct_handler_output_is_preserved() -> None:
     value = {"items": [1, "two", None]}
-    serializer = Serializer(
-        limits=DEFAULT_LIMITS, handlers=(direct_handler,)
-    )
+    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(direct_handler,))
 
     assert serializer.to_jsonable(Direct(value)) is value
 
 
 def test_non_finite_direct_handler_output_is_preserved() -> None:
-    serializer = Serializer(
-        limits=DEFAULT_LIMITS, handlers=(direct_handler,)
-    )
+    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(direct_handler,))
 
     result = serializer.to_jsonable(Direct(float("nan")))
 
@@ -117,22 +111,16 @@ def test_non_finite_direct_handler_output_is_preserved() -> None:
 
 
 def test_direct_handler_output_rejects_invalid_nested_leaf_with_path() -> None:
-    serializer = Serializer(
-        limits=DEFAULT_LIMITS, handlers=(direct_handler,)
-    )
+    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(direct_handler,))
 
     with pytest.raises(JsonEncodeError) as exc_info:
-        serializer.to_jsonable(
-            {"outer": Direct({"items": [object()]})}
-        )
+        serializer.to_jsonable({"outer": Direct({"items": [object()]})})
 
     assert exc_info.value.path == ("outer", "items", 0)
 
 
 def test_direct_handler_output_rejects_non_string_key() -> None:
-    serializer = Serializer(
-        limits=DEFAULT_LIMITS, handlers=(direct_handler,)
-    )
+    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(direct_handler,))
 
     with pytest.raises(JsonEncodeError) as exc_info:
         serializer.to_jsonable({"outer": Direct({1: "value"})})
@@ -144,9 +132,7 @@ def test_direct_handler_output_rejects_non_string_key() -> None:
 def test_direct_handler_output_rejects_cycle() -> None:
     value: list[Any] = []
     value.append(value)
-    serializer = Serializer(
-        limits=DEFAULT_LIMITS, handlers=(direct_handler,)
-    )
+    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(direct_handler,))
 
     with pytest.raises(JsonEncodeError) as exc_info:
         serializer.to_jsonable(Direct(value))
@@ -172,9 +158,7 @@ def test_direct_handler_output_rejects_one_past_max_depth_with_path() -> None:
     )
 
     with pytest.raises(MaxDepthExceededError) as exc_info:
-        serializer.to_jsonable(
-            {"outer": Direct({"items": [["leaf"]]})}
-        )
+        serializer.to_jsonable({"outer": Direct({"items": [["leaf"]]})})
 
     assert exc_info.value.depth == 4
     assert exc_info.value.max_depth == 3
@@ -206,9 +190,7 @@ def test_value_transform_error_subclass_carries_prefix_and_shape() -> None:
             )
         return False, None
 
-    serializer = Serializer(
-        limits=DEFAULT_LIMITS, handlers=(failing_handler,)
-    )
+    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(failing_handler,))
     with pytest.raises(CustomTransformError) as exc_info:
         serializer.to_jsonable({"k": Marker("t")})
     exc = exc_info.value

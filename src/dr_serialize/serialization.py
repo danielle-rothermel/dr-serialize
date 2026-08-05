@@ -54,9 +54,7 @@ class ConversionContext:
     depth: int
     path: JsonPath
 
-    def convert(
-        self, child: Any, key: str | int | None = None
-    ) -> Jsonable:
+    def convert(self, child: Any, key: str | int | None = None) -> Jsonable:
         child_path = self.path if key is None else (*self.path, key)
         return _convert_node(
             self.serializer, child, self.depth + 1, child_path
@@ -210,9 +208,7 @@ def _jsonable_scalar(x: Any, ctx: ConversionContext) -> JsonableHandle:
 
 def _jsonable_sequence(x: Any, ctx: ConversionContext) -> JsonableHandle:
     if isinstance(x, (list, tuple)):
-        return True, [
-            ctx.convert(item, index) for index, item in enumerate(x)
-        ]
+        return True, [ctx.convert(item, index) for index, item in enumerate(x)]
     return False, None
 
 
@@ -221,9 +217,7 @@ def _jsonable_unordered_set(x: Any, ctx: ConversionContext) -> JsonableHandle:
     # members are ordered by canonical JSON text. Member paths in errors
     # raised during conversion refer to iteration order, not output position.
     if isinstance(x, (set, frozenset)):
-        converted = [
-            ctx.convert(item, index) for index, item in enumerate(x)
-        ]
+        converted = [ctx.convert(item, index) for index, item in enumerate(x)]
         try:
             ordered = canonical_sorted_values(converted)
         except JsonEncodeError as error:
@@ -260,9 +254,7 @@ def _jsonable_type(x: Any, ctx: ConversionContext) -> JsonableHandle:
     return True, f"<class {x.__module__}.{x.__name__}>"
 
 
-def _jsonable_pydantic_model(
-    x: Any, ctx: ConversionContext
-) -> JsonableHandle:
+def _jsonable_pydantic_model(x: Any, ctx: ConversionContext) -> JsonableHandle:
     if isinstance(x, pydantic.BaseModel):
         try:
             dumped = x.model_dump(mode="json")
@@ -298,8 +290,7 @@ def _jsonable_object_vars(x: Any, ctx: ConversionContext) -> JsonableHandle:
     if hasattr(x, "__dict__") and not callable(x):
         try:
             return True, {
-                key: ctx.convert(value, key)
-                for key, value in vars(x).items()
+                key: ctx.convert(value, key) for key, value in vars(x).items()
             }
         except SerializationError:
             raise
