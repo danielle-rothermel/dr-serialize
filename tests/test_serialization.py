@@ -165,9 +165,7 @@ class TestGuardrails:
         "field",
         ["max_depth", "max_bytes", "hard_max_bytes"],
     )
-    def test_boolean_serialization_limit_is_rejected(
-        self, field: str
-    ) -> None:
+    def test_boolean_serialization_limit_is_rejected(self, field: str) -> None:
         values: dict[str, Any] = {
             "max_depth": 0,
             "max_bytes": 0,
