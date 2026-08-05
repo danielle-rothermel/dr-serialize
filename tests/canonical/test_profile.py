@@ -18,6 +18,16 @@ from dr_serialize import (
 )
 
 
+class _MisleadingAbsInt(int):
+    def __abs__(self) -> int:
+        return 0
+
+
+class _RaisingAbsInt(int):
+    def __abs__(self) -> int:
+        raise RuntimeError("absolute value failed")
+
+
 def _nested_list(depth: int, leaf: Jsonable = 0) -> Jsonable:
     value = leaf
     for _ in range(depth):
@@ -96,6 +106,24 @@ def test_profile_rejects_first_integer_beyond_maximum_digits(
     assert error.type_name == "int"
     assert error.detail == "integer exceeds maximum 640 decimal digits"
     assert isinstance(error.underlying, ValueError)
+
+
+@pytest.mark.parametrize(
+    "value_type",
+    [_MisleadingAbsInt, _RaisingAbsInt],
+)
+def test_profile_bound_cannot_be_bypassed_by_int_subclass(
+    value_type: type[int],
+) -> None:
+    value = value_type(10**CANONICAL_JSON_MAX_INTEGER_DIGITS)
+
+    with pytest.raises(JsonEncodeError) as exc_info:
+        canonical_json(value)
+
+    assert exc_info.value.path == ()
+    assert (
+        exc_info.value.detail == "integer exceeds maximum 640 decimal digits"
+    )
 
 
 @pytest.mark.subprocess

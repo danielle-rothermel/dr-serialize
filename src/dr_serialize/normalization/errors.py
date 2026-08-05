@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from dr_serialize._core.diagnostics import JsonPath, SerializationError
+from dr_serialize._core.diagnostics import (
+    JsonPath,
+    SerializationError,
+    detail_repr,
+)
 
 
 def _format_top_level_sizes(
@@ -32,7 +36,8 @@ class MaxDepthExceededError(SerializationError):
         self.value_preview = value_preview
         self.detail = detail
         super().__init__(
-            f"max depth {max_depth} exceeded at depth {depth} path {path!r}"
+            f"max depth {max_depth} exceeded at depth {depth} path "
+            f"{detail_repr(path)}"
         )
 
     def diagnostics(self) -> dict[str, Any]:
@@ -70,7 +75,7 @@ class PayloadTooLargeError(SerializationError):
         sizes_part = f" top keys: {sizes_summary}" if sizes_summary else ""
         super().__init__(
             f"payload {size_bytes} bytes exceeds limit {max_bytes} "
-            f"at path {path!r}{sizes_part}"
+            f"at path {detail_repr(path)}{sizes_part}"
         )
 
     def diagnostics(self) -> dict[str, Any]:
@@ -103,7 +108,7 @@ class ValueTransformError(SerializationError):
         self.underlying = underlying
         self.value_preview = value_preview
         self.detail = detail
-        super().__init__(f"{self.message_prefix} at path {path!r}")
+        super().__init__(f"{self.message_prefix} at path {detail_repr(path)}")
 
     def diagnostics(self) -> dict[str, Any]:
         return {

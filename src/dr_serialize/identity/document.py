@@ -77,22 +77,13 @@ class IdentityDocument:
                 detail=detail_repr(schema_version),
             )
         _validate_strict_json(payload, ("payload",))
-        prospective_document: dict[str, Jsonable] = {
-            "schema": schema,
-            "schema_version": schema_version,
-            "payload": payload,
-        }
-        failure = _find_canonical_json_failure(prospective_document)
-        if failure is not None:
-            reason = _canonical_failure_detail(failure) or failure.reason
-            raise IdentityDocumentError(
-                path=failure.path,
-                reason=reason,
-                detail=reason,
-            )
+        _validate_canonical_profile(schema, schema_version, payload)
+        owned_payload = copy.deepcopy(payload)
+        _validate_strict_json(owned_payload, ("payload",))
+        _validate_canonical_profile(schema, schema_version, owned_payload)
         object.__setattr__(self, "schema", schema)
         object.__setattr__(self, "schema_version", schema_version)
-        object.__setattr__(self, "_payload", copy.deepcopy(payload))
+        object.__setattr__(self, "_payload", owned_payload)
 
     @property
     def payload(self) -> Jsonable:
@@ -172,4 +163,25 @@ def build_identity_document(
             "schema_version": schema_version,
             "payload": payload,
         }
+    )
+
+
+def _validate_canonical_profile(
+    schema: str,
+    schema_version: int,
+    payload: Jsonable,
+) -> None:
+    prospective_document: dict[str, Jsonable] = {
+        "schema": schema,
+        "schema_version": schema_version,
+        "payload": payload,
+    }
+    failure = _find_canonical_json_failure(prospective_document)
+    if failure is None:
+        return
+    reason = _canonical_failure_detail(failure) or failure.reason
+    raise IdentityDocumentError(
+        path=failure.path,
+        reason=reason,
+        detail=reason,
     )

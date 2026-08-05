@@ -162,7 +162,10 @@ def _walk_json_failure(  # noqa: PLR0911,PLR0912 -- exhaustive JSON value walk
         if isinstance(current, bool) or current is None:
             continue
         if isinstance(current, int):
-            if integer_limit is not None and abs(current) >= integer_limit:
+            if (
+                integer_limit is not None
+                and int.__abs__(current) >= integer_limit
+            ):
                 return _JsonFailure(
                     path=entry.path,
                     leaf=current,

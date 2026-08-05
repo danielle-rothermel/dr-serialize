@@ -47,6 +47,16 @@ def _nested_list(depth: int, leaf: Jsonable = 0) -> Jsonable:
     return value
 
 
+class _MisleadingAbsInt(int):
+    def __abs__(self) -> int:
+        return 0
+
+
+class _RaisingAbsInt(int):
+    def __abs__(self) -> int:
+        raise RuntimeError("absolute value failed")
+
+
 # --------------------------------------------------------------------------
 # Identity Document: exact three-field shape
 # --------------------------------------------------------------------------
@@ -250,6 +260,71 @@ def test_document_rejects_schema_version_beyond_canonical_limit() -> None:
     assert (
         exc_info.value.reason == "integer exceeds maximum 640 decimal digits"
     )
+
+
+@pytest.mark.parametrize(
+    "version_type",
+    [_MisleadingAbsInt, _RaisingAbsInt],
+)
+def test_document_integer_bound_cannot_be_bypassed_by_subclass(
+    version_type: type[int],
+) -> None:
+    with pytest.raises(IdentityDocumentError) as exc_info:
+        IdentityDocument(
+            schema="s",
+            schema_version=version_type(10**640),
+            payload={},
+        )
+
+    assert exc_info.value.path == ("schema_version",)
+
+
+def test_broken_path_repr_cannot_replace_identity_document_error() -> None:
+    class BadReprStr(str):
+        __slots__ = ()
+
+        def __repr__(self) -> str:
+            raise RuntimeError("representation failed")
+
+    key = BadReprStr("n")
+    with pytest.raises(IdentityDocumentError) as exc_info:
+        IdentityDocument(
+            schema="s",
+            schema_version=1,
+            payload={key: 10**640},
+        )
+
+    assert exc_info.value.path == ("payload", key)
+
+
+def test_document_revalidates_deep_copied_payload() -> None:
+    class InvalidDeepCopyList(list[Jsonable]):
+        def __deepcopy__(self, _memo: dict[int, Any]) -> Any:
+            return object()
+
+    with pytest.raises(StrictJsonError) as exc_info:
+        IdentityDocument(
+            schema="s",
+            schema_version=1,
+            payload=InvalidDeepCopyList(),
+        )
+
+    assert exc_info.value.path == ("payload",)
+
+
+def test_document_revalidates_canonical_bounds_after_deepcopy() -> None:
+    class ExpandingDeepCopyList(list[Jsonable]):
+        def __deepcopy__(self, _memo: dict[int, Any]) -> Any:
+            return _nested_list(100)
+
+    with pytest.raises(IdentityDocumentError) as exc_info:
+        IdentityDocument(
+            schema="s",
+            schema_version=1,
+            payload=ExpandingDeepCopyList(),
+        )
+
+    assert exc_info.value.path == ("payload", *((0,) * 99))
 
 
 def test_mutating_original_payload_does_not_change_document() -> None:

@@ -85,9 +85,9 @@ class Serializer:
 
 Canonical JSON consumes finite strict JSON values without applying handlers or
 selecting domain fields. Profile v1 admits at most 100 nested containers and
-640 decimal digits per integer, then uses the standard-library JSON encoder;
-canonical text is the stable contract from which exact bytes and hashes are
-derived.
+640 decimal digits per integer; scalars have depth 0 and a root list or object
+has depth 1. It then uses the standard-library JSON encoder; canonical text is
+the stable contract from which exact bytes and hashes are derived.
 
 ```python
 CANONICAL_JSON_MAX_CONTAINER_DEPTH: Final[int] = 100

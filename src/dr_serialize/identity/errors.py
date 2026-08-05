@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from dr_serialize._core.diagnostics import JsonPath, SerializationError
+from dr_serialize._core.diagnostics import (
+    JsonPath,
+    SerializationError,
+    detail_repr,
+)
 
 
 class IdentityDocumentError(SerializationError):
@@ -28,7 +32,7 @@ class IdentityDocumentError(SerializationError):
         self.reason = reason
         self.detail = detail
         super().__init__(
-            f"invalid identity document at path {path!r}: {reason}"
+            f"invalid identity document at path {detail_repr(path)}: {reason}"
         )
 
     def diagnostics(self) -> dict[str, Any]:

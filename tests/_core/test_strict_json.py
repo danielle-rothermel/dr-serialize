@@ -67,6 +67,20 @@ def test_broken_repr_cannot_replace_strict_json_error() -> None:
     assert exc_info.value.detail == "<repr failed for BadRepr: RuntimeError>"
 
 
+def test_broken_path_repr_cannot_replace_strict_json_error() -> None:
+    class BadReprStr(str):
+        __slots__ = ()
+
+        def __repr__(self) -> str:
+            raise RuntimeError("representation failed")
+
+    key = BadReprStr("bad")
+    with pytest.raises(StrictJsonError) as exc_info:
+        validate_strict_json({key: object()})
+
+    assert exc_info.value.path == (key,)
+
+
 def test_rejects_non_json_value_with_jsonpath_location() -> None:
     value = {"k": [1, object()]}
     with pytest.raises(StrictJsonError) as exc_info:

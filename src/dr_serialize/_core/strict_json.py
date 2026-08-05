@@ -34,7 +34,8 @@ class StrictJsonError(SerializationError):
         self.type_name = type_name
         self.detail = detail
         super().__init__(
-            f"not a strict JSON value at path {path!r}: {reason} ({type_name})"
+            "not a strict JSON value at path "
+            f"{detail_repr(path)}: {reason} ({type_name})"
         )
 
     def diagnostics(self) -> dict[str, Any]:

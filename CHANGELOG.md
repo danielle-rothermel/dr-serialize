@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Validate arbitrarily deep in-memory strict JSON values iteratively while
   preserving depth-first failure paths; canonical and identity entry points
   apply their separate frozen profile depth bound.
+- Keep typed failures intact when caller-defined value or path representations
+  raise, and prevent integer subclasses from bypassing canonical digit bounds.
 - Normalize `set` and `frozenset` deterministically: members are converted
   through the handler chain and then ordered by canonical JSON text, so a
   set's normalized JSON is byte-identical across processes regardless of
@@ -46,7 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   even though normalization still passes them through elsewhere.
 - Made `IdentityDocument` own its payload privately; every public payload or
   document mapping is now a fresh deep copy, so caller mutation cannot change
-  canonical identity bytes or hashes.
+  canonical identity bytes or hashes. Construction validates both the caller's
+  payload and the copied value that becomes the owned snapshot.
 
 ## [0.1.0] - 2026-07-24
 

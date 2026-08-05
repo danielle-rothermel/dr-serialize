@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from dr_serialize._core.diagnostics import JsonPath, SerializationError
+from dr_serialize._core.diagnostics import (
+    JsonPath,
+    SerializationError,
+    detail_repr,
+)
 
 
 class JsonEncodeError(SerializationError):
@@ -23,7 +27,8 @@ class JsonEncodeError(SerializationError):
         self.underlying = underlying
         self.value_preview = value_preview
         super().__init__(
-            f"not JSON-serializable at path {path!r} type {type_name}"
+            "not JSON-serializable at path "
+            f"{detail_repr(path)} type {type_name}"
         )
 
     def diagnostics(self) -> dict[str, Any]:
