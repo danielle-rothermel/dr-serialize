@@ -12,8 +12,9 @@ class IdentityDocumentError(SerializationError):
 
     Raised by :func:`validate_identity_document` when the document is not a
     mapping, is missing a required field, carries an extra field, or has a
-    field of the wrong type. Values inside the payload that are not strict
-    JSON values raise :class:`StrictJsonError` instead.
+    field of the wrong type, or exceeds the frozen Canonical JSON Text profile.
+    Values inside the payload that are not strict JSON values raise
+    :class:`StrictJsonError` instead.
     """
 
     def __init__(

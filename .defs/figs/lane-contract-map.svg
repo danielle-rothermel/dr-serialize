@@ -144,7 +144,7 @@
     <circle cx="35" cy="493" r="4" fill="#6f42c1"/>
     <text x="48" y="498" class="body ink">SHA-256 over canonical JSON text UTF-8 bytes.</text>
     <circle cx="35" cy="520" r="4" fill="#6f42c1"/>
-    <text x="48" y="525" class="body ink">No handlers, limits, or implicit normalization.</text>
+    <text x="48" y="525" class="body ink">Frozen depth/digit bounds; no handlers or normalization.</text>
     <text x="48" y="546" class="small muted">Same input → same canonical JSON text + hash.</text>
 
     <path d="M236 562 V584" class="arrow"/>

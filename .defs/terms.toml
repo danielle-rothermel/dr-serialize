@@ -78,9 +78,16 @@ categories = ["identity"]
 name = "canonical JSON text"
 definition = """
 The single deterministic UTF-8 JSON text selected for a JSON value, using \
-compact separators and sorted object keys. The same accepted value always \
-produces the same text and bytes."""
-exported_symbols = ["canonical_json", "canonical_json_bytes", "json_hash"]
+compact separators, sorted object keys, and profile-defined structural and \
+numeric bounds. The same accepted value always produces the same text and \
+bytes."""
+exported_symbols = [
+  "canonical_json",
+  "canonical_json_bytes",
+  "json_hash",
+  "CANONICAL_JSON_MAX_CONTAINER_DEPTH",
+  "CANONICAL_JSON_MAX_INTEGER_DIGITS",
+]
 categories = ["canonicalization"]
 
 [[terms]]

@@ -51,9 +51,12 @@ statement = """
 canonical_json(), canonical_json_bytes(), json_hash(), and the identity \
 functions validate Strict JSON Values at runtime. Profile v1 sorts object \
 keys, preserves list order, uses compact separators and ASCII escaping, \
-rejects non-finite numbers and cycles, and encodes text as UTF-8. Its existing \
-rules and golden cases are frozen; it is project-owned rather than RFC 8785, \
-and an incompatible future profile uses a separately named API."""
+rejects non-finite numbers and cycles, admits at most 100 nested containers \
+and 640 decimal digits per integer, and encodes text as UTF-8 through the \
+standard-library JSON encoder. Identity Document construction validates the \
+complete prospective document against the same bounds. The profile rules and \
+golden cases are frozen; it is project-owned rather than RFC 8785, and an \
+incompatible future profile uses a separately named API."""
 rationale = """
 A frozen, explicitly project-owned profile keeps canonical bytes and their \
 hashes reproducible without implying conformance to a different standard."""

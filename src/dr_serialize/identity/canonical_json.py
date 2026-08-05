@@ -15,10 +15,11 @@ def canonical_identity_json(document: IdentityDocument) -> str:
     three-field document. This pins the ``dr-serialize Canonical JSON Text
     profile v1`` used by :func:`dr_serialize.canonical.canonical_json`
     (``sort_keys=True``, ``separators=(",", ":")``, ``ensure_ascii=True``,
-    ``allow_nan=False``), including preserved list order; it is NOT RFC 8785.
-    Incompatible profiles require separately named APIs. The payload is
-    already validated as a strict JSON value, so serialization cannot
-    silently coerce a runtime value onto an identity.
+    ``allow_nan=False``), including preserved list order and the frozen
+    container-depth and integer-digit bounds; it is NOT RFC 8785. Incompatible
+    profiles require separately named APIs. The complete document is already
+    validated against that profile, so serialization cannot silently coerce a
+    runtime value onto an identity.
     """
     return canonical_json(document.to_json_dict())
 

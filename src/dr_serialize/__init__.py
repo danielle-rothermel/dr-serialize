@@ -7,8 +7,8 @@ normalized JSON value -- JSON-safe ``Jsonable`` data -- under explicit
 chain (:mod:`dr_serialize.normalization`).
 
 **Canonical JSON Text** (deterministic, policy-free): :func:`canonical_json`,
-:func:`canonical_json_bytes`, and :func:`json_hash` turn finite strict JSON
-values into stable canonical JSON text, exact bytes, and hashes under the
+:func:`canonical_json_bytes`, and :func:`json_hash` turn bounded finite strict
+JSON values into stable canonical JSON text, exact bytes, and hashes under the
 ``dr-serialize Canonical JSON Text profile v1``
 (:mod:`dr_serialize.canonical`).
 
@@ -46,6 +46,8 @@ from dr_serialize._core.strict_json import (
     validate_strict_json,
 )
 from dr_serialize.canonical import (
+    CANONICAL_JSON_MAX_CONTAINER_DEPTH,
+    CANONICAL_JSON_MAX_INTEGER_DIGITS,
     JsonEncodeError,
     canonical_json,
     canonical_json_bytes,
@@ -91,6 +93,8 @@ from dr_serialize.normalization import (
 )
 
 __all__ = [
+    "CANONICAL_JSON_MAX_CONTAINER_DEPTH",
+    "CANONICAL_JSON_MAX_INTEGER_DIGITS",
     "IDENTITY_DOCUMENT_FIELDS",
     "POSTGRES_JSONB_MAX_BYTES",
     "POSTGRES_JSONB_PAYLOAD_MAX_BYTES",

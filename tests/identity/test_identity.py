@@ -12,9 +12,12 @@ from __future__ import annotations
 import itertools
 import json
 from pathlib import Path
-from typing import Any, cast, get_type_hints
+from typing import TYPE_CHECKING, Any, cast, get_type_hints
 
 import pytest
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from dr_serialize import (
     IdentityDocument,
@@ -35,6 +38,13 @@ from dr_serialize._core.digests import SHA256_HEX_LENGTH
 GOLDEN_FIXTURE = (
     Path(__file__).parents[1] / "fixtures" / "identity_golden.json"
 )
+
+
+def _nested_list(depth: int, leaf: Jsonable = 0) -> Jsonable:
+    value = leaf
+    for _ in range(depth):
+        value = [value]
+    return value
 
 
 # --------------------------------------------------------------------------
@@ -184,6 +194,62 @@ def test_document_rejects_non_finite_in_payload() -> None:
             payload={"x": float("inf")},
         )
     assert exc_info.value.path == ("payload", "x")
+
+
+def test_document_accepts_exact_canonical_depth_limit() -> None:
+    document = build_identity_document(
+        schema="s",
+        schema_version=1,
+        payload=_nested_list(99),
+    )
+
+    assert len(identity_document_hash(document)) == SHA256_HEX_LENGTH
+
+
+@pytest.mark.parametrize(
+    "construct",
+    [
+        lambda payload: IdentityDocument("s", 1, payload),
+        lambda payload: build_identity_document(
+            schema="s", schema_version=1, payload=payload
+        ),
+        lambda payload: validate_identity_document(
+            {"schema": "s", "schema_version": 1, "payload": payload}
+        ),
+    ],
+)
+def test_document_rejects_payload_beyond_canonical_depth_limit(
+    construct: Callable[[Jsonable], IdentityDocument],
+) -> None:
+    with pytest.raises(IdentityDocumentError) as exc_info:
+        construct(_nested_list(100))
+
+    assert exc_info.value.path == ("payload", *((0,) * 99))
+    assert exc_info.value.reason == "container depth 101 exceeds maximum 100"
+
+
+def test_document_rejects_payload_integer_beyond_canonical_limit() -> None:
+    with pytest.raises(IdentityDocumentError) as exc_info:
+        build_identity_document(
+            schema="s",
+            schema_version=1,
+            payload={"n": 10**640},
+        )
+
+    assert exc_info.value.path == ("payload", "n")
+    assert (
+        exc_info.value.reason == "integer exceeds maximum 640 decimal digits"
+    )
+
+
+def test_document_rejects_schema_version_beyond_canonical_limit() -> None:
+    with pytest.raises(IdentityDocumentError) as exc_info:
+        IdentityDocument(schema="s", schema_version=10**640, payload={})
+
+    assert exc_info.value.path == ("schema_version",)
+    assert (
+        exc_info.value.reason == "integer exceeds maximum 640 decimal digits"
+    )
 
 
 def test_mutating_original_payload_does_not_change_document() -> None:

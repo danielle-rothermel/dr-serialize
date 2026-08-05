@@ -63,10 +63,9 @@ def _validate_strict_json(value: Any, path: JsonPath) -> Jsonable:
     failure = _find_strict_json_failure(value, path)
     if failure is None:
         return cast("Jsonable", value)
-    failure_path, leaf, reason = failure
     raise StrictJsonError(
-        path=failure_path,
-        reason=reason,
-        type_name=type(leaf).__name__,
-        detail=detail_repr(leaf),
+        path=failure.path,
+        reason=failure.reason,
+        type_name=type(failure.leaf).__name__,
+        detail=detail_repr(failure.leaf),
     )

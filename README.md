@@ -14,9 +14,9 @@ areas supported by shared infrastructure:
   converts Python values into JSON-safe data through bounded, extensible
   conversion rules for diagnostics and storage.
 - **[Canonical JSON](https://github.com/danielle-rothermel/dr-serialize/tree/main/src/dr_serialize/canonical)**
-  renders finite strict JSON values as deterministic text and exact UTF-8 bytes,
-  projects unordered collections into stable arrays, and produces validated
-  SHA-256 digests.
+  renders bounded finite strict JSON values as deterministic text and exact
+  UTF-8 bytes, projects unordered collections into stable arrays, and produces
+  validated SHA-256 digests.
 - **[Strict decoding](https://github.com/danielle-rothermel/dr-serialize/tree/main/src/dr_serialize/decoding)**
   parses one complete UTF-8 JSON value under explicit byte and depth limits
   while rejecting duplicate keys, non-finite numbers, and malformed or trailing
@@ -26,7 +26,7 @@ areas supported by shared infrastructure:
   stable canonical bytes and a full identity hash without normalization.
 - **[Infra](https://github.com/danielle-rothermel/dr-serialize/tree/main/src/dr_serialize/_core)**
   provides the contracts shared by those areas:
-  - recursive JSON values and strict validation;
+  - recursive JSON values and iterative strict validation;
   - validated full SHA-256 digests;
   - diagnostic paths, typed errors, and bounded metadata;
   - a common UTF-8 encoding invariant.
@@ -84,10 +84,16 @@ class Serializer:
 ## Canonical JSON
 
 Canonical JSON consumes finite strict JSON values without applying handlers or
-selecting domain fields. Canonical text is the stable contract from which exact
-bytes and hashes are derived.
+selecting domain fields. Profile v1 admits at most 100 nested containers and
+640 decimal digits per integer, then uses the standard-library JSON encoder;
+canonical text is the stable contract from which exact bytes and hashes are
+derived.
 
 ```python
+CANONICAL_JSON_MAX_CONTAINER_DEPTH: Final[int] = 100
+CANONICAL_JSON_MAX_INTEGER_DIGITS: Final[int] = 640
+
+
 def canonical_json(value: Jsonable) -> str: ...
 def canonical_json_bytes(value: Jsonable, /) -> bytes: ...
 
@@ -139,8 +145,9 @@ class NonFiniteJsonNumberError(StrictJsonDecodeError): ...
 ## Identity
 
 The owning domain supplies every identity-bearing fact. dr-serialize validates
-the fixed document envelope, owns an isolated payload snapshot, and derives
-canonical identity bytes and a full hash without normalization.
+the fixed document envelope against the same complete Canonical JSON Text
+profile, owns an isolated payload snapshot, and derives canonical identity
+bytes and a full hash without normalization.
 
 ```python
 class IdentityDocument:

@@ -9,6 +9,13 @@ import pytest
 from dr_serialize import StrictJsonError, validate_strict_json
 
 
+def _nested_list(depth: int, leaf: Any = 0) -> Any:
+    value = leaf
+    for _ in range(depth):
+        value = [value]
+    return value
+
+
 @pytest.mark.parametrize(
     "value",
     [
@@ -123,6 +130,22 @@ def test_repeated_shared_subtree_is_not_a_cycle() -> None:
     shared = {"k": "v"}
     value = {"a": shared, "b": shared}
     assert validate_strict_json(value) is value
+
+
+def test_deep_strict_json_validation_does_not_recurse() -> None:
+    value = _nested_list(2_000)
+
+    assert validate_strict_json(value) is value
+
+
+def test_first_failure_order_remains_depth_first() -> None:
+    value = {"first": [object()], 1: "later invalid key"}
+
+    with pytest.raises(StrictJsonError) as exc_info:
+        validate_strict_json(value)
+
+    assert exc_info.value.path == ("first", 0)
+    assert exc_info.value.reason == "unsupported type"
 
 
 @pytest.mark.parametrize(

@@ -31,7 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   diagnostics may contain payload-derived or underlying-exception data.
 - Bound canonical text, bytes, and hashes to the documented
   `dr-serialize Canonical JSON Text profile v1`, with runtime rejection of
-  values outside finite strict JSON before encoding.
+  values outside finite strict JSON before encoding. The frozen profile admits
+  at most 100 nested containers and 640 decimal digits per integer, independent
+  of interpreter integer-string settings, and Identity Documents enforce the
+  same whole-document bounds before construction.
+- Validate arbitrarily deep in-memory strict JSON values iteratively while
+  preserving depth-first failure paths; canonical and identity entry points
+  apply their separate frozen profile depth bound.
 - Normalize `set` and `frozenset` deterministically: members are converted
   through the handler chain and then ordered by canonical JSON text, so a
   set's normalized JSON is byte-identical across processes regardless of

@@ -9,6 +9,10 @@ from typing import Any
 from dr_serialize._core.diagnostics import detail_repr
 from dr_serialize._core.json_values import Jsonable
 from dr_serialize._core.strict_json import _validate_strict_json
+from dr_serialize.canonical.profile import (
+    _canonical_failure_detail,
+    _find_canonical_json_failure,
+)
 from dr_serialize.identity.errors import IdentityDocumentError
 
 IDENTITY_DOCUMENT_FIELDS = ("schema", "schema_version", "payload")
@@ -21,8 +25,8 @@ class IdentityDocument:
     Construction itself validates, so every
     ``IdentityDocument`` -- whether built via :func:`build_identity_document`,
     :func:`validate_identity_document`, or the exported constructor directly
-    -- always holds a payload validated as a strict JSON value with the
-    exact three-field shape. The owning domain chooses ``schema``,
+    -- always holds a complete three-field document validated against the
+    Canonical JSON Text profile. The owning domain chooses ``schema``,
     ``schema_version``, and the complete ``payload``; dr-serialize validates
     them.
 
@@ -50,7 +54,8 @@ class IdentityDocument:
         invariant as :func:`build_identity_document` /
         :func:`validate_identity_document`: ``schema`` is a string,
         ``schema_version`` is a real int (not bool), and ``payload`` is
-        a strict JSON value. Without this, a directly constructed document
+        a strict JSON value within the frozen canonical profile. Without this,
+        a directly constructed document
         with, for example, int/enum dict keys would be handed straight to
         ``json.dumps`` and have its keys silently coerced to strings,
         producing a valid-looking Identity Hash that collides with the
@@ -72,6 +77,19 @@ class IdentityDocument:
                 detail=detail_repr(schema_version),
             )
         _validate_strict_json(payload, ("payload",))
+        prospective_document: dict[str, Jsonable] = {
+            "schema": schema,
+            "schema_version": schema_version,
+            "payload": payload,
+        }
+        failure = _find_canonical_json_failure(prospective_document)
+        if failure is not None:
+            reason = _canonical_failure_detail(failure) or failure.reason
+            raise IdentityDocumentError(
+                path=failure.path,
+                reason=reason,
+                detail=reason,
+            )
         object.__setattr__(self, "schema", schema)
         object.__setattr__(self, "schema_version", schema_version)
         object.__setattr__(self, "_payload", copy.deepcopy(payload))
@@ -100,10 +118,12 @@ def validate_identity_document(
     """Validate a dict as an exact-shape Identity Document.
 
     Requires exactly the fields ``schema`` (str), ``schema_version`` (int,
-    not bool), and ``payload`` (a strict JSON value). Missing fields, extra
-    fields, and wrong field types raise :class:`IdentityDocumentError`;
-    values inside the payload that are not strict JSON values raise
-    :class:`StrictJsonError` with a ``("payload", ...)`` path.
+    not bool), and ``payload`` (a strict JSON value). The complete prospective
+    document must also satisfy the frozen Canonical JSON Text profile. Missing
+    fields, extra fields, wrong field types, and profile-bound violations raise
+    :class:`IdentityDocumentError`; values inside the payload that are not
+    strict JSON values raise :class:`StrictJsonError` with a
+    ``("payload", ...)`` path.
     """
     if not isinstance(document, dict):
         raise IdentityDocumentError(

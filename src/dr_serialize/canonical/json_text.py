@@ -7,32 +7,41 @@ import json
 from dr_serialize._core.diagnostics import detail_repr, preview_repr
 from dr_serialize._core.encoding import TEXT_ENCODING
 from dr_serialize._core.json_values import (
-    Jsonable,
-    _find_strict_json_failure,
+    Jsonable,  # noqa: TC001 -- runtime hints
 )
 from dr_serialize.canonical.errors import JsonEncodeError
+from dr_serialize.canonical.profile import (
+    _canonical_failure_detail,
+    _find_canonical_json_failure,
+)
 
 
 def canonical_json(value: Jsonable) -> str:
     """Render ``value`` using dr-serialize Canonical JSON Text profile v1.
 
-    Runtime validation rejects values outside strict ``Jsonable`` before
-    encoding. Unsupported types, non-string object keys, and reference cycles
-    carry an underlying :class:`TypeError`; non-finite numbers carry an
-    underlying :class:`ValueError`.
+    Runtime validation rejects values outside strict ``Jsonable`` or profile
+    v1's frozen depth and integer bounds before encoding. Unsupported types,
+    non-string object keys, and reference cycles carry an underlying
+    :class:`TypeError`; non-finite numbers and profile-bound violations carry
+    an underlying :class:`ValueError`. The whole-value encoder remains
+    :func:`json.dumps` with the profile's fixed flags.
     """
-    failure = _find_strict_json_failure(value)
+    failure = _find_canonical_json_failure(value)
     if failure is not None:
-        failure_path, leaf, reason = failure
+        profile_detail = _canonical_failure_detail(failure)
         underlying: TypeError | ValueError
-        if reason == "non-finite number":
-            underlying = ValueError(reason)
+        if failure.reason in {
+            "maximum container depth",
+            "maximum integer digits",
+            "non-finite number",
+        }:
+            underlying = ValueError(profile_detail or failure.reason)
         else:
-            underlying = TypeError(reason)
+            underlying = TypeError(failure.reason)
         error = JsonEncodeError(
-            path=failure_path,
-            type_name=type(leaf).__name__,
-            detail=detail_repr(leaf),
+            path=failure.path,
+            type_name=type(failure.leaf).__name__,
+            detail=profile_detail or detail_repr(failure.leaf),
             underlying=underlying,
             value_preview=preview_repr(value),
         )
