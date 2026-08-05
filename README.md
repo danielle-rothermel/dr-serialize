@@ -7,20 +7,218 @@
 | --- |
 
 **dr-serialize makes Python values JSON-safe and produces deterministic JSON
-text, bytes, hashes, and identities.** Its functionality is organized into
-these areas:
+text, bytes, hashes, and identities.** Its functionality is organized into four
+areas supported by shared infrastructure:
 
-- **Normalization** converts Python values into JSON-safe data through bounded,
-  extensible conversion rules for diagnostics and storage.
-- **Canonical JSON text and hashing** render finite strict JSON values as
-  deterministic text and exact UTF-8 bytes, project unordered collections into
-  stable arrays, and produce validated SHA-256 digests.
-- **Strict decoding** parses one complete UTF-8 JSON value under explicit byte
-  and depth limits while rejecting duplicate keys, non-finite numbers, and
-  malformed or trailing input.
-- **Identity documents and hashes** validate a fixed document shape around a
-  domain-owned payload and derive stable canonical bytes and a full identity
-  hash without applying normalization policy.
-- **Boundary types and diagnostics** define strict JSON values, validated
-  digests, typed errors, bounded diagnostic metadata, and the shared terms and
-  behavioral contracts for the package.
+- **[Normalization](https://github.com/danielle-rothermel/dr-serialize/tree/main/src/dr_serialize/normalization)**
+  converts Python values into JSON-safe data through bounded, extensible
+  conversion rules for diagnostics and storage.
+- **[Canonical JSON](https://github.com/danielle-rothermel/dr-serialize/tree/main/src/dr_serialize/canonical)**
+  renders finite strict JSON values as deterministic text and exact UTF-8 bytes,
+  projects unordered collections into stable arrays, and produces validated
+  SHA-256 digests.
+- **[Strict decoding](https://github.com/danielle-rothermel/dr-serialize/tree/main/src/dr_serialize/decoding)**
+  parses one complete UTF-8 JSON value under explicit byte and depth limits
+  while rejecting duplicate keys, non-finite numbers, and malformed or trailing
+  input.
+- **[Identity](https://github.com/danielle-rothermel/dr-serialize/tree/main/src/dr_serialize/identity)**
+  validates a fixed document shape around a domain-owned payload and derives
+  stable canonical bytes and a full identity hash without normalization.
+- **[Infra](https://github.com/danielle-rothermel/dr-serialize/tree/main/src/dr_serialize/_core)**
+  provides the contracts shared by those areas:
+  - recursive JSON values and strict validation;
+  - validated full SHA-256 digests;
+  - diagnostic paths, typed errors, and bounded metadata;
+  - a common UTF-8 encoding invariant.
+
+The declarations below are abbreviated contract shapes; `...` replaces
+implementation details.
+
+## Normalization
+
+Normalization is policy-driven and may be lossy. A `Serializer` combines
+explicit depth and size limits with an ordered chain of consumer handlers, and
+produces `Jsonable` data for diagnostics or storage rather than identity.
+
+```python
+class SerializationLimits(BaseModel):
+    max_depth: int = 100
+    max_bytes: int
+    hard_max_bytes: int | None = None
+
+
+def postgres_jsonb_limits(
+    max_bytes: int = POSTGRES_JSONB_PAYLOAD_MAX_BYTES,
+) -> SerializationLimits: ...
+```
+
+```python
+type JsonableHandle = tuple[bool, Any]
+type JsonableHandler = Callable[
+    [Any, ConversionContext],
+    JsonableHandle,
+]
+
+
+@dataclass(frozen=True, slots=True)
+class ConversionContext:
+    serializer: Serializer
+    depth: int
+    path: JsonPath
+
+    def convert(
+        self,
+        child: Any,
+        key: str | int | None = None,
+    ) -> Jsonable: ...
+
+
+@dataclass(frozen=True, slots=True)
+class Serializer:
+    limits: SerializationLimits
+    handlers: tuple[JsonableHandler, ...] = ()
+
+    def to_jsonable(self, x: Any) -> Jsonable: ...
+```
+
+## Canonical JSON
+
+Canonical JSON consumes finite strict JSON values without applying handlers or
+selecting domain fields. Canonical text is the stable contract from which exact
+bytes and hashes are derived.
+
+```python
+def canonical_json(value: Jsonable) -> str: ...
+def canonical_json_bytes(value: Jsonable, /) -> bytes: ...
+
+
+def json_hash(
+    value: Jsonable,
+    *,
+    length: int | None = None,
+) -> Sha256Digest | str: ...
+```
+
+```python
+def canonical_sorted_values(
+    values: Iterable[Jsonable],
+    /,
+) -> list[Jsonable]: ...
+```
+
+`canonical_sorted_values` projects only logically unordered collections into a
+stable array. It does not reorder arrays whose existing order is meaningful.
+
+## Strict decoding
+
+Strict decoding accepts exactly one bounded UTF-8 JSON value without coercion.
+Its failures expose structural metadata without retaining or echoing the input.
+
+```python
+def decode_strict_json_bytes(
+    data: bytes,
+    /,
+    *,
+    max_bytes: int,
+    max_depth: int,
+) -> Jsonable: ...
+```
+
+```python
+class StrictJsonDecodeError(SerializationError): ...
+
+
+class JsonByteLimitError(StrictJsonDecodeError): ...
+class JsonDepthLimitError(StrictJsonDecodeError): ...
+class InvalidUtf8Error(StrictJsonDecodeError): ...
+class JsonSyntaxError(StrictJsonDecodeError): ...
+class DuplicateJsonKeyError(StrictJsonDecodeError): ...
+class NonFiniteJsonNumberError(StrictJsonDecodeError): ...
+```
+
+## Identity
+
+The owning domain supplies every identity-bearing fact. dr-serialize validates
+the fixed document envelope, owns an isolated payload snapshot, and derives
+canonical identity bytes and a full hash without normalization.
+
+```python
+class IdentityDocument:
+    schema: str
+    schema_version: int
+
+    def __init__(
+        self,
+        schema: str,
+        schema_version: int,
+        payload: Jsonable,
+    ) -> None: ...
+
+    @property
+    def payload(self) -> Jsonable: ...
+
+    def to_json_dict(self) -> dict[str, Jsonable]: ...
+```
+
+```python
+def build_identity_document(
+    *,
+    schema: str,
+    schema_version: int,
+    payload: Any,
+) -> IdentityDocument: ...
+
+
+def validate_identity_document(
+    document: dict[Any, Any],
+) -> IdentityDocument: ...
+
+
+def canonical_identity_json_bytes(
+    document: IdentityDocument,
+    /,
+) -> bytes: ...
+
+
+def identity_document_hash(
+    document: IdentityDocument,
+) -> Sha256Digest: ...
+```
+
+## Shared infrastructure
+
+The shared infrastructure defines the recursive value, digest, and diagnostic
+contracts used across the four functional areas. Finite-number validation is a
+runtime property of strict `Jsonable` values because Python's type system cannot
+express it in the recursive alias.
+
+```python
+type Jsonable = (
+    None
+    | bool
+    | int
+    | float
+    | str
+    | list[Jsonable]
+    | dict[str, Jsonable]
+)
+
+
+def validate_strict_json(value: Any) -> Jsonable: ...
+```
+
+```python
+class Sha256Digest(str):
+    @classmethod
+    def parse(cls, value: str, /) -> Self: ...
+
+
+type JsonPath = tuple[str | int, ...]
+
+
+class SerializationError(Exception):
+    path: JsonPath
+    detail: str
+
+    def diagnostics(self) -> dict[str, Any]: ...
+```
