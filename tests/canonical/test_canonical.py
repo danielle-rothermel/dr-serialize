@@ -116,6 +116,21 @@ def test_json_hash_rejects_bad_length(length: int) -> None:
 
 
 class TestCanonicalTypedErrors:
+    def test_broken_repr_cannot_replace_json_encode_error(self) -> None:
+        class BadRepr:
+            def __repr__(self) -> str:
+                raise RuntimeError("representation failed")
+
+        with pytest.raises(JsonEncodeError) as exc_info:
+            canonical_json(cast("Jsonable", BadRepr()))
+
+        assert exc_info.value.detail == (
+            "<repr failed for BadRepr: RuntimeError>"
+        )
+        assert exc_info.value.value_preview == (
+            "<repr failed for BadRepr: RuntimeError>"
+        )
+
     def test_non_jsonable_value_is_rejected_before_encoding(
         self,
         monkeypatch: pytest.MonkeyPatch,
