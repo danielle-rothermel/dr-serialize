@@ -113,15 +113,68 @@ def _convert_node(
             detail=detail_repr(x),
         )
     ctx = ConversionContext(serializer=serializer, depth=depth, path=path)
-    for handler in (
-        *_PRIMARY_HANDLERS,
-        *serializer.handlers,
-        *_FALLBACK_HANDLERS,
-    ):
+    for handler in _PRIMARY_HANDLERS:
+        handled, value = handler(x, ctx)
+        if handled:
+            return value
+    for handler in serializer.handlers:
+        handled, value = handler(x, ctx)
+        if handled:
+            return _validate_handler_output(serializer, value, depth, path)
+    for handler in _FALLBACK_HANDLERS:
         handled, value = handler(x, ctx)
         if handled:
             return value
     return x
+
+
+def _validate_handler_output(
+    serializer: Serializer,
+    value: Any,
+    depth: int,
+    path: JsonPath,
+) -> Jsonable:
+    failure = find_json_failure(value, path)
+    if failure is not None:
+        failure_path, leaf = failure
+        underlying = TypeError(
+            "consumer handler returned a value outside Jsonable"
+        )
+        raise JsonEncodeError(
+            path=failure_path,
+            type_name=type(leaf).__name__,
+            detail=detail_repr(leaf),
+            underlying=underlying,
+            value_preview=preview_repr(value),
+        ) from underlying
+    _validate_handler_output_depth(serializer, value, depth, path)
+    return value
+
+
+def _validate_handler_output_depth(
+    serializer: Serializer,
+    value: Jsonable,
+    depth: int,
+    path: JsonPath,
+) -> None:
+    if depth > serializer.limits.max_depth:
+        raise MaxDepthExceededError(
+            depth=depth,
+            max_depth=serializer.limits.max_depth,
+            path=path,
+            value_preview=preview_repr(value),
+            detail=detail_repr(value),
+        )
+    if isinstance(value, list):
+        for index, item in enumerate(value):
+            _validate_handler_output_depth(
+                serializer, item, depth + 1, (*path, index)
+            )
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            _validate_handler_output_depth(
+                serializer, item, depth + 1, (*path, key)
+            )
 
 
 def _encoded_preview_slices(encoded: str) -> tuple[str, str, str]:

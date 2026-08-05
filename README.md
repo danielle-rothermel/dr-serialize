@@ -136,11 +136,11 @@ The decoder is strict and non-coercing. It rejects byte-order marks,
 invalid UTF-8, duplicate decoded object keys, non-finite numbers,
 malformed or trailing input, and multiple root values. Its iterative
 structural parser enforces `max_depth` without depending on Python
-recursion. Typed failures expose bounded structural diagnostics and never
-echo the input. This guarantee covers exception messages, `diagnostics()`,
-and chained causes/contexts. As with ordinary Python exceptions, tooling
-that captures traceback locals can capture function arguments; do not
-persist traceback locals from secret-bearing decode calls.
+recursion. Typed failures expose only bounded structural metadata, do not echo
+or retain input, and are safe to persist. This guarantee covers exception
+messages, `diagnostics()`, and chained causes/contexts. Traceback locals are
+the exception: tooling that captures them can retain function arguments, so do
+not persist traceback locals from secret-bearing decode calls.
 
 ## Identity lane: Identity Document and `identity_document_hash`
 
@@ -186,10 +186,12 @@ identity hashing. Committed golden vectors live in
 
 ## Errors
 
-Both lanes and the Canonical JSON Text utilities raise from one typed
-taxonomy rooted at `SerializationError`,
-and every error carries the path to the offending value plus a
-`diagnostics()` dict safe to persist:
+Both lanes and the Canonical JSON Text utilities raise from one typed taxonomy
+rooted at `SerializationError`. Outside the strict decoder, diagnostics are
+structurally persistable and their preview and detail fields are bounded, but
+they may contain payload-derived data or an underlying exception's `repr` and
+are not secret-safe. Every error carries the path to the offending value plus
+a `diagnostics()` dict:
 
 | Error | Raised by |
 | --- | --- |

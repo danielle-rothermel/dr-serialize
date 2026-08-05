@@ -144,6 +144,73 @@ class TestBuiltinTransforms:
 
 
 class TestGuardrails:
+    @pytest.mark.parametrize(
+        "field",
+        ["max_depth", "max_bytes", "hard_max_bytes"],
+    )
+    def test_negative_serialization_limit_is_rejected(
+        self, field: str
+    ) -> None:
+        values: dict[str, Any] = {
+            "max_depth": 0,
+            "max_bytes": 0,
+            "hard_max_bytes": 0,
+        }
+        values[field] = -1
+
+        with pytest.raises(ValidationError):
+            SerializationLimits(**values)
+
+    @pytest.mark.parametrize(
+        "field",
+        ["max_depth", "max_bytes", "hard_max_bytes"],
+    )
+    def test_boolean_serialization_limit_is_rejected(
+        self, field: str
+    ) -> None:
+        values: dict[str, Any] = {
+            "max_depth": 0,
+            "max_bytes": 0,
+            "hard_max_bytes": 0,
+        }
+        values[field] = False
+
+        with pytest.raises(ValidationError):
+            SerializationLimits(**values)
+
+    def test_max_bytes_cannot_exceed_hard_max_bytes(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="max_bytes must not exceed hard_max_bytes",
+        ):
+            SerializationLimits(max_bytes=101, hard_max_bytes=100)
+
+    @pytest.mark.parametrize(
+        ("limits", "effective_hard_max_bytes"),
+        [
+            (
+                SerializationLimits(
+                    max_depth=0,
+                    max_bytes=0,
+                    hard_max_bytes=0,
+                ),
+                0,
+            ),
+            (
+                SerializationLimits(max_bytes=100, hard_max_bytes=100),
+                100,
+            ),
+            (SerializationLimits(max_bytes=100, hard_max_bytes=None), 100),
+        ],
+        ids=["zero", "equal", "none"],
+    )
+    def test_zero_equal_and_omitted_hard_limits_are_valid(
+        self,
+        limits: SerializationLimits,
+        effective_hard_max_bytes: int,
+    ) -> None:
+        assert limits.effective_hard_max_bytes == effective_hard_max_bytes
+
     def test_max_depth_enforced_inside_model_dump(self) -> None:
         class PayloadModel(BaseModel):
             data: Any
@@ -206,6 +273,14 @@ class TestGuardrails:
             max_bytes=100,
             postgres_max_bytes=POSTGRES_JSONB_MAX_BYTES,
         )
+
+    def test_max_bytes_remains_the_enforced_runtime_limit(self) -> None:
+        limits = SerializationLimits(max_bytes=100, hard_max_bytes=1_000)
+        with pytest.raises(PayloadTooLargeError) as exc_info:
+            to_jsonable(large_payload(500), limits=limits)
+
+        assert exc_info.value.max_bytes == 100
+        assert exc_info.value.postgres_max_bytes == 1_000
 
     def test_hard_max_bytes_defaults_to_max_bytes(self) -> None:
         limits = SerializationLimits(max_bytes=100)

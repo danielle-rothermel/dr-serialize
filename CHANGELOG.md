@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Reject negative serialization limits and configurations where `max_bytes`
+  exceeds the optional `hard_max_bytes` diagnostic ceiling.
+- Validate consumer handler results as already-normalized JSON values,
+  preserving valid values while enforcing their shape and depth.
+- Clarify that strict decoder diagnostics are bounded, non-echoing, and safe
+  to persist except for traceback locals, while other serialization
+  diagnostics may contain payload-derived or underlying-exception data.
 - Bound canonical text, bytes, and hashes to the documented
   `dr-serialize Canonical JSON Text profile v1`, with runtime rejection of
   values outside finite strict JSON before encoding.

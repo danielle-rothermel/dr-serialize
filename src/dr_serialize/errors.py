@@ -1,7 +1,10 @@
-"""Typed serialization error taxonomy with rich diagnostics.
+"""Typed serialization error taxonomy with structured diagnostics.
 
-Every concrete error carries the path to the offending value and a
-``diagnostics()`` dict safe to persist alongside failure records.
+Strict decoder diagnostics are bounded structural metadata, do not echo or
+retain input, and are safe to persist except for separately captured traceback
+locals. Other ``SerializationError`` diagnostics are structurally persistable
+and have bounded preview and detail fields, but may contain payload-derived
+data or an underlying exception's repr and are not secret-safe.
 """
 
 from __future__ import annotations
