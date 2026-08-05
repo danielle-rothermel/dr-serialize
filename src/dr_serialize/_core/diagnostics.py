@@ -1,0 +1,28 @@
+"""Shared error base, paths, and bounded diagnostic rendering."""
+
+from __future__ import annotations
+
+from typing import Any
+
+MESSAGE_PREVIEW = 512
+DEBUG_DETAIL_LIMIT = 256 * 1024
+
+type JsonPath = tuple[str | int, ...]
+
+
+def preview_repr(x: Any) -> str:
+    return repr(x)[:MESSAGE_PREVIEW]
+
+
+def detail_repr(x: Any) -> str:
+    return repr(x)[:DEBUG_DETAIL_LIMIT]
+
+
+class SerializationError(Exception):
+    """Base for JSON-safe serialization failures."""
+
+    path: JsonPath
+    detail: str
+
+    def diagnostics(self) -> dict[str, Any]:
+        raise NotImplementedError

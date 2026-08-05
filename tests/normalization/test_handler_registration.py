@@ -1,4 +1,4 @@
-"""Contract tests for the consumer handler API."""
+"""Contract tests for the normalization consumer handler API."""
 
 from __future__ import annotations
 

@@ -18,7 +18,7 @@ import pytest
 SUBPROCESS_WATCHDOG_SECONDS = 60
 HASH_SEEDS = ("0", "1", "4242")
 
-SOURCE_ROOT = Path(__file__).parent.parent / "src"
+SOURCE_ROOT = Path(__file__).parents[2] / "src"
 
 NORMALIZE_SET_SCRIPT = """
 import sys

@@ -7,7 +7,7 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-DEFS_DIR = Path(__file__).parent.parent / ".defs"
+DEFS_DIR = Path(__file__).parents[2] / ".defs"
 
 
 def _load_toml(name: str) -> dict[str, Any]:

@@ -255,6 +255,6 @@
   <!-- Footer -->
   <g class="sans">
     <text x="54" y="1337" class="small muted">Decoder diagnostics are bounded and non-echoing; other typed diagnostics are structurally persistable, not secret-safe.</text>
-    <text x="1546" y="1337" text-anchor="end" class="mono code-small quiet">Source: dr_serialize serialization, canonical, decoding, identity</text>
+    <text x="1546" y="1337" text-anchor="end" class="mono code-small quiet">Source: dr_serialize normalization, canonical, decoding, identity, _core</text>
   </g>
 </svg>

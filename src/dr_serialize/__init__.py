@@ -4,7 +4,7 @@
 :class:`Serializer` converts arbitrary Python values to diagnostic
 normalized JSON value -- JSON-safe ``Jsonable`` data -- under explicit
 :class:`SerializationLimits`, through an ordered, pluggable handler
-chain (:mod:`dr_serialize.serialization`).
+chain (:mod:`dr_serialize.normalization`).
 
 **Canonical JSON Text** (deterministic, policy-free): :func:`canonical_json`,
 :func:`canonical_json_bytes`, and :func:`json_hash` turn finite strict JSON
@@ -12,7 +12,11 @@ values into stable canonical JSON text, exact bytes, and hashes under the
 ``dr-serialize Canonical JSON Text profile v1``
 (:mod:`dr_serialize.canonical`).
 
-**Identity lane** (strict, policy-free): :func:`validate_strict_json`,
+**Strict JSON boundary** (policy-free): :func:`validate_strict_json` validates
+in-memory values without coercion, while :func:`decode_strict_json_bytes`
+parses bounded untrusted bytes.
+
+**Identity lane** (strict, policy-free):
 :class:`IdentityDocument`, :func:`canonical_identity_json`, and
 :func:`identity_document_hash` implement the identity contract -- strict
 JSON value validation, the exact three-field Identity Document,
@@ -23,13 +27,26 @@ feed identity hashing.
 
 Normalization and canonical JSON text generation compose at the call site --
 ``json_hash(serializer.to_jsonable(x))`` -- so hash stability
-never depends on handler policy. Typed errors for every lane live in
-:mod:`dr_serialize.errors` and :mod:`dr_serialize.identity`. The
+never depends on handler policy. Typed errors live with their owning
+functional areas over a shared diagnostic base. The
 authoritative vocabulary and exported-name mapping live in
 ``.defs/terms.toml`` and its rendered terms reference.
 """
 
+from dr_serialize._core.diagnostics import (
+    JsonPath,
+    SerializationError,
+    detail_repr,
+    preview_repr,
+)
+from dr_serialize._core.digests import Sha256Digest, Sha256DigestError
+from dr_serialize._core.json_values import Jsonable
+from dr_serialize._core.strict_json import (
+    StrictJsonError,
+    validate_strict_json,
+)
 from dr_serialize.canonical import (
+    JsonEncodeError,
     canonical_json,
     canonical_json_bytes,
     canonical_sorted_values,
@@ -45,24 +62,10 @@ from dr_serialize.decoding import (
     StrictJsonDecodeError,
     decode_strict_json_bytes,
 )
-from dr_serialize.digests import Sha256Digest, Sha256DigestError
-from dr_serialize.errors import (
-    JsonEncodeError,
-    JsonPath,
-    MaxDepthExceededError,
-    ModelDumpError,
-    ObjectVarsSerializationError,
-    PayloadTooLargeError,
-    SerializationError,
-    ValueTransformError,
-    detail_repr,
-    preview_repr,
-)
 from dr_serialize.identity import (
     IDENTITY_DOCUMENT_FIELDS,
     IdentityDocument,
     IdentityDocumentError,
-    StrictJsonError,
     build_identity_document,
     canonical_identity_json,
     canonical_identity_json_bytes,
@@ -70,20 +73,21 @@ from dr_serialize.identity import (
     identity_document_hash,
     identity_hash_prefix,
     validate_identity_document,
-    validate_strict_json,
 )
-from dr_serialize.jsonable import Jsonable
-from dr_serialize.limits import (
+from dr_serialize.normalization import (
     POSTGRES_JSONB_MAX_BYTES,
     POSTGRES_JSONB_PAYLOAD_MAX_BYTES,
-    SerializationLimits,
-    postgres_jsonb_limits,
-)
-from dr_serialize.serialization import (
     ConversionContext,
     JsonableHandle,
     JsonableHandler,
+    MaxDepthExceededError,
+    ModelDumpError,
+    ObjectVarsSerializationError,
+    PayloadTooLargeError,
+    SerializationLimits,
     Serializer,
+    ValueTransformError,
+    postgres_jsonb_limits,
 )
 
 __all__ = [

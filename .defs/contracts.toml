@@ -11,7 +11,7 @@ Only the owning domain can decide which facts define sameness; keeping that \
 decision outside dr-serialize prevents serialization policy from silently \
 redefining identity."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_identity.py"
+check = "uv run pytest -q tests/identity/test_identity.py"
 terms = ["identity", "identity payload", "identity document"]
 
 [[contracts]]
@@ -24,7 +24,7 @@ rationale = """
 Keeping policy-driven or lossy conversion out of the identity path ensures \
 that normalization choices cannot redefine caller-owned identity facts."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_identity.py::test_identity_path_does_not_coerce_via_diagnostic_normalization"
+check = "uv run pytest -q tests/identity/test_identity.py::test_identity_path_does_not_coerce_via_diagnostic_normalization"
 terms = [
   "identity",
   "strict JSON value",
@@ -42,7 +42,7 @@ rationale = """
 Isolation makes the validated document, its canonical representation, and its \
 hash stable after construction even when callers retain or mutate containers."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_identity.py -k 'mutat or alias or copy'"
+check = "uv run pytest -q tests/identity/test_identity.py -k 'mutat or alias or copy'"
 terms = ["identity document", "canonical identity JSON text", "identity hash"]
 
 [[contracts]]
@@ -58,7 +58,7 @@ rationale = """
 A frozen, explicitly project-owned profile keeps canonical bytes and their \
 hashes reproducible without implying conformance to a different standard."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_canonical.py tests/test_identity.py"
+check = "uv run pytest -q tests/canonical tests/identity"
 terms = [
   "strict JSON value",
   "canonical JSON text",
@@ -76,7 +76,7 @@ rationale = """
 The nominal full-digest type makes complete hashes distinguishable from \
 collision-prone display projections at API boundaries."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_digests.py tests/test_canonical.py tests/test_identity.py -k 'hash or digest or prefix'"
+check = "uv run pytest -q tests/_core/test_digests.py tests/canonical tests/identity -k 'hash or digest or prefix'"
 terms = ["hash", "identity hash", "identity hash prefix"]
 
 [[contracts]]
@@ -93,7 +93,7 @@ Instance-scoped policy keeps conversion choices explicit, while library-owned \
 validation and bookkeeping apply the declared limits consistently across \
 built-in and consumer handling."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_serialization.py tests/test_handler_registration.py"
+check = "uv run pytest -q tests/normalization/test_serializer.py tests/normalization/test_handler_registration.py"
 terms = [
   "normalization",
   "diagnostic normalized JSON value",
@@ -113,7 +113,7 @@ Checking bytes first and parsing iteratively bounds work before text or nested \
 structure is trusted, while strict rejection preserves the decoded value's \
 declared JSON meaning."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_decoding.py"
+check = "uv run pytest -q tests/decoding/test_decoder.py"
 terms = ["strict JSON value"]
 
 [[contracts]]
@@ -130,7 +130,7 @@ The strict byte decoder is an untrusted-input boundary that must not retain its 
 input, while other serialization failures preserve debugging evidence whose \
 disclosure depends on the calling context."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_decoding.py tests/test_serialization.py tests/test_handler_registration.py"
+check = "uv run pytest -q tests/decoding tests/normalization"
 
 [[contracts]]
 title = "Canonical value ordering is policy-free and duplicate-preserving"
@@ -149,7 +149,7 @@ collections -- including downstream Pydantic field serializers -- reach \
 deterministic JSON without dr-serialize taking on normalization policy or a \
 second error taxonomy."""
 date = "2026-08-05"
-check = "uv run pytest -q tests/test_canonical.py -k canonical_sorted_values"
+check = "uv run pytest -q tests/canonical -k canonical_sorted_values"
 terms = ["canonical value ordering", "canonicalization", "strict JSON value"]
 
 [[contracts]]
@@ -169,5 +169,5 @@ container handling; ordering set members by canonical JSON text removes it \
 at the source, since canonical_json() intentionally preserves array order \
 and cannot repair it downstream."""
 date = "2026-08-05"
-check = "uv run pytest -q tests/test_serialization.py -k 'set or frozenset'"
+check = "uv run pytest -q tests/normalization/test_serializer.py -k 'set or frozenset'"
 terms = ["normalization", "canonical value ordering"]

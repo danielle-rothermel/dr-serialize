@@ -226,5 +226,5 @@
   <text x="84" y="1038" class="mono" fill="#ffffff">NO coercion   ·   NO Serializer.to_jsonable   ·   NO handlers   ·   NO normalization   ·   NO truncation in the hash path</text>
   <text x="1516" y="1038" text-anchor="end" class="small" fill="#c9d1dc">Validated document → exact bytes → full identity</text>
 
-  <text x="60" y="1080" class="small muted">Source: dr_serialize.identity, canonical, digests · blue = API flow · purple = invariant boundary · green = identity output · red = rejection · amber = display only</text>
+  <text x="60" y="1080" class="small muted">Source: dr_serialize.identity, canonical, _core.digests · blue = API flow · purple = invariant boundary · green = identity output · red = rejection · amber = display only</text>
 </svg>

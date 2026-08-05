@@ -195,7 +195,7 @@
 
   <!-- Public toolbox -->
   <text x="70" y="755" class="section ink">What helper-shaped tooling can consumers use today?</text>
-  <text x="70" y="781" class="small muted">Every item below is re-exported from dr_serialize and listed in the README API surface.</text>
+  <text x="70" y="781" class="small muted">Every item below is re-exported from dr_serialize.</text>
 
   <g transform="translate(70 800)">
     <rect width="530" height="132" rx="12" class="surface-strong"/>
@@ -318,5 +318,5 @@
   <rect x="70" y="1600" width="1660" height="2" class="anchor-fill"/>
   <line x1="70" y1="1575" x2="70" y2="1628" class="anchor" stroke-width="5"/>
   <text x="88" y="1602" class="card-title ink">Decision rule: expose capabilities; hide mechanisms and invariants until an external contract is demonstrably needed.</text>
-  <text x="88" y="1626" class="tiny muted">Source: src/dr_serialize/__init__.py, canonical.py, decoding.py, digests.py, errors.py, identity.py, jsonable.py, limits.py, serialization.py</text>
+  <text x="88" y="1626" class="tiny muted">Source: src/dr_serialize/__init__.py, _core/, canonical/, decoding/, identity/, normalization/</text>
 </svg>

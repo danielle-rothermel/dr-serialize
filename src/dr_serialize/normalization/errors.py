@@ -1,28 +1,10 @@
-"""Typed serialization error taxonomy with structured diagnostics.
-
-Strict decoder diagnostics are bounded structural metadata, do not echo or
-retain input, and are safe to persist except for separately captured traceback
-locals. Other ``SerializationError`` diagnostics are structurally persistable
-and have bounded preview and detail fields, but may contain payload-derived
-data or an underlying exception's repr and are not secret-safe.
-"""
+"""Typed failures raised by policy-driven normalization."""
 
 from __future__ import annotations
 
 from typing import Any, ClassVar
 
-MESSAGE_PREVIEW = 512
-DEBUG_DETAIL_LIMIT = 256 * 1024
-
-type JsonPath = tuple[str | int, ...]
-
-
-def preview_repr(x: Any) -> str:
-    return repr(x)[:MESSAGE_PREVIEW]
-
-
-def detail_repr(x: Any) -> str:
-    return repr(x)[:DEBUG_DETAIL_LIMIT]
+from dr_serialize._core.diagnostics import JsonPath, SerializationError
 
 
 def _format_top_level_sizes(
@@ -32,16 +14,6 @@ def _format_top_level_sizes(
 ) -> str:
     items = sorted(sizes.items(), key=lambda kv: kv[1], reverse=True)[:limit]
     return ", ".join(f"{key}={size}" for key, size in items)
-
-
-class SerializationError(Exception):
-    """Base for JSON-safe serialization failures."""
-
-    path: JsonPath
-    detail: str
-
-    def diagnostics(self) -> dict[str, Any]:
-        raise NotImplementedError
 
 
 class MaxDepthExceededError(SerializationError):
@@ -73,37 +45,8 @@ class MaxDepthExceededError(SerializationError):
         }
 
 
-class JsonEncodeError(SerializationError):
-    def __init__(
-        self,
-        *,
-        path: JsonPath,
-        type_name: str,
-        detail: str,
-        underlying: TypeError | ValueError,
-        value_preview: str,
-    ) -> None:
-        self.path = path
-        self.type_name = type_name
-        self.detail = detail
-        self.underlying = underlying
-        self.value_preview = value_preview
-        super().__init__(
-            f"not JSON-serializable at path {path!r} type {type_name}"
-        )
-
-    def diagnostics(self) -> dict[str, Any]:
-        return {
-            "path": list(self.path),
-            "detail": self.detail,
-            "type_name": self.type_name,
-            "value_preview": self.value_preview,
-            "underlying": repr(self.underlying),
-        }
-
-
 class PayloadTooLargeError(SerializationError):
-    def __init__(  # noqa: PLR0913 -- frozen diagnostics shape from lineage
+    def __init__(  # noqa: PLR0913 -- frozen public diagnostics shape
         self,
         *,
         size_bytes: int,
@@ -144,12 +87,7 @@ class PayloadTooLargeError(SerializationError):
 
 
 class ValueTransformError(SerializationError):
-    """Base for failures inside a value-transforming handler.
-
-    Consumers registering their own handlers subclass this with a
-    ``message_prefix`` so their failures carry the same diagnostics shape
-    as the built-in handler errors.
-    """
+    """Base for failures inside a value-transforming handler."""
 
     message_prefix: ClassVar[str] = "value transform failed"
 

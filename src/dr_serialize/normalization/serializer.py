@@ -1,4 +1,4 @@
-"""JSON-safe conversion engine with an ordered, pluggable handler chain.
+"""Policy-driven normalization with an ordered, pluggable handler chain.
 
 A :class:`Serializer` bundles limits with a tuple of consumer handlers.
 Consumer handlers run after the built-in scalar/container handlers and
@@ -18,22 +18,23 @@ from typing import Any
 
 import pydantic
 
-from dr_serialize._encoding import TEXT_ENCODING
-from dr_serialize.canonical import canonical_sorted_values
-from dr_serialize.errors import (
+from dr_serialize._core.diagnostics import (
     DEBUG_DETAIL_LIMIT,
-    JsonEncodeError,
     JsonPath,
-    MaxDepthExceededError,
-    ModelDumpError,
-    ObjectVarsSerializationError,
-    PayloadTooLargeError,
     SerializationError,
     detail_repr,
     preview_repr,
 )
-from dr_serialize.jsonable import Jsonable, find_json_failure
-from dr_serialize.limits import SerializationLimits
+from dr_serialize._core.encoding import TEXT_ENCODING
+from dr_serialize._core.json_values import Jsonable, find_json_failure
+from dr_serialize.canonical import JsonEncodeError, canonical_sorted_values
+from dr_serialize.normalization.errors import (
+    MaxDepthExceededError,
+    ModelDumpError,
+    ObjectVarsSerializationError,
+    PayloadTooLargeError,
+)
+from dr_serialize.normalization.limits import SerializationLimits
 
 ENCODED_PREVIEW_SLICE = 8192
 

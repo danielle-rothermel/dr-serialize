@@ -1,19 +1,14 @@
 """Contract tests for Canonical JSON Text and hashes.
 
-The golden fixture in ``tests/fixtures/hashing_golden.json`` was captured
-from whetstone-ai before extraction; byte-identical reproduction is the
-migration acceptance gate.
-
-The fixture's metadata keys were renamed ``digest`` -> ``hash`` after
-capture; the ``value``/``canonical_json`` inputs and all hash values remain
-byte-identical to the whetstone-ai capture.
+The golden fixture in ``tests/fixtures/hashing_golden.json`` pins exact
+canonical text and hash values as the compatibility gate.
 """
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, cast, get_type_hints
 
 import pytest
 
@@ -25,10 +20,10 @@ from dr_serialize import (
     canonical_sorted_values,
     json_hash,
 )
-from dr_serialize.canonical import SHA256_HEX_LENGTH
-from dr_serialize.jsonable import find_json_failure
+from dr_serialize._core.digests import SHA256_HEX_LENGTH
+from dr_serialize._core.json_values import find_json_failure
 
-GOLDEN_FIXTURE = Path(__file__).parent / "fixtures" / "hashing_golden.json"
+GOLDEN_FIXTURE = Path(__file__).parents[1] / "fixtures" / "hashing_golden.json"
 GOLDEN_TRUNCATED_LENGTH = 16
 
 
@@ -77,6 +72,10 @@ def test_json_hash_full_length() -> None:
     assert hash_value == json_hash({"k": "v"})
 
 
+def test_json_hash_runtime_annotations_resolve() -> None:
+    assert get_type_hints(json_hash)["value"] == Jsonable
+
+
 @pytest.mark.parametrize("length", [1, 16, 24, 32, 64])
 def test_json_hash_truncation(length: int) -> None:
     hash_value = json_hash({"k": "v"}, length=length)
@@ -99,7 +98,7 @@ class TestCanonicalTypedErrors:
             pytest.fail("json.dumps must not receive a non-Jsonable value")
 
         monkeypatch.setattr(
-            "dr_serialize.canonical.json.dumps",
+            "dr_serialize.canonical.json_text.json.dumps",
             unexpected_dump,
         )
 

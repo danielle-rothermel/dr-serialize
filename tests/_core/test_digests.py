@@ -1,4 +1,4 @@
-"""Contract tests for nominal full SHA-256 digest values."""
+"""Contract tests for the shared nominal full SHA-256 digest boundary."""
 
 from __future__ import annotations
 

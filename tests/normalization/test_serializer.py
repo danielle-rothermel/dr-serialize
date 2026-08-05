@@ -1,7 +1,4 @@
-"""Contract tests for the JSON-safe conversion engine.
-
-Ported from whetstone-ai's serialization contract tests (generic parts
-only; the DSPy handler tests stayed app-side with the handlers).
+"""Contract tests for the policy-driven normalization engine.
 
 Deliberately not covered here:
 - Full round-trip / lossless serialization
@@ -27,7 +24,7 @@ from dr_serialize import (
     SerializationLimits,
     postgres_jsonb_limits,
 )
-from tests.support import (
+from tests.normalization.support import (
     BadModel,
     SerializedNameModel,
     SimpleObject,

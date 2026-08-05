@@ -1,9 +1,9 @@
-"""The JSON-safe boundary type between dr-serialize's lanes.
+"""JSON value types and neutral failure classification shared by all areas.
 
-The conversion engine (:class:`~dr_serialize.serialization.Serializer`)
+The normalization engine (:class:`~dr_serialize.normalization.Serializer`)
 produces ``Jsonable``; the Canonical JSON Text utilities
 (:func:`~dr_serialize.canonical.canonical_json`,
-:func:`~dr_serialize.canonical.json_hash`) and the identity lane
+:func:`~dr_serialize.canonical.json_hash`) and the identity area
 (:mod:`dr_serialize.identity`) consume it.
 """
 
@@ -12,7 +12,7 @@ from __future__ import annotations
 import math
 from typing import Any, Literal
 
-from dr_serialize.errors import JsonPath
+from dr_serialize._core.diagnostics import JsonPath
 
 type Jsonable = (
     None | bool | int | float | str | list[Jsonable] | dict[str, Jsonable]

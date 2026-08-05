@@ -1,4 +1,4 @@
-"""Shared helpers and minimal fixtures for serialization contract tests."""
+"""Shared helpers and minimal fixtures for normalization contract tests."""
 
 from __future__ import annotations
 

@@ -1,8 +1,8 @@
 """Contract tests for the identity path.
 
-Covers strict JSON value validation and its rejection classes, the exact
-three-field Identity Document, Canonical Identity JSON Text, and the full
-Identity Hash. The golden fixture in ``tests/fixtures/identity_golden.json``
+Covers the exact three-field Identity Document, Canonical Identity JSON Text,
+and the full Identity Hash. The golden fixture in
+``tests/fixtures/identity_golden.json``
 is committed for reuse by other repos; byte-identical canonical JSON text
 and identical hashes are the cross-repository acceptance gate.
 """
@@ -12,7 +12,7 @@ from __future__ import annotations
 import itertools
 import json
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, cast, get_type_hints
 
 import pytest
 
@@ -30,139 +30,11 @@ from dr_serialize import (
     validate_identity_document,
     validate_strict_json,
 )
-from dr_serialize.canonical import SHA256_HEX_LENGTH
+from dr_serialize._core.digests import SHA256_HEX_LENGTH
 
-GOLDEN_FIXTURE = Path(__file__).parent / "fixtures" / "identity_golden.json"
-
-
-# --------------------------------------------------------------------------
-# Strict JSON value validation: acceptance
-# --------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    "value",
-    [
-        None,
-        True,
-        False,
-        0,
-        -1,
-        42,
-        9007199254740992,
-        0.0,
-        -0.001,
-        1e300,
-        "",
-        "text",
-        [],
-        {},
-        [1, "two", None, True, [3, 4]],
-        {"a": 1, "b": {"c": [None, False]}},
-        {"nested": {"deep": {"deeper": [1, {"x": "y"}]}}},
-    ],
+GOLDEN_FIXTURE = (
+    Path(__file__).parents[1] / "fixtures" / "identity_golden.json"
 )
-def test_validate_strict_json_accepts_strict_json(value: Any) -> None:
-    assert validate_strict_json(value) is value
-
-
-def test_validate_strict_json_accepts_numeric_string_keys() -> None:
-    value = {"10": "ten", "2": "two", "1": "one"}
-    assert validate_strict_json(value) is value
-
-
-# --------------------------------------------------------------------------
-# Strict JSON value validation: rejection, one test per invalid class
-# --------------------------------------------------------------------------
-
-
-def test_rejects_non_json_value_at_root() -> None:
-    with pytest.raises(StrictJsonError) as exc_info:
-        validate_strict_json(object())
-    exc = exc_info.value
-    assert exc.path == ()
-    assert exc.reason == "unsupported type"
-    assert exc.type_name == "object"
-
-
-def test_rejects_non_json_value_with_jsonpath_location() -> None:
-    value = {"k": [1, object()]}
-    with pytest.raises(StrictJsonError) as exc_info:
-        validate_strict_json(value)
-    exc = exc_info.value
-    assert exc.path == ("k", 1)
-    assert exc.reason == "unsupported type"
-    assert set(exc.diagnostics()) == {
-        "path",
-        "detail",
-        "reason",
-        "type_name",
-    }
-    assert exc.diagnostics()["path"] == ["k", 1]
-
-
-@pytest.mark.parametrize(
-    "bad_value", [float("nan"), float("inf"), float("-inf")]
-)
-def test_rejects_non_finite_number(bad_value: float) -> None:
-    with pytest.raises(StrictJsonError) as exc_info:
-        validate_strict_json({"x": [0.0, bad_value]})
-    exc = exc_info.value
-    assert exc.path == ("x", 1)
-    assert exc.reason == "non-finite number"
-    assert exc.type_name == "float"
-
-
-@pytest.mark.parametrize("bad_key", [1, 2.0, None, True, (1, 2)])
-def test_rejects_non_string_object_key(bad_key: Any) -> None:
-    value = {"ok": {bad_key: "v"}}
-    with pytest.raises(StrictJsonError) as exc_info:
-        validate_strict_json(value)
-    exc = exc_info.value
-    assert exc.path == ("ok",)
-    assert exc.reason == "non-string object key"
-
-
-def test_rejects_dict_reference_cycle() -> None:
-    value: dict[str, Any] = {"a": 1}
-    value["self"] = value
-    with pytest.raises(StrictJsonError) as exc_info:
-        validate_strict_json(value)
-    exc = exc_info.value
-    assert exc.reason == "reference cycle"
-    assert exc.type_name == "dict"
-
-
-def test_rejects_list_reference_cycle() -> None:
-    inner: list[Any] = [1]
-    value = {"items": inner}
-    inner.append(inner)
-    with pytest.raises(StrictJsonError) as exc_info:
-        validate_strict_json(value)
-    exc = exc_info.value
-    assert exc.reason == "reference cycle"
-    assert exc.type_name == "list"
-
-
-def test_repeated_shared_subtree_is_not_a_cycle() -> None:
-    shared = {"k": "v"}
-    value = {"a": shared, "b": shared}
-    assert validate_strict_json(value) is value
-
-
-@pytest.mark.parametrize(
-    "bad_value",
-    [
-        b"bytes",
-        (1, 2),
-        {1, 2},
-        object(),
-        complex(1, 2),
-    ],
-)
-def test_rejects_assorted_non_json_types(bad_value: Any) -> None:
-    with pytest.raises(StrictJsonError):
-        validate_strict_json(bad_value)
 
 
 # --------------------------------------------------------------------------
@@ -197,6 +69,23 @@ def test_build_identity_document_matches_validate() -> None:
         {"schema": "s", "schema_version": 2, "payload": {"a": 1}}
     )
     assert built == validated
+
+
+@pytest.mark.parametrize(
+    ("renderer", "return_type"),
+    [
+        (canonical_identity_json, str),
+        (canonical_identity_json_bytes, bytes),
+    ],
+)
+def test_identity_renderer_runtime_annotations_resolve(
+    renderer: Any,
+    return_type: type[str] | type[bytes],
+) -> None:
+    assert get_type_hints(renderer) == {
+        "document": IdentityDocument,
+        "return": return_type,
+    }
 
 
 def test_document_rejects_missing_field() -> None:

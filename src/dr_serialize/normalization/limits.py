@@ -1,4 +1,4 @@
-"""Serialization limits as explicit, injectable configuration.
+"""Normalization limits as explicit, injectable configuration.
 
 Postgres JSONB ships as *a* preset, not *the* truth: consumers with other
 storage ceilings (or none) construct their own ``SerializationLimits``.

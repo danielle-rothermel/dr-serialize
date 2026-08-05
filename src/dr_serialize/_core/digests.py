@@ -1,4 +1,4 @@
-"""Validated full SHA-256 digest values."""
+"""Validated full SHA-256 digest values shared across hashing areas."""
 
 from __future__ import annotations
 
