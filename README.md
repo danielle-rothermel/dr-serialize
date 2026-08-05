@@ -26,9 +26,10 @@ Raw mapping --> IdentityDocument --> canonical_identity_json --> identity_docume
   text's UTF-8 bytes - no coercion, and a diagnostic normalized JSON value
   never feeds it.
 
-The [terms reference](https://danielle-rothermel.github.io/dr-serialize/)
-renders the authoritative vocabulary in `.defs/terms.toml`, including its
-categories, relationships, definitions, and mappings to exported names.
+The [terms and contracts reference](https://danielle-rothermel.github.io/dr-serialize/)
+renders the authoritative vocabulary in `.defs/terms.toml` and binding
+behavioral rules in `.defs/contracts.toml`, including term categories,
+relationships, definitions, and mappings to exported names.
 
 Normalization and canonical JSON text generation compose at your call site,
 so hashes never silently depend on serialization policy:
@@ -151,7 +152,7 @@ identity: validate a strict JSON value, wrap it in the exact three-field
 [Canonical Identity JSON Text](https://danielle-rothermel.github.io/dr-serialize/#term-canonical-identity-json-text),
 and hash that text's UTF-8 bytes into the full
 [Identity Hash](https://danielle-rothermel.github.io/dr-serialize/#term-identity-hash). The
-[terms reference](https://danielle-rothermel.github.io/dr-serialize/) defines each term;
+[terms and contracts reference](https://danielle-rothermel.github.io/dr-serialize/) defines each term;
 the owning domain chooses the schema, version, and complete payload -
 dr-serialize only validates.
 

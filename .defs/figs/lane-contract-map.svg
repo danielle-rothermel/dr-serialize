@@ -126,7 +126,7 @@
     <text x="28" y="119" class="label" fill="#6f42c1">INPUT</text>
     <rect x="24" y="132" width="424" height="62" rx="10" class="node"/>
     <text x="40" y="157" class="mono code ink">value: Jsonable</text>
-    <text x="40" y="180" class="small muted">Already JSON-safe—constructed directly or normalized explicitly</text>
+    <text x="40" y="180" class="small muted">Finite Strict JSON Value · validated at runtime</text>
 
     <path d="M236 194 V222" class="arrow"/>
     <text x="28" y="244" class="label" fill="#6f42c1">REPRESENTATIVE API</text>
@@ -194,7 +194,7 @@
     <circle cx="35" cy="566" r="4" fill="#2b8a3e"/>
     <text x="48" y="571" class="body ink">No coercion, handlers, truncation, or cycles.</text>
     <circle cx="35" cy="597" r="4" fill="#2b8a3e"/>
-    <text x="48" y="602" class="body ink">Deep-copied payload gives snapshot semantics.</text>
+    <text x="48" y="602" class="body ink">Private copy-in + fresh copy-out preserve the snapshot.</text>
 
     <path d="M236 620 V646" class="arrow"/>
     <text x="28" y="668" class="label" fill="#2b8a3e">IDENTITY API + OUTPUT</text>
@@ -253,7 +253,7 @@
 
   <!-- Footer -->
   <g class="sans">
-    <text x="54" y="1337" class="small muted">Shared failure contract: typed SerializationError subclasses carry a JsonPath and persistable diagnostics().</text>
+    <text x="54" y="1337" class="small muted">Decoder diagnostics are bounded and non-echoing; other typed diagnostics are structurally persistable, not secret-safe.</text>
     <text x="1546" y="1337" text-anchor="end" class="mono code-small quiet">Source: dr_serialize serialization, canonical, decoding, identity</text>
   </g>
 </svg>

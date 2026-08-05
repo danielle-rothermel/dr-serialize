@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": ".defs binding contracts",
+  "description": "The structural schema for a repository's .defs/contracts.toml file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contracts"],
+  "properties": {
+    "contracts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/contract"
+      }
+    }
+  },
+  "$defs": {
+    "nonBlankString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "statement", "rationale", "date"],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/nonBlankString"
+        },
+        "statement": {
+          "$ref": "#/$defs/nonBlankString"
+        },
+        "rationale": {
+          "$ref": "#/$defs/nonBlankString"
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "check": {
+          "$ref": "#/$defs/nonBlankString"
+        },
+        "terms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Exact canonical names from terms.toml linked by this contract.",
+          "items": {
+            "$ref": "#/$defs/nonBlankString"
+          }
+        }
+      }
+    }
+  }
+}

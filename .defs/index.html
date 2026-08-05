@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="doc.css">
-<title>dr-serialize · Terms</title>
+<title>dr-serialize · Terms and contracts</title>
 <style>
   .terms-page { width: 100%; max-width: 1480px; }
-  .terms-page h1 { margin-bottom: 24px; }
+  .terms-page h1 { margin-bottom: 12px; }
+  .page-intro { max-width: 900px; margin: 0 0 24px; color: #465166; }
   .terms-graph {
     display: block;
     width: 100%;
@@ -16,6 +17,8 @@
     margin: 0 0 28px;
     border: 0;
   }
+  .reference-section + .reference-section { margin-top: 36px; }
+  .reference-section h2 { margin-bottom: 12px; }
   .terms-shell { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
   .terms-table { border: 0; font-size: 14.5px; }
   .terms-table thead,
@@ -52,6 +55,17 @@
   .term-symbols { margin-top: 17px; }
   .symbol-list { display: flex; flex-wrap: wrap; gap: 7px 14px; }
   .symbol-list code { font-size: 11px; }
+  .contract-title { display: block; font: 700 17px/1.35 var(--font-prose); }
+  .contract-date { display: block; margin-top: 8px; color: #707b8d; font: 650 11px/1.5 var(--font-system); }
+  .contract-terms { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+  .contract-term { padding: 3px 10px; border: 1px solid #bba5ed; border-radius: 999px; background: #f0eaff; color: #6442a3; font: 650 11px/1.5 var(--font-system); text-decoration: none; }
+  .contract-term:hover,
+  .contract-term:focus-visible { border-color: var(--accent); color: var(--accent); text-decoration: underline; }
+  .contract-statement { margin: 0; color: #172033; font: 650 15px/1.55 var(--font-prose); }
+  .contract-rationale { margin: 12px 0 0; color: #465166; line-height: 1.55; }
+  .contract-check { margin-top: 17px; }
+  .check-label { margin-bottom: 4px; color: #707b8d; font: 700 10px/1.4 var(--font-system); letter-spacing: .1em; text-transform: uppercase; }
+  .contract-check code { overflow-wrap: anywhere; font-size: 11px; }
   .defs-error { grid-column: 1 / -1; color: var(--red); }
 
   @media (max-width: 760px) {
@@ -71,7 +85,12 @@
 </head>
 <body>
 <main class="terms-page">
-<h1>dr-serialize terms</h1>
+<h1>dr-serialize terms and contracts</h1>
+<p class="page-intro">
+  This page renders the two authoritative TOML files that agents read directly:
+  shared vocabulary in <code>terms.toml</code> and standing rules in
+  <code>contracts.toml</code>.
+</p>
 <object
   class="terms-graph"
   data="figs/all-terms.svg"
@@ -80,17 +99,38 @@
 >
   <a href="figs/all-terms.svg">Open the dr-serialize terms graph</a>
 </object>
-<div class="terms-shell">
-  <table class="terms-table">
-    <thead>
-      <tr>
-        <th scope="col">Term · Categories · Relationships</th>
-        <th scope="col">Definition · Exported symbols</th>
-      </tr>
-    </thead>
-    <tbody data-defs-file="terms.toml" data-defs-kind="terms-reference"></tbody>
-  </table>
-</div>
+<section class="reference-section" aria-labelledby="terms-heading">
+  <h2 id="terms-heading">Terms</h2>
+  <div class="terms-shell">
+    <table class="terms-table">
+      <thead>
+        <tr>
+          <th scope="col">Term · Categories · Relationships</th>
+          <th scope="col">Definition · Exported symbols</th>
+        </tr>
+      </thead>
+      <tbody data-defs-file="terms.toml" data-defs-kind="terms-reference"></tbody>
+    </table>
+  </div>
+</section>
+<section class="reference-section" aria-labelledby="contracts-heading">
+  <h2 id="contracts-heading">Contracts</h2>
+  <div class="terms-shell">
+    <table class="terms-table">
+      <thead>
+        <tr>
+          <th scope="col">Contract · Date · Terms</th>
+          <th scope="col">Statement · Rationale · Check</th>
+        </tr>
+      </thead>
+      <tbody
+        data-defs-file="contracts.toml"
+        data-defs-kind="contracts-reference"
+        data-defs-terms-file="terms.toml"
+      ></tbody>
+    </table>
+  </div>
+</section>
 <script type="module" src="defs-render.js"></script>
 </main>
 </body>

@@ -105,7 +105,7 @@
   <rect x="98" y="346" width="72" height="20" rx="10" class="public-fill"/>
   <text x="134" y="360" text-anchor="middle" class="label public-text">PUBLIC</text>
   <text x="184" y="361" class="mono-strong ink">JsonPath = tuple[str | int, ...]   ·   SerializationError.diagnostics() → dict[str, Any]</text>
-  <text x="184" y="385" class="small muted">One location grammar and persistable diagnostic shape span the SerializationError taxonomy.</text>
+  <text x="184" y="385" class="small muted">Decoder diagnostics are bounded and non-echoing; others are structurally persistable, not secret-safe.</text>
   <rect x="1080" y="334" width="196" height="66" rx="9" class="cell"/>
   <circle cx="1100" cy="355" r="6" class="use-dot"/>
   <text x="1116" y="360" class="small ink">5 typed errors</text>
@@ -124,7 +124,7 @@
   <rect x="98" y="420" width="72" height="20" rx="10" class="public-fill"/>
   <text x="134" y="434" text-anchor="middle" class="label public-text">PUBLIC</text>
   <text x="184" y="435" class="mono-strong ink">preview_repr(x: Any) → str   ·   detail_repr(x: Any) → str</text>
-  <text x="184" y="459" class="small muted">Bounded reprs standardize safe message previews (512 chars) and persisted detail (256 KiB).</text>
+  <text x="184" y="459" class="small muted">Bounded reprs capture payload-derived message previews (512 chars) and persisted detail (256 KiB).</text>
   <rect x="1080" y="408" width="196" height="66" rx="9" class="cell"/>
   <circle cx="1100" cy="429" r="6" class="use-dot"/>
   <text x="1116" y="434" class="small ink">both helpers</text>
@@ -307,9 +307,9 @@
     <text x="20" y="27" class="label foundation-text">FOUNDATIONAL INTERNAL — KEEP UNEXPORTED</text>
     <text x="20" y="53" class="mono-small ink">TEXT_ENCODING · _convert_node · primary/fallback tables</text>
     <text x="20" y="81" class="label private-text">PRIVATE MECHANISMS</text>
-    <text x="20" y="107" class="mono-small ink">find_json_failure · _validate_strict_json</text>
-    <text x="20" y="129" class="mono-small ink">_encoded_preview_slices · _top_level_key_sizes</text>
-    <text x="20" y="151" class="mono-small ink">_format_top_level_sizes</text>
+    <text x="20" y="107" class="mono-small ink">find_json_failure · _validate_strict_json · _validate_handler_output</text>
+    <text x="20" y="129" class="mono-small ink">_validate_handler_output_depth · _encoded_preview_slices</text>
+    <text x="20" y="151" class="mono-small ink">_top_level_key_sizes · _format_top_level_sizes</text>
     <text x="20" y="166" class="tiny muted">Invariant ownership and implementation detail—not consumer capability.</text>
   </g>
 

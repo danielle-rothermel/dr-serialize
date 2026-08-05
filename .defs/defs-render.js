@@ -1,7 +1,7 @@
-// Client-side renderer for the dr-serialize .defs terms reference.
+// Client-side renderer for the dr-serialize .defs terms and contracts reference.
 //
-// terms.toml is authoritative. This module derives reverse relationship links
-// in the browser and never stores a second copy of term data.
+// The TOML files are authoritative. This module derives links in the browser
+// and never stores a second copy of their data.
 
 import { parse } from "./smol-toml.js";
 
@@ -25,8 +25,20 @@ function titleCase(value) {
   );
 }
 
+function anchorId(kind, value) {
+  const slug = value
+    .toLocaleLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `${kind}-${slug}`;
+}
+
 function termId(name) {
-  return `term-${name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+  return anchorId("term", name);
+}
+
+function contractId(title) {
+  return anchorId("contract", title);
 }
 
 function termLink(name, text = titleCase(name)) {
@@ -62,6 +74,51 @@ function validateTerms(terms) {
           throw new Error(`${term.name}: ${field} target does not exist: ${target}`);
         }
       }
+    }
+  }
+}
+
+function validateContracts(contracts, terms) {
+  if (!Array.isArray(contracts)) {
+    throw new Error("contracts.toml must contain a contracts array");
+  }
+
+  const termNames = new Set(terms.map((term) => term.name));
+  const foldedTitles = new Set();
+  for (const contract of contracts) {
+    if (contract === null || typeof contract !== "object") {
+      throw new Error("every contract must be a table");
+    }
+    for (const field of ["title", "statement", "rationale", "date"]) {
+      if (typeof contract[field] !== "string" || !contract[field].trim()) {
+        throw new Error(`every contract must have a non-blank ${field}`);
+      }
+    }
+    if (
+      contract.check !== undefined &&
+      (typeof contract.check !== "string" || !contract.check.trim())
+    ) {
+      throw new Error(`${contract.title}: check must be non-blank`);
+    }
+    if (contract.terms !== undefined && !Array.isArray(contract.terms)) {
+      throw new Error(`${contract.title}: terms must be an array`);
+    }
+
+    const foldedTitle = contract.title.toLocaleLowerCase();
+    if (foldedTitles.has(foldedTitle)) {
+      throw new Error(`duplicate contract title: ${contract.title}`);
+    }
+    foldedTitles.add(foldedTitle);
+
+    const referencedTerms = new Set();
+    for (const term of contract.terms ?? []) {
+      if (referencedTerms.has(term)) {
+        throw new Error(`${contract.title}: duplicate term reference: ${term}`);
+      }
+      if (!termNames.has(term)) {
+        throw new Error(`${contract.title}: term does not exist: ${term}`);
+      }
+      referencedTerms.add(term);
     }
   }
 }
@@ -203,6 +260,46 @@ function termRow(term, terms, reverse) {
   ]);
 }
 
+function contractRow(contract) {
+  const title = el("span", "contract-title", [contract.title]);
+  title.id = contractId(contract.title);
+
+  const date = el("time", "contract-date", [contract.date]);
+  date.dateTime = contract.date;
+  const metadataChildren = [title, date];
+  if (contract.terms?.length) {
+    metadataChildren.push(
+      el(
+        "div",
+        "contract-terms",
+        contract.terms.map((term) => {
+          const link = termLink(term, term);
+          link.className = "contract-term";
+          return link;
+        }),
+      ),
+    );
+  }
+
+  const detailChildren = [
+    el("p", "contract-statement", [contract.statement.trim()]),
+    el("p", "contract-rationale", [contract.rationale.trim()]),
+  ];
+  if (contract.check) {
+    detailChildren.push(
+      el("div", "contract-check", [
+        el("div", "check-label", ["Check"]),
+        el("code", null, [contract.check]),
+      ]),
+    );
+  }
+
+  return el("tr", null, [
+    el("td", "contract-metadata", metadataChildren),
+    el("td", "contract-detail", detailChildren),
+  ]);
+}
+
 async function fillTermsReference(slot) {
   const response = await fetch(slot.dataset.defsFile);
   if (!response.ok) {
@@ -217,16 +314,44 @@ async function fillTermsReference(slot) {
   );
 }
 
+async function fillContractsReference(slot) {
+  const [contractsResponse, termsResponse] = await Promise.all([
+    fetch(slot.dataset.defsFile),
+    fetch(slot.dataset.defsTermsFile),
+  ]);
+  if (!contractsResponse.ok) {
+    throw new Error(`${slot.dataset.defsFile}: HTTP ${contractsResponse.status}`);
+  }
+  if (!termsResponse.ok) {
+    throw new Error(
+      `${slot.dataset.defsTermsFile}: HTTP ${termsResponse.status}`,
+    );
+  }
+
+  const contracts = parse(await contractsResponse.text()).contracts ?? [];
+  const terms = parse(await termsResponse.text()).terms ?? [];
+  validateTerms(terms);
+  validateContracts(contracts, terms);
+  slot.replaceChildren(...contracts.map((contract) => contractRow(contract)));
+}
+
 async function fillSlot(slot) {
   slot.setAttribute("aria-busy", "true");
   try {
-    if (slot.dataset.defsKind !== "terms-reference") {
+    if (slot.dataset.defsKind === "terms-reference") {
+      await fillTermsReference(slot);
+    } else if (slot.dataset.defsKind === "contracts-reference") {
+      await fillContractsReference(slot);
+    } else {
       throw new Error(`unsupported defs kind: ${slot.dataset.defsKind}`);
     }
-    await fillTermsReference(slot);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const cell = el("td", "defs-error", [`Failed to load terms: ${message}`]);
+    const subject =
+      slot.dataset.defsKind === "contracts-reference" ? "contracts" : "terms";
+    const cell = el("td", "defs-error", [
+      `Failed to load ${subject}: ${message}`,
+    ]);
     cell.colSpan = 2;
     slot.replaceChildren(el("tr", null, [cell]));
   } finally {

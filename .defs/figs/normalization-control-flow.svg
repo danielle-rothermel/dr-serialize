@@ -93,8 +93,8 @@
   <text x="698" y="408" class="mono">max_depth: StrictInt = 100</text>
   <text x="698" y="438" class="mono">max_bytes: StrictInt</text>
   <text x="698" y="468" class="mono">hard_max_bytes: StrictInt | None = None</text>
-  <text x="664" y="518" class="small">max_depth and max_bytes gate execution.</text>
-  <text x="664" y="534" class="small">hard_max_bytes is diagnostic only.</text>
+  <text x="664" y="518" class="small">All numeric limits are nonnegative; zero is valid.</text>
+  <text x="664" y="534" class="small">max_bytes gates size; hard_max_bytes is diagnostic and ≥ max_bytes.</text>
 
   <text x="1184" y="274" class="eyebrow">HANDLER CAPABILITY</text>
   <text x="1184" y="302" class="card-title">ConversionContext and public handler stubs</text>
@@ -155,13 +155,13 @@
   <line x1="774" y1="930" x2="1018" y2="930" class="hairline"/>
   <text x="774" y="960" class="mono-small">handled, value = handler(x, ctx)</text>
   <text x="774" y="996" class="mono-small">if handled:</text>
-  <text x="792" y="1020" class="mono-bold">return value</text>
-  <text x="774" y="1054" class="small">The returned value is not automatically</text>
-  <text x="774" y="1074" class="small">walked again. A handler explicitly calls:</text>
+  <text x="792" y="1020" class="mono-small">return _validate_handler_output</text>
+  <text x="774" y="1054" class="small">Library read-only validation checks the</text>
+  <text x="774" y="1074" class="small">handled result as Jsonable under depth.</text>
   <rect x="774" y="1092" width="244" height="42" rx="6" fill="#ffffff" stroke="#cab8df"/>
   <text x="790" y="1118" class="mono-bold anchor">ctx.convert(child, key)</text>
-  <text x="774" y="1153" class="micro">A handler may raise its own</text>
-  <text x="774" y="1170" class="micro">ValueTransformError subclass.</text>
+  <text x="774" y="1153" class="micro">ctx.convert normalizes arbitrary children;</text>
+  <text x="774" y="1170" class="micro">handlers may raise ValueTransformError.</text>
 
   <path d="M1040 1020 H1074" class="flow"/>
 
@@ -210,7 +210,7 @@
   <path d="M1464 1038 H1422 V820 H1380" class="flow-dashed"/>
 
   <rect x="1464" y="1170" width="360" height="44" class="node-green"/>
-  <text x="1484" y="1198" class="label green">A handled value returns to its caller immediately.</text>
+  <text x="1484" y="1198" class="label green">A handled value is validated, then returned.</text>
 
   <!-- Whole-payload gates -->
   <text x="72" y="1298" class="section-no">3</text>
