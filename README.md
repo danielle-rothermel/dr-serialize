@@ -1,52 +1,37 @@
 # dr-serialize
 
-JSON-safe serialization and canonical hashing for Python: **two
-deliberately separate lanes** - a policy-driven normalization lane and a
-strict identity lane - plus general-purpose Canonical JSON Text utilities:
+JSON-safe serialization, canonical JSON text and hashing, strict JSON
+decoding, and identity-document primitives for Python.
 
-```text
-                normalization lane (policy)
-Any value --> Serializer.to_jsonable(...) --> diagnostic normalized JSON value
-                                                   |
-                canonical JSON text (deterministic) v
- canonical_json(...) --> stable text --> canonical_json_bytes(...) --> json_hash(...)
+## At a Glance
 
-                identity lane (strict, policy-free)
-Raw mapping --> IdentityDocument --> canonical_identity_json --> identity_document_hash
-```
+- **Reference:** [Terms and contracts](https://danielle-rothermel.github.io/dr-serialize/)
+- **Current release:** [`0.1.1`](https://github.com/danielle-rothermel/dr-serialize/releases/tag/v0.1.1)
+- **Danielle-owned repository dependencies:** None.
+- **Runtime dependency:** [Pydantic](https://github.com/pydantic/pydantic)
+  `>=2.13.4`.
 
-- The **normalization lane** is *policy*: it decides what your objects
-  become as a diagnostic normalized JSON value - extensible via handlers,
-  bounded by explicit limits, lossy where it must be.
-- The **Canonical JSON Text** utilities are *deterministic*: they encode
-  finite strict JSON data as canonical JSON text, exact UTF-8 bytes, and
-  hashes - no handlers, no limits, same input, same bytes, forever.
-- The **identity lane** is *strict*: it validates a strict JSON value and
-  the exact Identity Document shape, then hashes the canonical identity JSON
-  text's UTF-8 bytes - no coercion, and a diagnostic normalized JSON value
-  never feeds it.
+## High-Level Design
 
-The [terms and contracts reference](https://danielle-rothermel.github.io/dr-serialize/)
-renders the authoritative vocabulary in `.defs/terms.toml` and binding
-behavioral rules in `.defs/contracts.toml`, including term categories,
-relationships, definitions, and mappings to exported names.
+- **Policy-driven normalization** converts Python values into JSON-safe data
+  through bounded, extensible conversion rules. It is intended for
+  diagnostics and storage and may be lossy.
+- **Canonical JSON text and hashing** turn finite strict JSON values into
+  deterministic text, exact UTF-8 bytes, and SHA-256 hashes. Ordered arrays
+  stay ordered, while a separate helper can project unordered collections
+  into deterministic arrays.
+- **Bounded strict decoding** parses one complete UTF-8 JSON value under
+  explicit byte and depth limits, rejecting duplicate keys, non-finite
+  numbers, and malformed or trailing input.
+- **Identity documents and hashes** validate a fixed document shape around a
+  domain-owned payload and derive stable canonical bytes and a full identity
+  hash without applying normalization policy.
+- **Shared boundary types and diagnostics** provide strict JSON value types,
+  validated digests, typed errors, bounded diagnostic metadata, and a common
+  terms-and-contracts vocabulary.
 
-Normalization and canonical JSON text generation compose at your call site,
-so hashes never silently depend on serialization policy:
-
-```python
-hash_value = json_hash(serializer.to_jsonable(value))
-```
-
-## Ecosystem
-
-`dr-serialize` provides serialization/schema utilities shared across the
-dr-* stack: JSON-safe conversion, explicit limits, and canonical hashing.
-Neighbor repos are `dr-providers`, `dr-graph`, `dr-platform`, `dr-code`,
-`whetstone-ai`, and `unitbench`.
-This repo depends directly on `pydantic` and no named ecosystem neighbor;
-no consumer repo is declared here, though tests document extraction lineage
-from `whetstone-ai`.
+Normalization and canonical JSON text generation can be composed explicitly,
+but normalized diagnostic data never feeds the identity path.
 
 ## Normalization: `Serializer`
 
