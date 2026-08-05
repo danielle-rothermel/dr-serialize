@@ -84,6 +84,24 @@ def test_json_hash_rejects_bad_length(length: int) -> None:
 
 
 class TestCanonicalTypedErrors:
+    def test_non_jsonable_value_is_rejected_before_encoding(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        def unexpected_dump(_value: object, **_kwargs: object) -> str:
+            pytest.fail("json.dumps must not receive a non-Jsonable value")
+
+        monkeypatch.setattr(
+            "dr_serialize.canonical.json.dumps",
+            unexpected_dump,
+        )
+
+        with pytest.raises(JsonEncodeError) as exc_info:
+            canonical_json(cast("Jsonable", (1, 2)))
+
+        assert exc_info.value.path == ()
+        assert isinstance(exc_info.value.underlying, TypeError)
+
     def test_non_jsonable_leaf_raises_json_encode_error_with_path(
         self,
     ) -> None:
@@ -112,6 +130,16 @@ class TestCanonicalTypedErrors:
         assert exc.type_name == "float"
         assert isinstance(exc.underlying, ValueError)
 
+    def test_non_string_key_raises_type_error_underlying(self) -> None:
+        value = cast("Jsonable", {"outer": {1: "value"}})
+        with pytest.raises(JsonEncodeError) as exc_info:
+            canonical_json(value)
+
+        exc = exc_info.value
+        assert exc.path == ("outer",)
+        assert exc.type_name == "int"
+        assert isinstance(exc.underlying, TypeError)
+
     def test_hash_propagates_json_encode_error(self) -> None:
         value = cast("Jsonable", {"k": object()})
         with pytest.raises(JsonEncodeError):
@@ -131,8 +159,9 @@ class TestCycleAndKeyDiagnostics:
     def test_cyclic_dict_raises_json_encode_error(self) -> None:
         cyclic: dict[str, Any] = {"a": 1}
         cyclic["self"] = cyclic
-        with pytest.raises(JsonEncodeError):
+        with pytest.raises(JsonEncodeError) as exc_info:
             canonical_json(cast("Jsonable", cyclic))
+        assert isinstance(exc_info.value.underlying, TypeError)
         with pytest.raises(JsonEncodeError):
             json_hash(cast("Jsonable", cyclic))
 

@@ -7,8 +7,9 @@ normalized JSON value -- JSON-safe ``Jsonable`` data -- under explicit
 chain (:mod:`dr_serialize.serialization`).
 
 **Canonical JSON Text** (deterministic, policy-free): :func:`canonical_json`,
-:func:`canonical_json_bytes`, and :func:`json_hash` turn already-JSON-safe
-values into stable canonical JSON text, exact bytes, and hashes
+:func:`canonical_json_bytes`, and :func:`json_hash` turn finite strict JSON
+values into stable canonical JSON text, exact bytes, and hashes under the
+``dr-serialize Canonical JSON Text profile v1``
 (:mod:`dr_serialize.canonical`).
 
 **Identity lane** (strict, policy-free): :func:`validate_strict_json`,

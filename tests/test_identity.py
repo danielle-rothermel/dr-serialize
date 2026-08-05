@@ -314,6 +314,24 @@ def test_mutating_original_payload_does_not_change_document() -> None:
     assert identity_document_hash(doc) == hash_before
 
 
+def test_mutating_public_payload_does_not_change_document() -> None:
+    doc = IdentityDocument(
+        "s",
+        1,
+        {"nested": {"items": [1, 2]}},
+    )
+    canonical_before = canonical_identity_json_bytes(doc)
+    hash_before = identity_document_hash(doc)
+
+    public_payload = cast("dict[str, Any]", doc.payload)
+    public_payload["nested"]["items"].append(3)
+    public_payload["injected"] = True
+
+    assert doc.payload == {"nested": {"items": [1, 2]}}
+    assert canonical_identity_json_bytes(doc) == canonical_before
+    assert identity_document_hash(doc) == hash_before
+
+
 def test_mutating_to_json_dict_result_does_not_change_document() -> None:
     doc = IdentityDocument(
         schema="s", schema_version=1, payload={"nested": {"b": 2}}

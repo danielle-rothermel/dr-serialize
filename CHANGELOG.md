@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   values; full canonical and identity hashes now return this string subtype
   without changing their values, and strict Pydantic fields preserve it.
 
+### Changed
+
+- Bound canonical text, bytes, and hashes to the documented
+  `dr-serialize Canonical JSON Text profile v1`, with runtime rejection of
+  values outside finite strict JSON before encoding.
+- Made `IdentityDocument` own its payload privately; every public payload or
+  document mapping is now a fresh deep copy, so caller mutation cannot change
+  canonical identity bytes or hashes.
+
 ## [0.1.0] - 2026-07-24
 
 Initial release.

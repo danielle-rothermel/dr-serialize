@@ -19,8 +19,8 @@ Raw mapping --> IdentityDocument --> canonical_identity_json --> identity_docume
   become as a diagnostic normalized JSON value - extensible via handlers,
   bounded by explicit limits, lossy where it must be.
 - The **Canonical JSON Text** utilities are *deterministic*: they encode
-  already-JSON-safe data as canonical JSON text, exact UTF-8 bytes, and hashes -
-  no handlers, no limits, same input, same bytes, forever.
+  finite strict JSON data as canonical JSON text, exact UTF-8 bytes, and
+  hashes - no handlers, no limits, same input, same bytes, forever.
 - The **identity lane** is *strict*: it validates a strict JSON value and
   the exact Identity Document shape, then hashes the canonical identity JSON
   text's UTF-8 bytes - no coercion, and a diagnostic normalized JSON value
@@ -90,18 +90,24 @@ storage policy.
 ```python
 from dr_serialize import canonical_json, canonical_json_bytes, json_hash
 
-text = canonical_json(payload)              # sorted keys, compact, NaN rejected
+text = canonical_json(payload)              # profile-v1 deterministic text
 data = canonical_json_bytes(payload)        # exact UTF-8 encoding of text
 digest = json_hash(payload)                 # validated full Sha256Digest
 display = json_hash(payload, length=16)     # ordinary truncated string
 ```
 
-Both take `Jsonable` input - data that is already JSON-safe, typically
-the output of `Serializer.to_jsonable` or values you construct yourself.
-These utilities are intentionally policy-free: hashes are long-lived
-keys, so they must never change because a handler was added or a limit
-tuned. If you need conversion first, compose with the normalization lane
-explicitly.
+All three functions are bound to the **dr-serialize Canonical JSON Text
+profile v1**: object keys are sorted, list order is preserved, separators are
+compact, non-ASCII characters are escaped, and input must be a finite strict
+JSON value at runtime (including string-only object keys and no reference
+cycles). This is not RFC 8785. An incompatible profile requires a separately
+named API; these functions have no profile or version parameter.
+
+Inputs are `Jsonable` values, typically the output of
+`Serializer.to_jsonable` or values you construct yourself. These utilities
+are intentionally policy-free: hashes are long-lived keys, so they must never
+change because a handler was added or a limit tuned. If you need conversion
+first, compose with the normalization lane explicitly.
 
 `Sha256Digest` is the nominal boundary for full SHA-256 values. Its
 `parse()` method accepts exactly 64 lowercase hexadecimal characters and
@@ -165,8 +171,13 @@ h = identity_document_hash(doc)    # full 64-char lowercase SHA-256 hex
 wire = canonical_identity_json_bytes(doc)  # the exact bytes h covers
 ```
 
-Rejections are typed: `StrictJsonError` for values that are not strict
-JSON values, `IdentityDocumentError` for documents that are not the exact
+`IdentityDocument` owns a private snapshot of its payload. Both its public
+`payload` property and `to_json_dict()` return fresh deep-copied ordinary JSON
+values, so mutating any caller-visible alias cannot change its canonical bytes
+or hash.
+
+Rejections are typed: `StrictJsonError` for values that are not strict JSON
+values, `IdentityDocumentError` for documents that are not the exact
 three-field shape. There is no truncation parameter on this path;
 `identity_hash_prefix` is a separate, display-only helper that never
 establishes identity. A diagnostic normalized JSON value never feeds
@@ -183,7 +194,7 @@ and every error carries the path to the offending value plus a
 | Error | Raised by |
 | --- | --- |
 | `MaxDepthExceededError` | engine: nesting exceeded `max_depth` |
-| `JsonEncodeError` | engine probe and canonical JSON text: value not JSON-encodable (canonical also rejects NaN/inf) |
+| `JsonEncodeError` | engine probe and canonical JSON text: value not JSON-encodable (canonical requires finite strict JSON input) |
 | `PayloadTooLargeError` | engine: encoded size exceeded `max_bytes` |
 | `ModelDumpError` | engine: Pydantic `model_dump` failed |
 | `ObjectVarsSerializationError` | engine: `__dict__` walk failed |

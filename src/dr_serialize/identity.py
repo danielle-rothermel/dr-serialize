@@ -36,9 +36,8 @@ from __future__ import annotations
 
 import copy
 import hashlib
-import math
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass, field
+from typing import Any, cast
 
 from dr_serialize.canonical import canonical_json, canonical_json_bytes
 from dr_serialize.digests import (
@@ -46,11 +45,8 @@ from dr_serialize.digests import (
     Sha256Digest,
     Sha256DigestError,
 )
-from dr_serialize.errors import SerializationError, detail_repr
-from dr_serialize.jsonable import Jsonable
-
-if TYPE_CHECKING:
-    from dr_serialize.errors import JsonPath
+from dr_serialize.errors import JsonPath, SerializationError, detail_repr
+from dr_serialize.jsonable import Jsonable, _find_strict_json_failure
 
 IDENTITY_DOCUMENT_FIELDS = ("schema", "schema_version", "payload")
 
@@ -120,11 +116,11 @@ class IdentityDocumentError(SerializationError):
         }
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class IdentityDocument:
     """A validated, self-describing, versioned Identity Document.
 
-    Construction itself validates (see :meth:`__post_init__`), so every
+    Construction itself validates, so every
     ``IdentityDocument`` -- whether built via :func:`build_identity_document`,
     :func:`validate_identity_document`, or the exported constructor directly
     -- always holds a payload validated as a strict JSON value with the
@@ -133,17 +129,23 @@ class IdentityDocument:
     them.
 
     **Snapshot semantics.** The constructor takes a deep copy of ``payload``
-    after validation, so the document owns an independent snapshot: later
-    mutation of the caller's original object cannot affect the document or
-    its Identity Hash. Likewise :meth:`to_json_dict` returns a fresh deep
-    copy, so mutating the returned mapping never touches the stored payload.
+    after validation and stores it privately, so the document owns an
+    independent snapshot: later mutation of the caller's original object
+    cannot affect the document or its Identity Hash. The public
+    :attr:`payload` and :meth:`to_json_dict` each return a fresh deep copy,
+    so mutating any returned alias never touches the stored payload.
     """
 
     schema: str
     schema_version: int
-    payload: Jsonable
+    _payload: Jsonable = field(repr=False)
 
-    def __post_init__(self) -> None:
+    def __init__(
+        self,
+        schema: str,
+        schema_version: int,
+        payload: Jsonable,
+    ) -> None:
         """Reject any document the validators would reject.
 
         The public constructor is exported, so it must enforce the same
@@ -157,27 +159,30 @@ class IdentityDocument:
         string-keyed document. Validating here raises the typed
         :class:`IdentityDocumentError` / :class:`StrictJsonError` instead.
         """
-        if not isinstance(self.schema, str):
+        if not isinstance(schema, str):
             raise IdentityDocumentError(
                 path=("schema",),
                 reason="field must be a string",
-                detail=detail_repr(self.schema),
+                detail=detail_repr(schema),
             )
         # bool is a subclass of int; schema_version must be a real int.
-        if isinstance(self.schema_version, bool) or not isinstance(
-            self.schema_version, int
+        if isinstance(schema_version, bool) or not isinstance(
+            schema_version, int
         ):
             raise IdentityDocumentError(
                 path=("schema_version",),
                 reason="field must be an integer",
-                detail=detail_repr(self.schema_version),
+                detail=detail_repr(schema_version),
             )
-        _validate_strict_json(self.payload, ("payload",), frozenset())
-        # Snapshot the payload so post-construction mutation of the caller's
-        # object cannot change the document or its hash. Validation above
-        # already rejected reference cycles, so deepcopy is safe. The
-        # dataclass is frozen+slots, so assign via object.__setattr__.
-        object.__setattr__(self, "payload", copy.deepcopy(self.payload))
+        _validate_strict_json(payload, ("payload",))
+        object.__setattr__(self, "schema", schema)
+        object.__setattr__(self, "schema_version", schema_version)
+        object.__setattr__(self, "_payload", copy.deepcopy(payload))
+
+    @property
+    def payload(self) -> Jsonable:
+        """Return a fresh deep copy of the owned identity payload."""
+        return copy.deepcopy(self._payload)
 
     def to_json_dict(self) -> dict[str, Jsonable]:
         """Return the exact three-field document as a plain dict.
@@ -188,7 +193,7 @@ class IdentityDocument:
         return {
             "schema": self.schema,
             "schema_version": self.schema_version,
-            "payload": copy.deepcopy(self.payload),
+            "payload": self.payload,
         }
 
 
@@ -202,67 +207,23 @@ def validate_strict_json(value: Any) -> Jsonable:
     :class:`StrictJsonError` with the JsonPath-style ``path`` to the first
     offending value or key. No coercion or normalization is performed.
     """
-    return _validate_strict_json(value, (), frozenset())
+    return _validate_strict_json(value, ())
 
 
 def _validate_strict_json(
     value: Any,
     path: JsonPath,
-    seen: frozenset[int],
 ) -> Jsonable:
-    """Recursive strict JSON value check carrying traversal state.
-
-    ``path`` is the JsonPath-style location of ``value``; ``seen`` holds the
-    ``id()`` of every container on the current path, for cycle detection.
-    """
-    if value is None or isinstance(value, (bool, int, str)):
-        # bool is a subclass of int; both are accepted JSON scalars.
-        return value
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise StrictJsonError(
-                path=path,
-                reason="non-finite number",
-                type_name="float",
-                detail=detail_repr(value),
-            )
-        return value
-    if isinstance(value, dict):
-        if id(value) in seen:
-            raise StrictJsonError(
-                path=path,
-                reason="reference cycle",
-                type_name="dict",
-                detail=detail_repr(value),
-            )
-        inner = seen | {id(value)}
-        for key, item in value.items():
-            if not isinstance(key, str):
-                raise StrictJsonError(
-                    path=path,
-                    reason="non-string object key",
-                    type_name=type(key).__name__,
-                    detail=detail_repr(key),
-                )
-            _validate_strict_json(item, (*path, key), inner)
-        return value
-    if isinstance(value, list):
-        if id(value) in seen:
-            raise StrictJsonError(
-                path=path,
-                reason="reference cycle",
-                type_name="list",
-                detail=detail_repr(value),
-            )
-        inner = seen | {id(value)}
-        for index, item in enumerate(value):
-            _validate_strict_json(item, (*path, index), inner)
-        return value
+    """Validate via the strict failure traversal shared with canonical JSON."""
+    failure = _find_strict_json_failure(value, path)
+    if failure is None:
+        return cast("Jsonable", value)
+    failure_path, leaf, reason = failure
     raise StrictJsonError(
-        path=path,
-        reason="unsupported type",
-        type_name=type(value).__name__,
-        detail=detail_repr(value),
+        path=failure_path,
+        reason=reason,
+        type_name=type(leaf).__name__,
+        detail=detail_repr(leaf),
     )
 
 
@@ -334,12 +295,13 @@ def canonical_identity_json(document: IdentityDocument) -> str:
     """Render Canonical Identity JSON Text for an Identity Document.
 
     Deterministic, compact, sorted-key UTF-8 JSON text of the complete
-    three-field document. This pins the same profile as
-    :func:`dr_serialize.canonical.canonical_json`
+    three-field document. This pins the ``dr-serialize Canonical JSON Text
+    profile v1`` used by :func:`dr_serialize.canonical.canonical_json`
     (``sort_keys=True``, ``separators=(",", ":")``, ``ensure_ascii=True``,
-    ``allow_nan=False``); it is NOT RFC 8785. The payload is already
-    validated as a strict JSON value, so serialization cannot silently
-    coerce a runtime value onto an identity.
+    ``allow_nan=False``), including preserved list order; it is NOT RFC 8785.
+    Incompatible profiles require separately named APIs. The payload is
+    already validated as a strict JSON value, so serialization cannot
+    silently coerce a runtime value onto an identity.
     """
     return canonical_json(document.to_json_dict())
 
