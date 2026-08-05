@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from dr_serialize._core.diagnostics import JsonPath
     from dr_serialize._core.json_values import _JsonFailure
 
-CANONICAL_JSON_MAX_CONTAINER_DEPTH: Final[int] = 100
+CANONICAL_JSON_MAX_CONTAINER_DEPTH: Final[int] = 200
 CANONICAL_JSON_MAX_INTEGER_DIGITS: Final[int] = 640
 
 

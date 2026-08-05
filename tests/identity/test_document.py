@@ -170,7 +170,7 @@ def test_document_accepts_exact_canonical_depth_limit() -> None:
     document = build_identity_document(
         schema="s",
         schema_version=1,
-        payload=_nested_list(99),
+        payload=_nested_list(199),
     )
 
     assert len(identity_document_hash(document)) == SHA256_HEX_LENGTH
@@ -192,10 +192,10 @@ def test_document_rejects_payload_beyond_canonical_depth_limit(
     construct: Callable[[Jsonable], IdentityDocument],
 ) -> None:
     with pytest.raises(IdentityDocumentError) as exc_info:
-        construct(_nested_list(100))
+        construct(_nested_list(200))
 
-    assert exc_info.value.path == ("payload", *((0,) * 99))
-    assert exc_info.value.reason == "container depth 101 exceeds maximum 100"
+    assert exc_info.value.path == ("payload", *((0,) * 199))
+    assert exc_info.value.reason == "container depth 201 exceeds maximum 200"
 
 
 def test_document_rejects_payload_integer_beyond_canonical_limit() -> None:
@@ -275,7 +275,7 @@ def test_document_revalidates_deep_copied_payload() -> None:
 def test_document_revalidates_canonical_bounds_after_deepcopy() -> None:
     class ExpandingDeepCopyList(list[Jsonable]):
         def __deepcopy__(self, _memo: dict[int, Any]) -> Any:
-            return _nested_list(100)
+            return _nested_list(200)
 
     with pytest.raises(IdentityDocumentError) as exc_info:
         IdentityDocument(
@@ -284,7 +284,7 @@ def test_document_revalidates_canonical_bounds_after_deepcopy() -> None:
             payload=ExpandingDeepCopyList(),
         )
 
-    assert exc_info.value.path == ("payload", *((0,) * 99))
+    assert exc_info.value.path == ("payload", *((0,) * 199))
 
 
 def test_mutating_original_payload_does_not_change_document() -> None:

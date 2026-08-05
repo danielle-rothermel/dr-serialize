@@ -45,7 +45,7 @@ canonical set ordering.
 
 ```python
 class SerializationLimits(BaseModel):
-    max_depth: int = 100
+    max_depth: int = 200
     max_bytes: int
     hard_max_bytes: int | None = None
 
@@ -87,13 +87,13 @@ class Serializer:
 ## Canonical JSON
 
 Canonical JSON consumes finite strict JSON values without applying handlers or
-selecting domain fields. Profile v1 admits at most 100 nested containers and
+selecting domain fields. Profile v1 admits at most 200 nested containers and
 640 decimal digits per integer; scalars have depth 0 and a root list or object
 has depth 1. It then uses the standard-library JSON encoder; canonical text is
 the stable contract from which exact bytes and hashes are derived.
 
 ```python
-CANONICAL_JSON_MAX_CONTAINER_DEPTH: Final[int] = 100
+CANONICAL_JSON_MAX_CONTAINER_DEPTH: Final[int] = 200
 CANONICAL_JSON_MAX_INTEGER_DIGITS: Final[int] = 640
 
 
@@ -235,3 +235,15 @@ class SerializationError(Exception):
 
     def diagnostics(self) -> dict[str, Any]: ...
 ```
+
+## Development
+
+Install dependencies and the commit hook once per clone:
+
+```bash
+uv sync --locked
+uv run pre-commit install
+```
+
+The hook runs `scripts/pre-check.sh` for Ruff formatting, Ruff lint, and type
+checking, followed by the test suite.

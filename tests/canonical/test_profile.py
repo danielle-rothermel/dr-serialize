@@ -37,7 +37,7 @@ def test_profile_limits_are_public_and_frozen_at_v1_values() -> None:
     import dr_serialize
     import dr_serialize.canonical
 
-    assert CANONICAL_JSON_MAX_CONTAINER_DEPTH == 100
+    assert CANONICAL_JSON_MAX_CONTAINER_DEPTH == 200
     assert CANONICAL_JSON_MAX_INTEGER_DIGITS == 640
     assert (
         dr_serialize.canonical.CANONICAL_JSON_MAX_CONTAINER_DEPTH
@@ -73,9 +73,9 @@ def test_profile_rejects_first_container_beyond_maximum_depth() -> None:
         canonical_json(value)
 
     error = exc_info.value
-    assert error.path == (0,) * 100
+    assert error.path == (0,) * 200
     assert error.type_name == "list"
-    assert error.detail == "container depth 101 exceeds maximum 100"
+    assert error.detail == "container depth 201 exceeds maximum 200"
     assert isinstance(error.underlying, ValueError)
 
 

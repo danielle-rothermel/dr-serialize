@@ -8,6 +8,10 @@ from pydantic import ValidationError
 from dr_serialize import SerializationLimits
 
 
+def test_default_max_depth_is_200() -> None:
+    assert SerializationLimits(max_bytes=0).max_depth == 200
+
+
 @pytest.mark.parametrize(
     "field",
     ["max_depth", "max_bytes", "hard_max_bytes"],

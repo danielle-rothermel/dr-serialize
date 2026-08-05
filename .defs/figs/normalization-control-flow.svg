@@ -88,7 +88,7 @@
   <rect x="664" y="320" width="452" height="190" class="code"/>
   <text x="682" y="348" class="mono"><tspan class="anchor">class</tspan> SerializationLimits(BaseModel):</text>
   <text x="698" y="378" class="mono">model_config = frozen + extra="forbid"</text>
-  <text x="698" y="408" class="mono">max_depth: StrictInt = 100</text>
+  <text x="698" y="408" class="mono">max_depth: StrictInt = 200</text>
   <text x="698" y="438" class="mono">max_bytes: StrictInt</text>
   <text x="698" y="468" class="mono">hard_max_bytes: StrictInt | None = None</text>
   <text x="664" y="518" class="small">All numeric limits are nonnegative; zero is valid.</text>

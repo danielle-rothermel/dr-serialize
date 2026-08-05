@@ -16,7 +16,7 @@ POSTGRES_JSONB_PAYLOAD_MAX_BYTES = POSTGRES_JSONB_MAX_BYTES - int(
 )
 
 # Library policy guard against runaway nesting.
-DEFAULT_MAX_DEPTH = 100
+DEFAULT_MAX_DEPTH = 200
 
 
 class SerializationLimits(BaseModel):

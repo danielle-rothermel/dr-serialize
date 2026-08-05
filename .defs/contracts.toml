@@ -55,7 +55,7 @@ statement = """
 canonical_json(), canonical_json_bytes(), json_hash(), and the identity \
 functions validate Strict JSON Values at runtime. Profile v1 sorts object \
 keys, preserves list order, uses compact separators and ASCII escaping, \
-rejects non-finite numbers and cycles, admits at most 100 nested containers \
+rejects non-finite numbers and cycles, admits at most 200 nested containers \
 and 640 decimal digits per integer, and encodes text as UTF-8 through the \
 standard-library JSON encoder. Scalars have container depth 0; a root list or \
 object has depth 1; each nested list or object adds 1. Identity Document \
@@ -97,9 +97,9 @@ global registry or implicit policy. Serializer uses those objects without \
 copying or runtime type enforcement, so callers must not mutate aliased \
 configuration. max_depth, max_bytes, and hard_max_bytes are non-negative when \
 present, zero is valid, and max_bytes cannot exceed hard_max_bytes when the \
-latter is present. The library owns path and depth bookkeeping, validates \
-consumer-handled results as normalization Jsonable under the depth limit, and \
-enforces encoded size on the final result."""
+latter is present. max_depth defaults to 200. The library owns path and depth \
+bookkeeping, validates consumer-handled results as normalization Jsonable under \
+the depth limit, and enforces encoded size on the final result."""
 rationale = """
 Instance-scoped policy keeps conversion choices explicit, while library-owned \
 validation and bookkeeping apply the declared limits consistently across \

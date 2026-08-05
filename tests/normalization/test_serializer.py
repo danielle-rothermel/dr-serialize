@@ -126,19 +126,19 @@ class TestGuardrails:
 
     def test_max_depth_exceeded(self) -> None:
         with pytest.raises(MaxDepthExceededError) as exc_info:
-            to_jsonable(nested_list(101), limits=DEFAULT_LIMITS)
+            to_jsonable(nested_list(201), limits=DEFAULT_LIMITS)
         exc = exc_info.value
-        assert exc.depth == 101
+        assert exc.depth == 201
         assert exc.max_depth == DEFAULT_MAX_DEPTH
         assert_diagnostics(
             exc,
             {"path", "detail", "depth", "max_depth", "value_preview"},
-            depth=101,
+            depth=201,
             max_depth=DEFAULT_MAX_DEPTH,
         )
 
     def test_max_depth_nested_path(self) -> None:
-        payload = {"outer": {"inner": nested_list(101)}}
+        payload = {"outer": {"inner": nested_list(201)}}
         with pytest.raises(MaxDepthExceededError) as exc_info:
             to_jsonable(payload, limits=DEFAULT_LIMITS)
         path = exc_info.value.path

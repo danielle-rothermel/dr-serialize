@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.2] - 2026-08-05
 
 ### Added
 
@@ -17,8 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Organize the implementation and test suite by functional area under
   `_core`, `normalization`, `canonical`, `decoding`, and `identity`, while
   preserving every previously exported root name.
-- Enforce a maximum container depth of 100 and a maximum integer length of
-  640 decimal digits across canonical and identity entry points.
+- Freeze the canonical and identity maximum container depth at 200 and the
+  maximum integer length at 640 decimal digits.
+- Default normalization to a maximum depth of 200 while preserving explicit
+  per-instance configuration.
 - Validate arbitrary-depth strict JSON iteratively while preserving
   first-failure paths, and keep typed serialization errors intact when
   caller-defined value or path representations fail.

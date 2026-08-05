@@ -1,5 +1,5 @@
 {
-  "note": "Identity Document golden vectors. Cross-repo reusable. dr-serialize Canonical JSON Text profile v1: finite strict JSON input, at most 100 nested containers and 640 decimal digits per integer, sorted object keys, preserved list order, compact separators, ASCII escaping, and UTF-8 output bytes through the standard-library JSON encoder. Identity Documents enforce the profile over the complete document. Not RFC 8785. Incompatible profiles require separately named APIs. identity_hash = full lowercase sha256 hex of the canonical identity JSON text's UTF-8 bytes.",
+  "note": "Identity Document golden vectors. Cross-repo reusable. dr-serialize Canonical JSON Text profile v1: finite strict JSON input, at most 200 nested containers and 640 decimal digits per integer, sorted object keys, preserved list order, compact separators, ASCII escaping, and UTF-8 output bytes through the standard-library JSON encoder. Identity Documents enforce the profile over the complete document. Not RFC 8785. Incompatible profiles require separately named APIs. identity_hash = full lowercase sha256 hex of the canonical identity JSON text's UTF-8 bytes.",
   "cases": {
     "minimal_empty_payload": {
       "document": {
