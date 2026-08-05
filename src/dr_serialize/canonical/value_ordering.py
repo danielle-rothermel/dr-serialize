@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Iterable  # noqa: TC003 -- runtime hints
 
+from dr_serialize._core.json_values import (
+    Jsonable,  # noqa: TC001 -- runtime hints
+)
 from dr_serialize.canonical.errors import JsonEncodeError
 from dr_serialize.canonical.json_text import canonical_json
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
-
-    from dr_serialize._core.json_values import Jsonable
 
 
 def canonical_sorted_values(values: Iterable[Jsonable], /) -> list[Jsonable]:

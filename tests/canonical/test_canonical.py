@@ -7,6 +7,7 @@ canonical text and hash values as the compatibility gate.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any, cast, get_type_hints
 
@@ -15,6 +16,7 @@ import pytest
 from dr_serialize import (
     Jsonable,
     JsonEncodeError,
+    Sha256Digest,
     canonical_json,
     canonical_json_bytes,
     canonical_sorted_values,
@@ -72,8 +74,32 @@ def test_json_hash_full_length() -> None:
     assert hash_value == json_hash({"k": "v"})
 
 
-def test_json_hash_runtime_annotations_resolve() -> None:
-    assert get_type_hints(json_hash)["value"] == Jsonable
+@pytest.mark.parametrize(
+    ("function", "expected_hints"),
+    [
+        (canonical_json, {"value": Jsonable, "return": str}),
+        (canonical_json_bytes, {"value": Jsonable, "return": bytes}),
+        (
+            canonical_sorted_values,
+            {"values": Iterable[Jsonable], "return": list[Jsonable]},
+        ),
+        (
+            json_hash,
+            {
+                "value": Jsonable,
+                "length": int | None,
+                "return": Sha256Digest | str,
+            },
+        ),
+    ],
+)
+def test_canonical_runtime_annotations_resolve(
+    function: Callable[..., object],
+    expected_hints: dict[str, object],
+) -> None:
+    hints = get_type_hints(function)
+    for name, expected in expected_hints.items():
+        assert hints[name] == expected
 
 
 @pytest.mark.parametrize("length", [1, 16, 24, 32, 64])
