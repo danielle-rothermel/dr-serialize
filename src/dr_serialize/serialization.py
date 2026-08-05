@@ -224,7 +224,17 @@ def _jsonable_unordered_set(x: Any, ctx: ConversionContext) -> JsonableHandle:
         converted = [
             ctx.convert(item, index) for index, item in enumerate(x)
         ]
-        return True, canonical_sorted_values(converted)
+        try:
+            ordered = canonical_sorted_values(converted)
+        except JsonEncodeError as error:
+            raise JsonEncodeError(
+                path=(*ctx.path, *error.path),
+                type_name=error.type_name,
+                detail=error.detail,
+                underlying=error.underlying,
+                value_preview=error.value_preview,
+            ) from error
+        return True, ordered
     return False, None
 
 
