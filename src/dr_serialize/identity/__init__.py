@@ -1,3 +1,7 @@
+from dr_serialize._core.strict_json import (
+    StrictJsonError,
+    validate_strict_json,
+)
 from dr_serialize.identity.canonical_json import (
     canonical_identity_json,
     canonical_identity_json_bytes,
@@ -19,6 +23,7 @@ __all__ = [
     "IDENTITY_DOCUMENT_FIELDS",
     "IdentityDocument",
     "IdentityDocumentError",
+    "StrictJsonError",
     "build_identity_document",
     "canonical_identity_json",
     "canonical_identity_json_bytes",
@@ -26,4 +31,5 @@ __all__ = [
     "identity_document_hash",
     "identity_hash_prefix",
     "validate_identity_document",
+    "validate_strict_json",
 ]
