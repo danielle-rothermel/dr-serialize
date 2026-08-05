@@ -110,6 +110,36 @@ are intentionally policy-free: hashes are long-lived keys, so they must never
 change because a handler was added or a limit tuned. If you need conversion
 first, compose with the normalization lane explicitly.
 
+### Deterministic arrays from unordered collections
+
+`canonical_json` preserves array order by design, so an array built from a
+`set` cannot be repaired afterwards. `canonical_sorted_values` orders
+already-JSON-safe values by their canonical JSON text instead, projecting a
+logically unordered collection into one deterministic array. `Serializer`
+applies it to every `set` and `frozenset` it normalizes; call it directly
+wherever else an unordered collection becomes JSON - notably in a Pydantic
+`field_serializer`, so `model_dump(mode="json")` is byte-stable:
+
+```python
+import pydantic
+from dr_serialize import Jsonable, canonical_sorted_values
+
+class Capabilities(pydantic.BaseModel):
+    tags: frozenset[str]
+
+    @pydantic.field_serializer("tags")
+    def serialize_tags(self, value: frozenset[str]) -> list[Jsonable]:
+        return canonical_sorted_values(value)
+```
+
+The order is arbitrary-but-stable lexicographic order over canonical JSON
+text, not a human collation: `10` sorts before `2` and `true` sorts after
+every number. The helper is policy-free - it never normalizes, coerces, or
+deduplicates, duplicates survive, and the iterable is consumed once - and it
+must never be used to reorder a semantically ordered array. Members outside
+strict `Jsonable` raise `JsonEncodeError` with the member's input index
+prefixed onto the error path.
+
 `Sha256Digest` is the nominal boundary for full SHA-256 values. Its
 `parse()` method accepts exactly 64 lowercase hexadecimal characters and
 raises `Sha256DigestError` for prefixes, alternate case, whitespace,
@@ -220,8 +250,8 @@ malformed full digest.
 Normalization: `Serializer`, `ConversionContext`, `JsonableHandler`,
 `JsonableHandle`, `SerializationLimits`, `postgres_jsonb_limits`,
 `POSTGRES_JSONB_PAYLOAD_MAX_BYTES`, `POSTGRES_JSONB_MAX_BYTES`.
-Canonical JSON Text: `canonical_json`, `canonical_json_bytes`, `json_hash`,
-`Sha256Digest`, `Sha256DigestError`.
+Canonical JSON Text: `canonical_json`, `canonical_json_bytes`,
+`canonical_sorted_values`, `json_hash`, `Sha256Digest`, `Sha256DigestError`.
 Strict decoding: `decode_strict_json_bytes`, `StrictJsonDecodeError`,
 `JsonByteLimitError`, `JsonDepthLimitError`, `InvalidUtf8Error`,
 `JsonSyntaxError`, `DuplicateJsonKeyError`, `NonFiniteJsonNumberError`.
