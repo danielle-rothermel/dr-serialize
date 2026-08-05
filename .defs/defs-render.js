@@ -1,8 +1,3 @@
-// Client-side renderer for the dr-serialize .defs terms and contracts reference.
-//
-// The TOML files are authoritative. This module derives links in the browser
-// and never stores a second copy of their data.
-
 import { parse } from "./smol-toml.js";
 
 const RELATIONSHIPS = [

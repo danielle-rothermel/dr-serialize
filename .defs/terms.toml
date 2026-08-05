@@ -1,15 +1,13 @@
 #:schema ./terms.schema.json
 
-# Shared vocabulary for dr-serialize. See terms.schema.json for the entry
-# schema and the danielle-defs skill for authoring rules.
-
 [[terms]]
 name = "normalization"
 definition = """
 The policy-driven transformation of arbitrary values into a bounded, \
-JSON-safe representation for diagnostics or non-identity storage. \
-Normalization may be lossy, and its conversion choices are deliberately \
-separate from identity."""
+JSON-encodable representation for diagnostics or non-identity storage. \
+Normalization may be lossy, non-finite floats may survive outside canonical \
+set ordering, and its conversion choices are deliberately separate from \
+identity."""
 categories = ["normalization"]
 
 [[terms]]
@@ -78,9 +76,16 @@ categories = ["identity"]
 name = "canonical JSON text"
 definition = """
 The single deterministic UTF-8 JSON text selected for a JSON value, using \
-compact separators and sorted object keys. The same accepted value always \
-produces the same text and bytes."""
-exported_symbols = ["canonical_json", "canonical_json_bytes", "json_hash"]
+compact separators, sorted object keys, and profile-defined structural and \
+numeric bounds. The same accepted value always produces the same text and \
+bytes."""
+exported_symbols = [
+  "canonical_json",
+  "canonical_json_bytes",
+  "json_hash",
+  "CANONICAL_JSON_MAX_CONTAINER_DEPTH",
+  "CANONICAL_JSON_MAX_INTEGER_DIGITS",
+]
 categories = ["canonicalization"]
 
 [[terms]]
@@ -139,9 +144,10 @@ part_of = ["identity hash"]
 [[terms]]
 name = "diagnostic normalized JSON value"
 definition = """
-The potentially lossy, size- and depth-bounded JSON-safe value \
-produced by normalization for diagnostics or non-identity storage. It is not \
-an identity payload and never supplies input to identity hashing."""
+The potentially lossy, size- and depth-bounded JSON-shaped value produced by \
+normalization for diagnostics or non-identity storage. Non-finite floats may \
+survive outside canonical set ordering. It is not an identity payload and \
+never supplies input to identity hashing."""
 exported_symbols = [
   "Serializer",
   "Jsonable",
@@ -176,3 +182,23 @@ never normalizes, coerces, deduplicates, or selects domain fields, and is \
 never applied to semantically ordered arrays."""
 categories = ["canonicalization"]
 exported_symbols = ["canonical_sorted_values"]
+
+[[terms]]
+name = "error diagnostics"
+definition = """
+Structured context attached to a failure so callers can inspect its location \
+and cause without parsing an exception message. Its disclosure guarantees \
+depend on the boundary that produced it."""
+categories = ["normalization", "canonicalization", "identity"]
+exported_symbols = [
+  "JsonEncodeError",
+  "JsonPath",
+  "MaxDepthExceededError",
+  "ModelDumpError",
+  "ObjectVarsSerializationError",
+  "PayloadTooLargeError",
+  "SerializationError",
+  "ValueTransformError",
+  "detail_repr",
+  "preview_repr",
+]

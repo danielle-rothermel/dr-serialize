@@ -56,7 +56,6 @@
 
   <rect width="1920" height="1680" fill="#f4f6f9"/>
 
-  <!-- Header -->
   <text x="72" y="70" class="eyebrow">DR-SERIALIZE · NORMALIZATION LANE</text>
   <text x="72" y="116" class="title">What is the normalization control flow?</text>
   <text x="72" y="148" class="dek">An ordered policy walk at every node, followed by a whole-payload encoding and size probe.</text>
@@ -64,7 +63,6 @@
   <text x="1560" y="94" class="label amber">DIAGNOSTIC NORMALIZATION</text>
   <text x="1560" y="115" class="small">extensible · bounded · potentially lossy</text>
 
-  <!-- Public contracts -->
   <text x="72" y="206" class="section-no">1</text>
   <text x="106" y="204" class="section">What enters the engine?</text>
   <line x1="72" y1="220" x2="1848" y2="220" class="rule"/>
@@ -90,7 +88,7 @@
   <rect x="664" y="320" width="452" height="190" class="code"/>
   <text x="682" y="348" class="mono"><tspan class="anchor">class</tspan> SerializationLimits(BaseModel):</text>
   <text x="698" y="378" class="mono">model_config = frozen + extra="forbid"</text>
-  <text x="698" y="408" class="mono">max_depth: StrictInt = 100</text>
+  <text x="698" y="408" class="mono">max_depth: StrictInt = 200</text>
   <text x="698" y="438" class="mono">max_bytes: StrictInt</text>
   <text x="698" y="468" class="mono">hard_max_bytes: StrictInt | None = None</text>
   <text x="664" y="518" class="small">All numeric limits are nonnegative; zero is valid.</text>
@@ -107,7 +105,6 @@
   <text x="1218" y="486" class="mono"><tspan class="anchor">def</tspan> convert(child: Any, key: str | int | None = None) -&gt; Jsonable: ...</text>
   <text x="1184" y="530" class="small">Return (False, None) to continue; (True, value) claims this node.</text>
 
-  <!-- Main per-node flow -->
   <text x="72" y="600" class="section-no">2</text>
   <text x="106" y="598" class="section">How is each node decided?</text>
   <line x1="72" y1="614" x2="1848" y2="614" class="rule"/>
@@ -135,17 +132,17 @@
   <line x1="442" y1="930" x2="686" y2="930" class="hairline"/>
   <text x="442" y="956" class="mono-small">scalar</text>
   <text x="510" y="956" class="small">None / bool / int / float / str → itself</text>
-  <text x="442" y="988" class="mono-small">sequence</text>
-  <text x="442" y="1008" class="small">list / tuple / set / frozenset → list</text>
-  <text x="442" y="1028" class="small">each item via ctx.convert(item, index)</text>
-  <text x="442" y="1060" class="mono-small">mapping</text>
-  <text x="442" y="1080" class="small">dict → {str(key):</text>
-  <text x="482" y="1100" class="small">ctx.convert(value, str(key))}</text>
-  <text x="442" y="1126" class="mono-small">bytes</text>
-  <text x="510" y="1126" class="small">→ "&lt;bytes len=N&gt;"</text>
-  <rect x="442" y="1140" width="244" height="36" rx="6" fill="#fff6e0" stroke="#ead39b"/>
-  <text x="454" y="1155" class="micro amber">Set order is not promised; stringified dict keys</text>
-  <text x="454" y="1169" class="micro amber">can collide. Neither behavior is identity-safe.</text>
+  <text x="442" y="982" class="mono-small">ordered sequence</text>
+  <text x="442" y="1001" class="micro">list / tuple → list; preserve input order</text>
+  <text x="442" y="1020" class="micro">each item via ctx.convert(item, index)</text>
+  <text x="442" y="1043" class="mono-small">unordered set</text>
+  <text x="442" y="1062" class="micro">direct set/frozenset → sorted list</text>
+  <text x="442" y="1081" class="micro">each member via ctx.convert(item, iteration index)</text>
+  <text x="442" y="1104" class="mono-small">mapping</text>
+  <text x="442" y="1123" class="micro">dict → {str(key): ctx.convert(value, str(key))}</text>
+  <text x="442" y="1146" class="mono-small">bytes <tspan class="micro">→ "&lt;bytes len=N&gt;"</tspan></text>
+  <text x="442" y="1163" class="micro amber">Only direct set handling retains provenance;</text>
+  <text x="442" y="1178" class="micro amber">list conversions must sort at their boundary.</text>
 
   <path d="M708 1020 H742" class="flow"/>
 
@@ -181,7 +178,6 @@
   <rect x="1106" y="1146" width="252" height="28" rx="6" fill="#eef1f6"/>
   <text x="1118" y="1165" class="micro">No match → return x unchanged</text>
 
-  <!-- Recursive ownership sidecar -->
   <rect x="1440" y="642" width="408" height="594" class="card" filter="url(#shadow)"/>
   <text x="1464" y="678" class="eyebrow">RECURSION OWNERSHIP</text>
   <text x="1464" y="700" class="card-title">Handlers choose children;</text>
@@ -205,14 +201,13 @@
   <text x="1484" y="1030" class="mono-small">dumped = x.model_dump(mode="json")</text>
   <text x="1484" y="1056" class="mono-small">_convert_node(serializer, dumped,</text>
   <text x="1484" y="1080" class="mono-bold">              ctx.depth, ctx.path)</text>
-  <text x="1484" y="1124" class="small">The dump is not trusted as JSON-safe; its children</text>
-  <text x="1484" y="1145" class="small">then recurse normally and consume depth.</text>
+  <text x="1484" y="1124" class="small">model_dump may erase set/frozenset provenance;</text>
+  <text x="1484" y="1145" class="small">such conversions must apply canonical_sorted_values there.</text>
   <path d="M1464 1038 H1422 V820 H1380" class="flow-dashed"/>
 
   <rect x="1464" y="1170" width="360" height="44" class="node-green"/>
   <text x="1484" y="1198" class="label green">A handled value is validated, then returned.</text>
 
-  <!-- Whole-payload gates -->
   <text x="72" y="1298" class="section-no">3</text>
   <text x="106" y="1296" class="section">What must the root result pass?</text>
   <line x1="72" y1="1312" x2="1848" y2="1312" class="rule"/>
@@ -241,7 +236,6 @@
   <text x="1380" y="1400" class="mono-bold green">return value: Jsonable</text>
   <text x="1380" y="1427" class="small">Returns normalized Python data — not the encoded JSON string.</text>
 
-  <!-- Typed exits and boundary truth -->
   <text x="72" y="1510" class="section-no">4</text>
   <text x="106" y="1508" class="section">Where do typed failures leave?</text>
   <line x1="72" y1="1524" x2="1848" y2="1524" class="rule"/>
@@ -254,9 +248,9 @@
   <rect x="1238" y="1550" width="610" height="84" class="node-amber"/>
   <text x="1260" y="1578" class="label amber">BOUNDARY TRUTH</text>
   <text x="1260" y="1603" class="small">Normalization is handler-policy-dependent and may coerce, redact, or reorder.</text>
-  <text x="1260" y="1625" class="small">It is not deterministic normalization and must not establish strict identity.</text>
+  <text x="1260" y="1625" class="small">Direct-set ordering does not make normalization an identity contract.</text>
 
-  <text x="72" y="1667" class="micro">Source: src/dr_serialize/serialization.py, limits.py, jsonable.py, README.md</text>
+  <text x="72" y="1667" class="micro">Source: src/dr_serialize/normalization/, canonical/value_ordering.py, _core/json_values.py</text>
   <text x="1848" y="1649" text-anchor="end" class="micro">json.dumps ValueError passes through; arbitrary handler exceptions usually pass through.</text>
   <text x="1848" y="1667" text-anchor="end" class="micro">An enclosing __dict__ fallback wraps non-SerializationError exceptions.</text>
 </svg>

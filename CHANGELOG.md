@@ -4,6 +4,45 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-08-05
+
+### Added
+
+- Public constants `CANONICAL_JSON_MAX_CONTAINER_DEPTH` and
+  `CANONICAL_JSON_MAX_INTEGER_DIGITS` for the frozen Canonical JSON Text
+  profile v1 bounds.
+
+### Changed
+
+- Organize the implementation and test suite by functional area under
+  `_core`, `normalization`, `canonical`, `decoding`, and `identity`, while
+  preserving every previously exported root name.
+- Freeze the canonical and identity maximum container depth at 200 and the
+  maximum integer length at 640 decimal digits.
+- Default normalization to a maximum depth of 200 while preserving explicit
+  per-instance configuration.
+- Validate arbitrary-depth strict JSON iteratively while preserving
+  first-failure paths, and keep typed serialization errors intact when
+  caller-defined value or path representations fail.
+- Make the public canonical callable annotations resolvable at runtime.
+- Validate both the caller-provided identity payload and the deep-copied value
+  that is stored by `IdentityDocument`.
+- Replace the status-oriented README with a functional public-contract
+  overview, update the package description, and align the terms, contracts,
+  and five architecture diagrams with all 47 root exports.
+- Clarify the strict decoder disclosure boundary, direct unordered-set
+  determinism boundary, and `IdentityDocument` deep-copy protocol without
+  claiming stronger guarantees than the runtime provides.
+- Include cross-process hash-seed determinism tests in the default `pytest`
+  selection.
+
+### Removed
+
+- Remove the former flat implementation modules `dr_serialize.digests`,
+  `dr_serialize.errors`, `dr_serialize.jsonable`, `dr_serialize.limits`, and
+  `dr_serialize.serialization`; import supported names from `dr_serialize` or
+  their functional-area packages.
+
 ## [0.1.1] - 2026-08-05
 
 ### Added

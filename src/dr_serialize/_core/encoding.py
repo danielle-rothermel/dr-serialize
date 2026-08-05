@@ -1,0 +1,1 @@
+TEXT_ENCODING = "utf-8"

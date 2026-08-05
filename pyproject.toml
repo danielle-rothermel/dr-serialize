@@ -1,7 +1,7 @@
 [project]
 name = "dr-serialize"
-version = "0.1.1"
-description = "Canonical JSON Text hashing and JSON-safe serialization with pluggable handlers and configurable limits."
+version = "0.1.2"
+description = "Canonical JSON Text, identity hashing, strict JSON decoding, and bounded policy-driven normalization."
 readme = "README.md"
 license = "MIT"
 authors = [
@@ -29,7 +29,7 @@ Documentation = "https://danielle-rothermel.github.io/dr-serialize/"
 Changelog = "https://github.com/danielle-rothermel/dr-serialize/blob/main/CHANGELOG.md"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling==1.31.0"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
@@ -40,12 +40,14 @@ dev = [
     "ty>=0.0.51",
 ]
 
+[tool.uv]
+required-version = "==0.11.25"
+
 [tool.hatch.build.targets.sdist]
 only-include = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-m 'not subprocess'"
 markers = [
     "subprocess: spawns fresh interpreters (cross-process determinism)",
 ]

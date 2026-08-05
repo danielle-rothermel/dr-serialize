@@ -11,20 +11,22 @@ Only the owning domain can decide which facts define sameness; keeping that \
 decision outside dr-serialize prevents serialization policy from silently \
 redefining identity."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_identity.py"
+check = "uv run pytest -q tests/identity"
 terms = ["identity", "identity payload", "identity document"]
 
 [[contracts]]
 title = "Identity hashing never normalizes or coerces"
 statement = """
-Identity hashing accepts only a validated IdentityDocument with a Strict JSON \
-Value payload. It never uses Serializer, consumer handlers, truncation, or \
-coercion, and a Diagnostic Normalized JSON Value is never identity input."""
+Identity hashing consumes the mapping returned by its document argument as a \
+Strict JSON Value. It never uses Serializer, consumer handlers, truncation, or \
+coercion, and a Diagnostic Normalized JSON Value is never identity input. The \
+supported argument type is IdentityDocument; the runtime path relies on its \
+to_json_dict() protocol rather than enforcing that concrete type."""
 rationale = """
 Keeping policy-driven or lossy conversion out of the identity path ensures \
 that normalization choices cannot redefine caller-owned identity facts."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_identity.py::test_identity_path_does_not_coerce_via_diagnostic_normalization"
+check = "uv run pytest -q tests/identity/test_document.py::test_identity_path_does_not_coerce_via_diagnostic_normalization"
 terms = [
   "identity",
   "strict JSON value",
@@ -33,16 +35,18 @@ terms = [
 ]
 
 [[contracts]]
-title = "Identity Documents isolate every mutable alias"
+title = "Identity Documents apply the deep-copy protocol at their boundary"
 statement = """
-An IdentityDocument owns a private payload snapshot through copy-in, and its \
-payload and to_json_dict() accessors return fresh deep copies. Mutation through \
-any public alias cannot change its canonical bytes or identity hash."""
+IdentityDocument construction and payload access apply copy.deepcopy. Both the \
+caller-provided payload and the copied construction value are validated before \
+that value is stored. Accepted custom list and dict subclasses control whether \
+their deep-copy protocol yields alias isolation."""
 rationale = """
-Isolation makes the validated document, its canonical representation, and its \
-hash stable after construction even when callers retain or mutate containers."""
+The explicit copy-in and copy-out protocol isolates ordinary built-in \
+containers while keeping the actual guarantee truthful for accepted custom \
+container subclasses."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_identity.py -k 'mutat or alias or copy'"
+check = "uv run pytest -q tests/identity/test_document.py -k 'mutat or alias or copy'"
 terms = ["identity document", "canonical identity JSON text", "identity hash"]
 
 [[contracts]]
@@ -51,14 +55,19 @@ statement = """
 canonical_json(), canonical_json_bytes(), json_hash(), and the identity \
 functions validate Strict JSON Values at runtime. Profile v1 sorts object \
 keys, preserves list order, uses compact separators and ASCII escaping, \
-rejects non-finite numbers and cycles, and encodes text as UTF-8. Its existing \
-rules and golden cases are frozen; it is project-owned rather than RFC 8785, \
-and an incompatible future profile uses a separately named API."""
+rejects non-finite numbers and cycles, admits at most 200 nested containers \
+and 640 decimal digits per integer, and encodes text as UTF-8 through the \
+standard-library JSON encoder. Scalars have container depth 0; a root list or \
+object has depth 1; each nested list or object adds 1. Identity Document \
+construction validates the complete prospective document against the same \
+bounds. The profile rules and golden cases are frozen; it is project-owned \
+rather than RFC 8785, and an incompatible future profile uses a separately \
+named API."""
 rationale = """
 A frozen, explicitly project-owned profile keeps canonical bytes and their \
 hashes reproducible without implying conformance to a different standard."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_canonical.py tests/test_identity.py"
+check = "uv run pytest -q tests/canonical tests/identity"
 terms = [
   "strict JSON value",
   "canonical JSON text",
@@ -76,24 +85,27 @@ rationale = """
 The nominal full-digest type makes complete hashes distinguishable from \
 collision-prone display projections at API boundaries."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_digests.py tests/test_canonical.py tests/test_identity.py -k 'hash or digest or prefix'"
+check = "uv run pytest -q tests/_core/test_digests.py tests/canonical tests/identity -k 'hash or digest or prefix'"
 terms = ["hash", "identity hash", "identity hash prefix"]
 
 [[contracts]]
 title = "Normalization policy is instance-scoped and library-guarded"
 statement = """
-Each Serializer owns immutable ordered handlers and validated limits; there is \
-no global registry or implicit policy. max_depth, max_bytes, and \
-hard_max_bytes are non-negative when present, zero is valid, and max_bytes \
-cannot exceed hard_max_bytes when the latter is present. The library owns path \
-and depth bookkeeping, validates consumer-handled results as normalization \
-Jsonable under the depth limit, and enforces encoded size on the final result."""
+The supported Serializer configuration supplies a validated \
+SerializationLimits instance and an ordered tuple of handlers; there is no \
+global registry or implicit policy. Serializer uses those objects without \
+copying or runtime type enforcement, so callers must not mutate aliased \
+configuration. max_depth, max_bytes, and hard_max_bytes are non-negative when \
+present, zero is valid, and max_bytes cannot exceed hard_max_bytes when the \
+latter is present. max_depth defaults to 200. The library owns path and depth \
+bookkeeping, validates consumer-handled results as normalization Jsonable under \
+the depth limit, and enforces encoded size on the final result."""
 rationale = """
 Instance-scoped policy keeps conversion choices explicit, while library-owned \
 validation and bookkeeping apply the declared limits consistently across \
 built-in and consumer handling."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_serialization.py tests/test_handler_registration.py"
+check = "uv run pytest -q tests/normalization"
 terms = [
   "normalization",
   "diagnostic normalized JSON value",
@@ -113,24 +125,26 @@ Checking bytes first and parsing iteratively bounds work before text or nested \
 structure is trusted, while strict rejection preserves the decoded value's \
 declared JSON meaning."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_decoding.py"
+check = "uv run pytest -q tests/decoding/test_decoder.py"
 terms = ["strict JSON value"]
 
 [[contracts]]
 title = "Diagnostic disclosure depends on the entry point"
 statement = """
 Strict decoder messages, diagnostics, and exception cause and context contain \
-only bounded structural metadata, never echo or retain input, and are safe to \
-persist; traceback locals are outside this guarantee. Other \
+only bounded structural metadata and never echo or retain input. Traceback \
+locals are outside this guarantee. Other \
 SerializationError diagnostics are structurally persistable, and their \
 preview and detail fields are bounded, but they may contain payload-derived \
-details, previews, or underlying reprs and are not secret-safe."""
+details, previews, or underlying reprs and are not secret-safe. Diagnostic \
+value and path rendering cannot replace a typed serialization error even when \
+caller-defined repr implementations fail."""
 rationale = """
-The strict byte decoder is an untrusted-input boundary that must not retain its \
-input, while other serialization failures preserve debugging evidence whose \
-disclosure depends on the calling context."""
+The strict byte decoder is an untrusted-input boundary whose persistable error \
+surfaces exclude input, while other serialization failures preserve debugging \
+evidence whose disclosure depends on the calling context."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/test_decoding.py tests/test_serialization.py tests/test_handler_registration.py"
+check = "uv run pytest -q tests/decoding tests/normalization"
 
 [[contracts]]
 title = "Canonical value ordering is policy-free and duplicate-preserving"
@@ -149,25 +163,24 @@ collections -- including downstream Pydantic field serializers -- reach \
 deterministic JSON without dr-serialize taking on normalization policy or a \
 second error taxonomy."""
 date = "2026-08-05"
-check = "uv run pytest -q tests/test_canonical.py -k canonical_sorted_values"
+check = "uv run pytest -q tests/canonical/test_value_ordering.py"
 terms = ["canonical value ordering", "canonicalization", "strict JSON value"]
 
 [[contracts]]
-title = "Set normalization is deterministic"
+title = "Direct unordered-set normalization is deterministic"
 statement = """
-Serializer converts set and frozenset members recursively through the \
-handler chain, then orders the converted members with \
-canonical_sorted_values(), so the normalized JSON of a set is byte-identical \
-across fresh processes regardless of PYTHONHASHSEED. Lists and tuples \
-always retain their original order. There is no compatibility path and no \
-configurable ordering policy. Non-finite numbers inside sets are rejected \
-through canonical JSON error behavior even though normalization passes them \
-through elsewhere."""
+Set and frozenset values that reach Serializer's built-in unordered-set \
+handler are converted recursively and ordered with canonical_sorted_values(), \
+so that handler's output is byte-identical across fresh processes regardless \
+of PYTHONHASHSEED. Model or consumer conversions to lists erase unordered \
+provenance and must apply canonical_sorted_values() at that boundary. Lists \
+and tuples retain their original order. Non-finite numbers inside directly \
+handled sets are rejected through canonical JSON error behavior even though \
+normalization passes them through elsewhere."""
 rationale = """
-Hash iteration order is the only nondeterminism in the normalization lane's \
-container handling; ordering set members by canonical JSON text removes it \
-at the source, since canonical_json() intentionally preserves array order \
-and cannot repair it downstream."""
+Canonical ordering removes hash-iteration variance while unordered provenance \
+is still available. Once another conversion produces a list, canonical_json() \
+preserves that list order and cannot recover or repair the lost provenance."""
 date = "2026-08-05"
-check = "uv run pytest -q tests/test_serialization.py -k 'set or frozenset'"
+check = "uv run pytest -q tests/normalization/test_set_normalization.py tests/normalization/test_hash_seed_determinism.py"
 terms = ["normalization", "canonical value ordering"]
