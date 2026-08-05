@@ -1,6 +1,6 @@
 [project]
 name = "dr-serialize"
-version = "0.1.0"
+version = "0.1.1"
 description = "Canonical JSON Text hashing and JSON-safe serialization with pluggable handlers and configurable limits."
 readme = "README.md"
 license = "MIT"

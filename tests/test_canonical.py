@@ -39,6 +39,12 @@ def test_canonical_json_sorts_keys_and_compacts() -> None:
     )
 
 
+def test_canonical_json_preserves_array_order() -> None:
+    assert canonical_json([3, 1, 2]) == "[3,1,2]"
+    value: Jsonable = {"b": ["z", "a", "m"], "a": [3, 1, 2]}
+    assert canonical_json(value) == '{"a":[3,1,2],"b":["z","a","m"]}'
+
+
 @pytest.mark.parametrize(
     "value",
     [

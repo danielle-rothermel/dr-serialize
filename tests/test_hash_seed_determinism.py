@@ -51,6 +51,7 @@ def _normalize_set_with_seed(seed: str) -> str:
         **os.environ,
         "PYTHONHASHSEED": seed,
         "PYTHONPATH": str(SOURCE_ROOT),
+        "PYTHONDONTWRITEBYTECODE": "1",
     }
     completed = subprocess.run(  # noqa: S603
         [sys.executable, "-c", NORMALIZE_SET_SCRIPT],
