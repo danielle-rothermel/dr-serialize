@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 import pytest
@@ -17,6 +18,19 @@ from dr_serialize import (
     decode_strict_json_bytes,
     validate_strict_json,
 )
+
+_SENSITIVE_MARKER = "decoder-sensitive-marker"
+
+
+@dataclass(frozen=True, slots=True)
+class _PositionCase:
+    data: bytes
+    error_type: type[StrictJsonDecodeError]
+    detail: str
+    byte_offset: int
+    line: int | None = None
+    column: int | None = None
+    max_depth: int = 8
 
 
 @pytest.mark.parametrize(
@@ -177,6 +191,142 @@ def test_runtime_numeric_limit_is_translated_to_typed_error() -> None:
 
 
 @pytest.mark.parametrize(
+    "case",
+    [
+        pytest.param(
+            _PositionCase(
+                data='[\n  "é" true]'.encode(),
+                error_type=JsonSyntaxError,
+                detail="expected ',' or ']'",
+                byte_offset=9,
+                line=2,
+                column=7,
+            ),
+            id="missing-array-comma",
+        ),
+        pytest.param(
+            _PositionCase(
+                data='{\n  "é": 1 "b": 2}'.encode(),
+                error_type=JsonSyntaxError,
+                detail="expected ',' or '}'",
+                byte_offset=12,
+                line=2,
+                column=10,
+            ),
+            id="missing-object-comma",
+        ),
+        pytest.param(
+            _PositionCase(
+                data='{"é": 1,\n  2: 3}'.encode(),
+                error_type=JsonSyntaxError,
+                detail="expected an object key",
+                byte_offset=12,
+                line=2,
+                column=3,
+            ),
+            id="non-string-object-key",
+        ),
+        pytest.param(
+            _PositionCase(
+                data='{"é"\n  1}'.encode(),
+                error_type=JsonSyntaxError,
+                detail="expected ':'",
+                byte_offset=8,
+                line=2,
+                column=3,
+            ),
+            id="missing-colon",
+        ),
+        pytest.param(
+            _PositionCase(
+                data='[\n  "é\\x"]'.encode(),
+                error_type=JsonSyntaxError,
+                detail="malformed string",
+                byte_offset=4,
+                line=2,
+                column=3,
+            ),
+            id="malformed-string",
+        ),
+        pytest.param(
+            _PositionCase(
+                data='{"é": 1}\n  false'.encode(),
+                error_type=JsonSyntaxError,
+                detail="trailing data",
+                byte_offset=12,
+                line=2,
+                column=3,
+            ),
+            id="trailing-data",
+        ),
+        pytest.param(
+            _PositionCase(
+                data='{\n  "é": 1,\n  "\\u00e9": 2}'.encode(),
+                error_type=DuplicateJsonKeyError,
+                detail="object contains a duplicate key",
+                byte_offset=15,
+            ),
+            id="decoded-duplicate-key",
+        ),
+        pytest.param(
+            _PositionCase(
+                data='{\n  "é": [0]}'.encode(),
+                error_type=JsonDepthLimitError,
+                detail="input exceeds the configured structural depth limit",
+                byte_offset=10,
+                max_depth=1,
+            ),
+            id="depth-overflow",
+        ),
+        pytest.param(
+            _PositionCase(
+                data='{\n  "é": 1e400}'.encode(),
+                error_type=NonFiniteJsonNumberError,
+                detail="input contains a non-finite number",
+                byte_offset=10,
+            ),
+            id="numeric-overflow",
+        ),
+        pytest.param(
+            _PositionCase(
+                data='{\n  "é": "'.encode() + b'\xff"}',
+                error_type=InvalidUtf8Error,
+                detail="input is not valid UTF-8",
+                byte_offset=11,
+            ),
+            id="invalid-utf8",
+        ),
+    ],
+)
+def test_errors_report_structured_positions(case: _PositionCase) -> None:
+    with pytest.raises(StrictJsonDecodeError) as exc_info:
+        decode_strict_json_bytes(
+            case.data,
+            max_bytes=len(case.data),
+            max_depth=case.max_depth,
+        )
+
+    error = exc_info.value
+    diagnostics = error.diagnostics()
+    assert type(error) is case.error_type
+    assert error.detail == case.detail
+    assert diagnostics["detail"] == case.detail
+    assert diagnostics["byte_offset"] == case.byte_offset
+    if case.line is None:
+        assert "line" not in diagnostics
+        assert "column" not in diagnostics
+        assert "reason" not in diagnostics
+    else:
+        assert isinstance(error, JsonSyntaxError)
+        assert error.reason == case.detail
+        assert error.line == case.line
+        assert error.column == case.column
+        assert diagnostics["reason"] == case.detail
+        assert diagnostics["line"] == case.line
+        assert diagnostics["column"] == case.column
+
+
+@pytest.mark.parametrize(
     ("name", "value"),
     [
         ("max_bytes", -1),
@@ -192,31 +342,157 @@ def test_rejects_invalid_limits(name: str, value: Any) -> None:
 
 
 @pytest.mark.parametrize(
-    "error",
+    ("error", "expected"),
     [
-        JsonByteLimitError(size_bytes=10_000_000, max_bytes=10),
-        JsonDepthLimitError(depth=100, max_depth=10, byte_offset=99),
-        InvalidUtf8Error(byte_offset=5),
-        JsonSyntaxError(
-            reason="trailing data", byte_offset=5, line=1, column=6
+        (
+            JsonByteLimitError(size_bytes=10_000_000, max_bytes=10),
+            {
+                "path": [],
+                "detail": "input exceeds the configured byte limit",
+                "size_bytes": 10_000_000,
+                "max_bytes": 10,
+            },
         ),
-        DuplicateJsonKeyError(byte_offset=5),
-        NonFiniteJsonNumberError(byte_offset=5),
+        (
+            JsonDepthLimitError(depth=100, max_depth=10, byte_offset=99),
+            {
+                "path": [],
+                "detail": (
+                    "input exceeds the configured structural depth limit"
+                ),
+                "depth": 100,
+                "max_depth": 10,
+                "byte_offset": 99,
+            },
+        ),
+        (
+            InvalidUtf8Error(byte_offset=5),
+            {
+                "path": [],
+                "detail": "input is not valid UTF-8",
+                "byte_offset": 5,
+            },
+        ),
+        (
+            JsonSyntaxError(
+                reason="trailing data", byte_offset=5, line=1, column=6
+            ),
+            {
+                "path": [],
+                "detail": "trailing data",
+                "reason": "trailing data",
+                "byte_offset": 5,
+                "line": 1,
+                "column": 6,
+            },
+        ),
+        (
+            DuplicateJsonKeyError(byte_offset=5),
+            {
+                "path": [],
+                "detail": "object contains a duplicate key",
+                "byte_offset": 5,
+            },
+        ),
+        (
+            NonFiniteJsonNumberError(byte_offset=5),
+            {
+                "path": [],
+                "detail": "input contains a non-finite number",
+                "byte_offset": 5,
+            },
+        ),
     ],
 )
-def test_diagnostics_are_bounded_and_do_not_echo_input(
+def test_error_constructor_diagnostics_shape_is_exact(
     error: StrictJsonDecodeError,
+    expected: dict[str, Any],
 ) -> None:
-    secret = "secret-marker" * 10_000
+    assert error.diagnostics() == expected
+
+
+@pytest.mark.parametrize(
+    ("data", "max_bytes", "max_depth", "error_type"),
+    [
+        pytest.param(
+            _SENSITIVE_MARKER.encode(),
+            0,
+            0,
+            JsonByteLimitError,
+            id="byte-limit",
+        ),
+        pytest.param(
+            f'{{"{_SENSITIVE_MARKER}":[]}}'.encode(),
+            None,
+            1,
+            JsonDepthLimitError,
+            id="depth-limit",
+        ),
+        pytest.param(
+            b'"' + _SENSITIVE_MARKER.encode() + b'\xff"',
+            None,
+            0,
+            InvalidUtf8Error,
+            id="invalid-utf8",
+        ),
+        pytest.param(
+            f'"{_SENSITIVE_MARKER}'.encode(),
+            None,
+            0,
+            JsonSyntaxError,
+            id="syntax",
+        ),
+        pytest.param(
+            (f'{{"{_SENSITIVE_MARKER}":1,"{_SENSITIVE_MARKER}":2}}').encode(),
+            None,
+            1,
+            DuplicateJsonKeyError,
+            id="duplicate-key",
+        ),
+        pytest.param(
+            f'{{"{_SENSITIVE_MARKER}":NaN}}'.encode(),
+            None,
+            1,
+            NonFiniteJsonNumberError,
+            id="non-finite-number",
+        ),
+    ],
+)
+def test_public_decoder_errors_do_not_retain_secret(
+    data: bytes,
+    max_bytes: int | None,
+    max_depth: int,
+    error_type: type[StrictJsonDecodeError],
+) -> None:
+    with pytest.raises(StrictJsonDecodeError) as exc_info:
+        decode_strict_json_bytes(
+            data,
+            max_bytes=len(data) if max_bytes is None else max_bytes,
+            max_depth=max_depth,
+        )
+
+    error = exc_info.value
+    message = str(error)
     diagnostics = error.diagnostics()
-    rendered = repr(diagnostics)
-    assert secret not in rendered
-    assert len(rendered) < 1_000
+    assert type(error) is error_type
+    assert _SENSITIVE_MARKER not in message
+    assert len(message) < 256
+    assert 1 <= len(diagnostics) <= 6
+    for key, value in diagnostics.items():
+        assert len(key) < 32
+        if isinstance(value, str):
+            assert _SENSITIVE_MARKER not in value
+            assert len(value) < 128
+        elif isinstance(value, list):
+            assert value == []
+        else:
+            assert isinstance(value, int)
+    assert error.__cause__ is None
+    assert error.__context__ is None
 
 
 def test_large_adversarial_input_is_not_echoed_in_diagnostics() -> None:
-    secret = "secret-marker" * 10_000
-    data = ('"' + secret).encode()
+    data = ('"' + (_SENSITIVE_MARKER * 10_000)).encode()
     with pytest.raises(JsonSyntaxError) as exc_info:
         decode_strict_json_bytes(
             data,
@@ -224,15 +500,14 @@ def test_large_adversarial_input_is_not_echoed_in_diagnostics() -> None:
             max_depth=0,
         )
     rendered = repr(exc_info.value.diagnostics())
-    assert secret not in rendered
+    assert _SENSITIVE_MARKER not in rendered
     assert len(rendered) < 1_000
     assert exc_info.value.__cause__ is None
     assert exc_info.value.__context__ is None
 
 
 def test_invalid_utf8_does_not_retain_payload_in_exception_chain() -> None:
-    secret = b"secret-marker" * 10_000
-    data = b'"' + secret + b'\xff"'
+    data = b'"' + (_SENSITIVE_MARKER.encode() * 10_000) + b'\xff"'
     with pytest.raises(InvalidUtf8Error) as exc_info:
         decode_strict_json_bytes(
             data,

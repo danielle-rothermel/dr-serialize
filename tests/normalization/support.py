@@ -33,10 +33,6 @@ def assert_only_json_types(value: Any) -> None:
             for item in value:
                 assert_only_json_types(item)
         return
-    if isinstance(value, tuple):
-        for item in value:
-            assert_only_json_types(item)
-        return
     msg = f"non-JSON type: {type(value).__name__}"
     raise AssertionError(msg)
 
@@ -82,21 +78,12 @@ def large_payload(char_count: int) -> dict[str, str]:
     return {"blob": "a" * char_count}
 
 
-class OkModel(pydantic.BaseModel):
-    name: str
-    count: int
-
-
 class SerializedNameModel(pydantic.BaseModel):
     name: str
 
     @pydantic.field_serializer("name")
     def serialize_name(self, value: str) -> str:
         return value.upper()
-
-
-def ok_pydantic_model() -> OkModel:
-    return OkModel(name="n", count=1)
 
 
 class BadModel(pydantic.BaseModel):

@@ -11,7 +11,7 @@ Only the owning domain can decide which facts define sameness; keeping that \
 decision outside dr-serialize prevents serialization policy from silently \
 redefining identity."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/identity/test_identity.py"
+check = "uv run pytest -q tests/identity"
 terms = ["identity", "identity payload", "identity document"]
 
 [[contracts]]
@@ -24,7 +24,7 @@ rationale = """
 Keeping policy-driven or lossy conversion out of the identity path ensures \
 that normalization choices cannot redefine caller-owned identity facts."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/identity/test_identity.py::test_identity_path_does_not_coerce_via_diagnostic_normalization"
+check = "uv run pytest -q tests/identity/test_document.py::test_identity_path_does_not_coerce_via_diagnostic_normalization"
 terms = [
   "identity",
   "strict JSON value",
@@ -44,7 +44,7 @@ rationale = """
 Isolation makes the validated document, its canonical representation, and its \
 hash stable after construction even when callers retain or mutate containers."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/identity/test_identity.py -k 'mutat or alias or copy'"
+check = "uv run pytest -q tests/identity/test_document.py -k 'mutat or alias or copy'"
 terms = ["identity document", "canonical identity JSON text", "identity hash"]
 
 [[contracts]]
@@ -100,7 +100,7 @@ Instance-scoped policy keeps conversion choices explicit, while library-owned \
 validation and bookkeeping apply the declared limits consistently across \
 built-in and consumer handling."""
 date = "2026-08-04"
-check = "uv run pytest -q tests/normalization/test_serializer.py tests/normalization/test_handler_registration.py"
+check = "uv run pytest -q tests/normalization"
 terms = [
   "normalization",
   "diagnostic normalized JSON value",
@@ -158,7 +158,7 @@ collections -- including downstream Pydantic field serializers -- reach \
 deterministic JSON without dr-serialize taking on normalization policy or a \
 second error taxonomy."""
 date = "2026-08-05"
-check = "uv run pytest -q tests/canonical -k canonical_sorted_values"
+check = "uv run pytest -q tests/canonical/test_value_ordering.py"
 terms = ["canonical value ordering", "canonicalization", "strict JSON value"]
 
 [[contracts]]
@@ -178,5 +178,5 @@ container handling; ordering set members by canonical JSON text removes it \
 at the source, since canonical_json() intentionally preserves array order \
 and cannot repair it downstream."""
 date = "2026-08-05"
-check = "uv run pytest -q tests/normalization/test_serializer.py -k 'set or frozenset'"
+check = "uv run pytest -q tests/normalization/test_set_normalization.py tests/normalization/test_hash_seed_determinism.py"
 terms = ["normalization", "canonical value ordering"]

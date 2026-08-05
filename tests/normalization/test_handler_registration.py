@@ -59,46 +59,104 @@ def direct_handler(x: Any, ctx: ConversionContext) -> JsonableHandle:
 
 
 def test_handler_intercepts_before_fallbacks() -> None:
-    # Without the handler, Marker falls through to the __dict__ walk.
-    plain = Serializer(limits=DEFAULT_LIMITS)
-    assert plain.to_jsonable(Marker("t")) == {"tag": "t"}
-
     with_handler = Serializer(
         limits=DEFAULT_LIMITS, handlers=(marker_handler,)
     )
     assert with_handler.to_jsonable(Marker("t")) == {"marker": "t"}
 
-
-def test_serializers_do_not_share_handlers() -> None:
-    with_handler = Serializer(
-        limits=DEFAULT_LIMITS, handlers=(marker_handler,)
-    )
+    # A serializer constructed after consumer registration remains plain.
     plain = Serializer(limits=DEFAULT_LIMITS)
-    assert with_handler.to_jsonable(Marker("t")) == {"marker": "t"}
     assert plain.to_jsonable(Marker("t")) == {"tag": "t"}
 
 
-def test_scalars_bypass_consumer_handlers() -> None:
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (42, 42),
+        ([1, 2], [1, 2]),
+        ((1, 2), [1, 2]),
+        ({"beta", "alpha"}, ["alpha", "beta"]),
+        (frozenset({"beta", "alpha"}), ["alpha", "beta"]),
+        ({"key": "value"}, {"key": "value"}),
+        (b"hello", "<bytes len=5>"),
+    ],
+    ids=[
+        "scalar",
+        "list",
+        "tuple",
+        "set",
+        "frozenset",
+        "mapping",
+        "bytes",
+    ],
+)
+def test_primary_handlers_run_before_consumer_handlers(
+    value: Any,
+    expected: Any,
+) -> None:
+    calls: list[Any] = []
+
     def greedy(x: Any, ctx: ConversionContext) -> JsonableHandle:
         del ctx
+        calls.append(x)
         return True, f"intercepted {x!r}"
 
     serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(greedy,))
-    assert serializer.to_jsonable(42) == 42
-    assert serializer.to_jsonable([1, 2]) == [1, 2]
+    assert serializer.to_jsonable(value) == expected
+    assert calls == []
 
 
-def test_handler_recurses_via_ctx_convert() -> None:
-    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(wrapper_handler,))
+def test_first_matching_consumer_wins() -> None:
+    calls: list[str] = []
+
+    def first(x: Any, ctx: ConversionContext) -> JsonableHandle:
+        del ctx
+        calls.append("first")
+        if isinstance(x, Marker):
+            return True, {"winner": x.tag}
+        return False, None
+
+    def later(x: Any, ctx: ConversionContext) -> JsonableHandle:
+        del x, ctx
+        calls.append("later")
+        return True, {"winner": "later"}
+
+    serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(first, later))
+
+    assert serializer.to_jsonable(Marker("first")) == {"winner": "first"}
+    assert calls == ["first"]
+
+
+def test_ctx_convert_reenters_full_consumer_chain() -> None:
+    serializer = Serializer(
+        limits=DEFAULT_LIMITS,
+        handlers=(wrapper_handler, marker_handler),
+    )
     result = serializer.to_jsonable(Wrapper(Marker("deep")))
-    assert result == {"inner": {"tag": "deep"}}
+    assert result == {"inner": {"marker": "deep"}}
+
+
+@pytest.mark.parametrize("container_type", [set, frozenset])
+def test_set_members_are_consumer_converted_before_canonical_sorting(
+    container_type: type[set[Marker]] | type[frozenset[Marker]],
+) -> None:
+    value = container_type((Marker("beta"), Marker("alpha")))
+    serializer = Serializer(
+        limits=DEFAULT_LIMITS,
+        handlers=(marker_handler,),
+    )
+
+    assert serializer.to_jsonable(value) == [
+        {"marker": "alpha"},
+        {"marker": "beta"},
+    ]
 
 
 def test_valid_direct_handler_output_is_preserved() -> None:
     value = {"items": [1, "two", None]}
     serializer = Serializer(limits=DEFAULT_LIMITS, handlers=(direct_handler,))
 
-    assert serializer.to_jsonable(Direct(value)) is value
+    assert serializer.to_jsonable(Direct(value)) == value
 
 
 def test_non_finite_direct_handler_output_is_preserved() -> None:

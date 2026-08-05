@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from dr_serialize import (
     POSTGRES_JSONB_MAX_BYTES,
@@ -20,12 +20,10 @@ from dr_serialize import (
     ModelDumpError,
     ObjectVarsSerializationError,
     PayloadTooLargeError,
-    SerializationError,
     SerializationLimits,
     postgres_jsonb_limits,
 )
 from tests.normalization.support import (
-    BadModel,
     SerializedNameModel,
     SimpleObject,
     assert_diagnostics,
@@ -33,7 +31,6 @@ from tests.normalization.support import (
     bad_pydantic_model,
     large_payload,
     nested_list,
-    ok_pydantic_model,
     to_jsonable,
 )
 
@@ -43,24 +40,17 @@ DEFAULT_MAX_DEPTH = DEFAULT_LIMITS.max_depth
 
 class TestToJsonableInvariants:
     @pytest.mark.parametrize(
-        ("input_value", "check"),
+        ("input_value", "expected"),
         [
-            (None, lambda r: r is None),
-            (True, lambda r: r is True),
-            (42, lambda r: r == 42),
-            (1.5, lambda r: r == 1.5),
-            ("hi", lambda r: r == "hi"),
-            ({"a": 1, "b": {"c": 2}}, lambda r: r == {"a": 1, "b": {"c": 2}}),
-            ([1, [2, 3]], lambda r: r == [1, [2, 3]]),
-            ((1, 2), lambda r: r == [1, 2]),
-            ({"beta", "alpha"}, lambda r: r == ["alpha", "beta"]),
-            ({"x10", "x2", "x1"}, lambda r: r == ["x1", "x10", "x2"]),
-            (
-                frozenset({"delta", "charlie"}),
-                lambda r: r == ["charlie", "delta"],
-            ),
-            (frozenset({"b", "a", "c"}), lambda r: r == ["a", "b", "c"]),
-            ({1: "one"}, lambda r: r == {"1": "one"}),
+            (None, None),
+            (True, True),
+            (42, 42),
+            (1.5, 1.5),
+            ("hi", "hi"),
+            ({"a": 1, "b": {"c": 2}}, {"a": 1, "b": {"c": 2}}),
+            ([1, [2, 3]], [1, [2, 3]]),
+            ((1, 2), [1, 2]),
+            ({1: "one"}, {"1": "one"}),
         ],
         ids=[
             "none",
@@ -71,24 +61,15 @@ class TestToJsonableInvariants:
             "nested_dict",
             "nested_list",
             "tuple_to_list",
-            "set_orders_strings_by_canonical_text",
-            "set_orders_by_canonical_text_not_numeric_collation",
-            "frozenset_orders_strings_by_canonical_text",
-            "frozenset_orders_by_canonical_text",
             "int_dict_key_to_str",
         ],
     )
     def test_happy_path(
         self,
         input_value: Any,
-        check: Any,
+        expected: Any,
     ) -> None:
-        result = assert_to_jsonable(input_value)
-        assert check(result)
-
-    def test_message_shaped_payload(self) -> None:
-        payload = {"messages": [{"role": "user", "content": "hello"}]}
-        assert assert_to_jsonable(payload) == payload
+        assert assert_to_jsonable(input_value) == expected
 
 
 class TestBuiltinTransforms:
@@ -110,11 +91,7 @@ class TestBuiltinTransforms:
         assert result.startswith("<class ")
         assert expected_substring in result
 
-    def test_pydantic_model(self) -> None:
-        model = ok_pydantic_model()
-        assert assert_to_jsonable(model) == model.model_dump(mode="json")
-
-    def test_pydantic_precedence_over_object_vars(self) -> None:
+    def test_pydantic_field_serializer_precedes_object_vars(self) -> None:
         model = SerializedNameModel(name="n")
         result = assert_to_jsonable(model)
         assert result == model.model_dump(mode="json")
@@ -135,12 +112,11 @@ class TestBuiltinTransforms:
         async def coro() -> None:
             return None
 
-        with pytest.warns(
-            RuntimeWarning,
-            match="coroutine .* was never awaited",
-        ):
-            result = assert_to_jsonable(coro())
-        assert result == "<coroutine>"
+        coroutine = coro()
+        try:
+            assert assert_to_jsonable(coroutine) == "<coroutine>"
+        finally:
+            coroutine.close()
 
     def test_simple_object_vars(self) -> None:
         result = assert_to_jsonable(SimpleObject())
@@ -148,71 +124,6 @@ class TestBuiltinTransforms:
 
 
 class TestGuardrails:
-    @pytest.mark.parametrize(
-        "field",
-        ["max_depth", "max_bytes", "hard_max_bytes"],
-    )
-    def test_negative_serialization_limit_is_rejected(
-        self, field: str
-    ) -> None:
-        values: dict[str, Any] = {
-            "max_depth": 0,
-            "max_bytes": 0,
-            "hard_max_bytes": 0,
-        }
-        values[field] = -1
-
-        with pytest.raises(ValidationError):
-            SerializationLimits(**values)
-
-    @pytest.mark.parametrize(
-        "field",
-        ["max_depth", "max_bytes", "hard_max_bytes"],
-    )
-    def test_boolean_serialization_limit_is_rejected(self, field: str) -> None:
-        values: dict[str, Any] = {
-            "max_depth": 0,
-            "max_bytes": 0,
-            "hard_max_bytes": 0,
-        }
-        values[field] = False
-
-        with pytest.raises(ValidationError):
-            SerializationLimits(**values)
-
-    def test_max_bytes_cannot_exceed_hard_max_bytes(self) -> None:
-        with pytest.raises(
-            ValidationError,
-            match="max_bytes must not exceed hard_max_bytes",
-        ):
-            SerializationLimits(max_bytes=101, hard_max_bytes=100)
-
-    @pytest.mark.parametrize(
-        ("limits", "effective_hard_max_bytes"),
-        [
-            (
-                SerializationLimits(
-                    max_depth=0,
-                    max_bytes=0,
-                    hard_max_bytes=0,
-                ),
-                0,
-            ),
-            (
-                SerializationLimits(max_bytes=100, hard_max_bytes=100),
-                100,
-            ),
-            (SerializationLimits(max_bytes=100, hard_max_bytes=None), 100),
-        ],
-        ids=["zero", "equal", "none"],
-    )
-    def test_zero_equal_and_omitted_hard_limits_are_valid(
-        self,
-        limits: SerializationLimits,
-        effective_hard_max_bytes: int,
-    ) -> None:
-        assert limits.effective_hard_max_bytes == effective_hard_max_bytes
-
     def test_max_depth_enforced_inside_model_dump(self) -> None:
         class PayloadModel(BaseModel):
             data: Any
@@ -290,12 +201,6 @@ class TestGuardrails:
             to_jsonable(large_payload(500), limits=limits)
         assert exc_info.value.postgres_max_bytes == 100
 
-    def test_serialization_limits_are_frozen(self) -> None:
-        limits = SerializationLimits(max_bytes=100)
-
-        with pytest.raises(ValidationError, match="frozen"):
-            limits.max_bytes = 200
-
     def test_json_encode_error(self) -> None:
         with pytest.raises(JsonEncodeError) as exc_info:
             to_jsonable({"bad": object()}, limits=DEFAULT_LIMITS)
@@ -337,37 +242,6 @@ class TestStructuredErrors:
             {"path", "detail", "value_preview", "underlying"},
         )
 
-    def test_all_serialization_errors_implement_diagnostics(self) -> None:
-        """Smoke: concrete subclasses return diagnostics without raising."""
-        triggers: list[
-            tuple[type[SerializationError], SerializationError]
-        ] = []
-
-        with pytest.raises(MaxDepthExceededError) as exc_info:
-            to_jsonable(nested_list(101), limits=DEFAULT_LIMITS)
-        triggers.append((MaxDepthExceededError, exc_info.value))
-
-        with pytest.raises(JsonEncodeError) as exc_info:
-            to_jsonable({"bad": object()}, limits=DEFAULT_LIMITS)
-        triggers.append((JsonEncodeError, exc_info.value))
-
-        with pytest.raises(PayloadTooLargeError) as exc_info:
-            to_jsonable(
-                large_payload(500),
-                limits=postgres_jsonb_limits(100),
-            )
-        triggers.append((PayloadTooLargeError, exc_info.value))
-
-        with pytest.raises(ModelDumpError) as exc_info:
-            to_jsonable(BadModel(x=object()), limits=DEFAULT_LIMITS)
-        triggers.append((ModelDumpError, exc_info.value))
-
-        for exc_type, exc in triggers:
-            diag = exc.diagnostics()
-            assert isinstance(diag, dict)
-            assert "path" in diag
-            assert issubclass(type(exc), exc_type)
-
 
 class TestMetadataAndEdgePaths:
     def test_json_encode_error_reports_nested_path(self) -> None:
@@ -391,97 +265,3 @@ class TestMetadataAndEdgePaths:
 
         result = to_jsonable(async_gen(), limits=DEFAULT_LIMITS)
         assert result == "<async_generator>"
-
-
-class TestSetNormalization:
-    def test_set_members_are_ordered_by_canonical_text(self) -> None:
-        value = {"beta", "alpha", "10", "2", "gamma"}
-        assert assert_to_jsonable(value) == [
-            "10",
-            "2",
-            "alpha",
-            "beta",
-            "gamma",
-        ]
-
-    def test_set_ordering_is_independent_of_construction_order(self) -> None:
-        members = ["delta", "alpha", "charlie", "bravo"]
-        forward = assert_to_jsonable(set(members))
-        reverse = assert_to_jsonable({*members[::-1]})
-        assert forward == reverse == sorted(members)
-
-    def test_nested_set_members_are_ordered(self) -> None:
-        value = {(2, "b"), (1, "a")}
-        assert assert_to_jsonable(value) == [[1, "a"], [2, "b"]]
-
-    def test_lists_and_tuples_retain_original_order(self) -> None:
-        assert assert_to_jsonable(["b", "a", "c"]) == ["b", "a", "c"]
-        assert assert_to_jsonable(("b", "a", "c")) == ["b", "a", "c"]
-
-    def test_list_inside_set_member_retains_its_order(self) -> None:
-        value = {("z", "a"), ("m",)}
-        assert assert_to_jsonable(value) == [["m"], ["z", "a"]]
-
-    def test_non_finite_float_in_set_raises(self) -> None:
-        with pytest.raises(JsonEncodeError) as exc_info:
-            to_jsonable({float("nan")}, limits=DEFAULT_LIMITS)
-
-        exc = exc_info.value
-        assert exc.path == (0,)
-        assert exc.type_name == "float"
-        assert isinstance(exc.underlying, ValueError)
-
-    def test_non_finite_float_in_list_still_normalizes(self) -> None:
-        result = to_jsonable([float("inf")], limits=DEFAULT_LIMITS)
-        assert isinstance(result, list)
-        assert result[0] == float("inf")
-
-    def test_unserializable_set_member_reports_indexed_path(self) -> None:
-        # A lambda falls through every handler unconverted, so it reaches
-        # ordering time inside the set handler still unserializable.
-        with pytest.raises(JsonEncodeError) as exc_info:
-            to_jsonable({lambda: None}, limits=DEFAULT_LIMITS)
-
-        exc = exc_info.value
-        assert exc.path == (0,)
-        assert isinstance(exc.underlying, TypeError)
-
-    def test_max_depth_enforced_through_set_members(self) -> None:
-        limits = SerializationLimits(max_depth=3, max_bytes=1_000_000)
-        deep_member = (((("x",),),),)
-        with pytest.raises(MaxDepthExceededError):
-            to_jsonable({deep_member}, limits=limits)
-
-    def test_set_member_error_path_starts_at_member_index(self) -> None:
-        with pytest.raises(JsonEncodeError) as exc_info:
-            to_jsonable({("outer", (lambda: None,))}, limits=DEFAULT_LIMITS)
-
-        assert exc_info.value.path == (0, 1, 0)
-
-    def test_nested_non_finite_float_in_set_reports_full_path(self) -> None:
-        value = {"a": {"b": {"c": {float("nan")}}}}
-        with pytest.raises(JsonEncodeError) as exc_info:
-            to_jsonable(value, limits=DEFAULT_LIMITS)
-
-        exc = exc_info.value
-        assert exc.path == ("a", "b", "c", 0)
-        assert exc.type_name == "float"
-        assert isinstance(exc.underlying, ValueError)
-
-    def test_nested_unserializable_set_member_reports_full_path(self) -> None:
-        value = {"outer": [{"inner": {lambda: None}}]}
-        with pytest.raises(JsonEncodeError) as exc_info:
-            to_jsonable(value, limits=DEFAULT_LIMITS)
-
-        exc = exc_info.value
-        assert exc.path == ("outer", 0, "inner", 0)
-        assert isinstance(exc.underlying, TypeError)
-
-    def test_nested_set_member_error_path_includes_member_interior(
-        self,
-    ) -> None:
-        value = {"k": [{("outer", (lambda: None,))}]}
-        with pytest.raises(JsonEncodeError) as exc_info:
-            to_jsonable(value, limits=DEFAULT_LIMITS)
-
-        assert exc_info.value.path == ("k", 0, 0, 1, 0)
