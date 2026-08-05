@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1360" role="img" aria-labelledby="title desc">
-  <title id="title">dr-serialize surface and lane contract map</title>
-  <desc id="desc">A newcomer-oriented map of three public surfaces: policy-driven normalization from arbitrary Python values to diagnostic Jsonable data, deterministic Canonical JSON Text utilities over already-Jsonable values, and the strict policy-free identity lane from caller-selected schema, version, and payload to a full SHA-256 identity hash. A lower band shows the permitted explicit composition from normalization into general canonical hashing and forbids feeding normalized diagnostic data into identity hashing.</desc>
+  <title id="title">dr-serialize semantic lane contract map</title>
+  <desc id="desc">A newcomer-oriented map of three semantic lanes and their representative public APIs: policy-driven normalization from arbitrary Python values to diagnostic Jsonable data, deterministic Canonical JSON Text utilities over already-Jsonable values, and the strict policy-free identity lane from bounded strict JSON byte decoding or caller-selected schema, version, and payload to a full SHA-256 identity hash. Strict byte decoding is an input boundary to identity, not a fourth semantic lane. A lower band shows the permitted explicit composition from normalization into general canonical hashing and forbids feeding normalized diagnostic data into identity hashing.</desc>
   <defs>
     <style>
       .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
@@ -51,7 +51,7 @@
 
   <!-- Header -->
   <g class="sans">
-    <text x="54" y="68" class="label" fill="#6f42c1">DR-SERIALIZE · PUBLIC CONTRACT MAP</text>
+    <text x="54" y="68" class="label" fill="#6f42c1">DR-SERIALIZE · SEMANTIC LANE CONTRACT MAP</text>
     <text x="54" y="116" class="h1 ink">Choose the surface by what your data means</text>
     <text x="54" y="150" class="dek muted">Normalize runtime values, stabilize JSON-safe data, or establish domain identity.</text>
 
@@ -130,11 +130,12 @@
 
     <path d="M236 194 V222" class="arrow"/>
     <text x="28" y="244" class="label" fill="#6f42c1">REPRESENTATIVE API</text>
-    <rect x="24" y="257" width="424" height="128" rx="10" class="code-box"/>
-    <text x="40" y="286" class="mono code ink">def canonical_json(value: Jsonable) -&gt; str: ...</text>
-    <text x="40" y="320" class="mono code ink">def json_hash(</text>
-    <text x="54" y="344" class="mono code ink">value: Jsonable, *, length: int | None = None</text>
-    <text x="40" y="368" class="mono code ink">) -&gt; str: ...</text>
+    <rect x="24" y="257" width="424" height="144" rx="10" class="code-box"/>
+    <text x="40" y="283" class="mono code-small ink">canonical_json(value: Jsonable) -&gt; str</text>
+    <text x="40" y="309" class="mono code-small ink">canonical_json_bytes(value: Jsonable) -&gt; bytes</text>
+    <text x="40" y="339" class="mono code-small ink">json_hash(value: Jsonable, *,</text>
+    <text x="54" y="361" class="mono code-small ink">length: int | None = None)</text>
+    <text x="40" y="385" class="mono code-small muted">full -&gt; Sha256Digest · explicit length -&gt; str</text>
 
     <text x="28" y="416" class="label" fill="#6f42c1">FIXED BEHAVIOR</text>
     <circle cx="35" cy="444" r="4" fill="#6f42c1"/>
@@ -152,7 +153,8 @@
     <text x="40" y="665" class="mono code ink">str  ·  deterministic contract-bearer</text>
     <rect x="24" y="705" width="424" height="78" rx="10" fill="#f4eefb" stroke="#a78ad3" stroke-width="1.5"/>
     <text x="40" y="731" class="section ink">General JSON hash</text>
-    <text x="40" y="756" class="mono code ink">str  ·  64 hex, optionally truncated by length</text>
+    <text x="40" y="752" class="mono code-small ink">Sha256Digest  ·  full 64-character lowercase hex</text>
+    <text x="40" y="774" class="mono code-small ink">str  ·  only when an explicit length truncates it</text>
     <text x="28" y="812" class="small" fill="#5d35aa">Deterministic · policy-free · general purpose · not domain identity</text>
   </g>
 
@@ -166,11 +168,11 @@
     <text x="66" y="70" class="small muted">For stable cross-repo identity, keys, and references</text>
 
     <line x1="24" y1="92" x2="448" y2="92" class="rule"/>
-    <text x="28" y="119" class="label" fill="#2b8a3e">CALLER-OWNED INPUT</text>
+    <text x="28" y="119" class="label" fill="#2b8a3e">BOUNDED STRICT JSON INPUT</text>
     <rect x="24" y="132" width="424" height="86" rx="10" class="node"/>
-    <text x="40" y="157" class="mono code ink">schema: str  ·  schema_version: int</text>
-    <text x="40" y="180" class="mono code ink">payload: Jsonable  # Strict JSON Value</text>
-    <text x="40" y="202" class="small muted">The domain selects every identity-bearing payload field.</text>
+    <text x="40" y="157" class="mono code-small ink">decode_strict_json_bytes(data: bytes, *,</text>
+    <text x="54" y="180" class="mono code-small ink">max_bytes: int, max_depth: int) → Jsonable</text>
+    <text x="40" y="202" class="small muted">Strict JSON Value · typed errors · or caller-supplied values</text>
 
     <path d="M236 218 V240" class="arrow"/>
     <text x="28" y="262" class="label" fill="#2b8a3e">VALIDATED DOCUMENT</text>
@@ -196,12 +198,12 @@
 
     <path d="M236 620 V646" class="arrow"/>
     <text x="28" y="668" class="label" fill="#2b8a3e">IDENTITY API + OUTPUT</text>
-    <rect x="24" y="681" width="424" height="111" rx="10" fill="#e8f5ec" stroke="#72b77e" stroke-width="1.5"/>
-    <text x="40" y="708" class="mono code-small ink">canonical_identity_json(doc) -&gt; str</text>
-    <text x="40" y="733" class="mono code-small ink">identity_document_hash(doc) -&gt; str</text>
-    <text x="40" y="758" class="mono code-small ink">compute_identity_hash(raw_dict) -&gt; str</text>
-    <text x="40" y="781" class="small" fill="#247534">full 64-character lowercase SHA-256 hex</text>
-    <text x="28" y="812" class="mono code-small" fill="#247534">identity_hash_prefix(hash_hex, n) → display only</text>
+    <rect x="24" y="681" width="424" height="118" rx="10" fill="#e8f5ec" stroke="#72b77e" stroke-width="1.5"/>
+    <text x="40" y="703" class="mono code-small ink">canonical_identity_json(doc) -&gt; str</text>
+    <text x="40" y="725" class="mono code-small ink">canonical_identity_json_bytes(doc) -&gt; bytes</text>
+    <text x="40" y="747" class="mono code-small ink">identity_document_hash(doc) -&gt; Sha256Digest</text>
+    <text x="40" y="769" class="mono code-small ink">compute_identity_hash(raw) -&gt; Sha256Digest</text>
+    <text x="40" y="791" class="mono code-small" fill="#247534">identity_hash_prefix(Sha256Digest | str, n) -&gt; str</text>
   </g>
 
   <!-- Composition rules -->
@@ -252,6 +254,6 @@
   <!-- Footer -->
   <g class="sans">
     <text x="54" y="1337" class="small muted">Shared failure contract: typed SerializationError subclasses carry a JsonPath and persistable diagnostics().</text>
-    <text x="1546" y="1337" text-anchor="end" class="mono code-small quiet">dr-serialize · ef3baeb</text>
+    <text x="1546" y="1337" text-anchor="end" class="mono code-small quiet">Source: dr_serialize serialization, canonical, decoding, identity</text>
   </g>
 </svg>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1500" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1660" role="img" aria-labelledby="title desc">
   <title id="title">Cross-cutting and general-purpose tooling in dr-serialize</title>
-  <desc id="desc">A source-grounded map of the public helper API, internal foundational contracts, private mechanisms, their use by normalization, Canonical JSON Text, and identity, and a cautious assessment of possible future API candidates.</desc>
+  <desc id="desc">A source-grounded map of selected public helper APIs, internal foundational contracts, and private mechanisms across normalization, Canonical JSON Text, and identity. It includes the public bounded strict JSON byte-decoding boundary and its typed errors, exact canonical byte helpers, and the public Sha256Digest contract.</desc>
   <defs>
     <style>
       .bg { fill: #f4f6f9; }
@@ -47,13 +47,13 @@
     </marker>
   </defs>
 
-  <rect class="bg" width="1800" height="1500"/>
+  <rect class="bg" width="1800" height="1660"/>
 
   <!-- Header -->
   <text x="70" y="62" class="title ink">Cross-cutting tooling: small public seams, guarded internals</text>
   <text x="70" y="96" class="dek muted">Shared helpers span two separate lanes and the Canonical JSON Text utility surface.</text>
   <rect x="1456" y="42" width="274" height="34" rx="17" class="surface-strong"/>
-  <text x="1593" y="64" text-anchor="middle" class="mono-small muted">main · ef3baeb · Python 3.12+</text>
+  <text x="1593" y="64" text-anchor="middle" class="mono-small muted">Python 3.12+ · selected API map</text>
 
   <g transform="translate(70 120)">
     <rect width="134" height="28" rx="14" class="public-fill public-stroke" stroke-width="1"/>
@@ -76,10 +76,10 @@
   <text x="1178" y="232" text-anchor="middle" class="mono-small lane-text">Serializer.to_jsonable</text>
   <rect x="1290" y="190" width="196" height="54" rx="10" class="lane-fill"/>
   <text x="1388" y="213" text-anchor="middle" class="label lane-text">CANONICAL JSON TEXT</text>
-  <text x="1388" y="232" text-anchor="middle" class="mono-small lane-text">canonical_json / json_hash</text>
+  <text x="1388" y="232" text-anchor="middle" class="mono-small lane-text">canonical bytes · json_hash</text>
   <rect x="1500" y="190" width="210" height="54" rx="10" class="lane-fill"/>
   <text x="1605" y="213" text-anchor="middle" class="label lane-text">IDENTITY</text>
-  <text x="1605" y="232" text-anchor="middle" class="mono-small lane-text">strict JSON value + hash</text>
+  <text x="1605" y="232" text-anchor="middle" class="mono-small lane-text">strict decode · hash</text>
 
   <!-- Row 1 -->
   <rect x="84" y="260" width="986" height="66" rx="9" class="cell"/>
@@ -105,7 +105,7 @@
   <rect x="98" y="346" width="72" height="20" rx="10" class="public-fill"/>
   <text x="134" y="360" text-anchor="middle" class="label public-text">PUBLIC</text>
   <text x="184" y="361" class="mono-strong ink">JsonPath = tuple[str | int, ...]   ·   SerializationError.diagnostics() → dict[str, Any]</text>
-  <text x="184" y="385" class="small muted">One location grammar and persistable diagnostic shape span every failure taxonomy.</text>
+  <text x="184" y="385" class="small muted">One location grammar and persistable diagnostic shape span the SerializationError taxonomy.</text>
   <rect x="1080" y="334" width="196" height="66" rx="9" class="cell"/>
   <circle cx="1100" cy="355" r="6" class="use-dot"/>
   <text x="1116" y="360" class="small ink">5 typed errors</text>
@@ -150,12 +150,12 @@
   <text x="1100" y="530" class="mono-small muted">len(encoded.encode(...))</text>
   <rect x="1290" y="482" width="196" height="66" rx="9" class="cell"/>
   <circle cx="1310" cy="503" r="6" class="use-dot"/>
-  <text x="1326" y="508" class="small ink">hash bytes</text>
-  <text x="1310" y="530" class="mono-small muted">canonical_json(...).encode</text>
+  <text x="1326" y="508" class="small ink">exact canonical bytes</text>
+  <text x="1310" y="530" class="mono-small muted">canonical_json_bytes</text>
   <rect x="1500" y="482" width="210" height="66" rx="9" class="cell"/>
   <circle cx="1520" cy="503" r="6" class="use-dot"/>
-  <text x="1536" y="508" class="small ink">identity hash bytes</text>
-  <text x="1520" y="530" class="mono-small muted">canonical_identity_json</text>
+  <text x="1536" y="508" class="small ink">exact identity bytes</text>
+  <text x="1520" y="530" class="mono-small muted">canonical_identity_json_bytes</text>
 
   <!-- Row 5 -->
   <rect x="84" y="556" width="986" height="66" rx="9" class="cell"/>
@@ -178,20 +178,20 @@
 
   <!-- Row 6 -->
   <rect x="84" y="630" width="986" height="58" rx="9" class="cell"/>
-  <rect x="98" y="641" width="144" height="20" rx="10" class="foundation-fill"/>
-  <text x="170" y="655" text-anchor="middle" class="label foundation-text">FOUNDATIONAL</text>
-  <text x="256" y="656" class="mono-strong ink">SHA256_HEX_LENGTH = 64</text>
-  <text x="256" y="677" class="small muted">Shared bound for general hash truncation and display-only Identity Hash prefixes.</text>
+  <rect x="98" y="641" width="72" height="20" rx="10" class="public-fill"/>
+  <text x="134" y="655" text-anchor="middle" class="label public-text">PUBLIC</text>
+  <text x="184" y="656" class="mono-strong ink">Sha256Digest · Sha256DigestError</text>
+  <text x="184" y="677" class="small muted">Nominal full 64-character lowercase SHA-256 digest and its validation error.</text>
   <rect x="1080" y="630" width="196" height="58" rx="9" class="cell"/>
   <text x="1178" y="664" text-anchor="middle" class="small quiet">—</text>
   <rect x="1290" y="630" width="196" height="58" rx="9" class="cell"/>
   <circle cx="1310" cy="650" r="6" class="use-dot"/>
-  <text x="1326" y="655" class="small ink">json_hash bounds</text>
-  <text x="1310" y="675" class="mono-small muted">1 ≤ length ≤ 64</text>
+  <text x="1326" y="655" class="small ink">full hash result</text>
+  <text x="1310" y="675" class="mono-small muted">json_hash(full)</text>
   <rect x="1500" y="630" width="210" height="58" rx="9" class="cell"/>
   <circle cx="1520" cy="650" r="6" class="use-dot"/>
-  <text x="1536" y="655" class="small ink">display prefix check</text>
-  <text x="1520" y="675" class="mono-small muted">identity_hash_prefix</text>
+  <text x="1536" y="655" class="small ink">full identity result</text>
+  <text x="1520" y="675" class="mono-small muted">identity_document_hash</text>
 
   <!-- Public toolbox -->
   <text x="70" y="755" class="section ink">What helper-shaped tooling can consumers use today?</text>
@@ -232,9 +232,10 @@
     <rect width="530" height="132" rx="12" class="surface-strong"/>
     <rect x="18" y="16" width="190" height="22" rx="11" class="public-fill"/>
     <text x="113" y="31" text-anchor="middle" class="label public-text">CANONICAL JSON TEXT</text>
-    <text x="18" y="62" class="mono-strong ink">canonical_json(value: Jsonable) → str</text>
-    <text x="18" y="85" class="mono-strong ink">json_hash(value: Jsonable, *, length=None) → str</text>
-    <text x="18" y="112" class="small muted">Policy-free utilities; compose with normalization explicitly at the call site.</text>
+    <text x="18" y="58" class="mono-small ink">canonical_json(value: Jsonable) → str</text>
+    <text x="18" y="79" class="mono-small ink">canonical_json_bytes(value: Jsonable) → bytes</text>
+    <text x="18" y="100" class="mono-small ink">json_hash(value, length=None) → Sha256Digest</text>
+    <text x="18" y="121" class="mono-small ink">json_hash(value, length=int) → str</text>
   </g>
 
   <g transform="translate(635 948)">
@@ -248,20 +249,40 @@
 
   <g transform="translate(1200 948)">
     <rect width="530" height="132" rx="12" class="surface-strong"/>
-    <rect x="18" y="16" width="182" height="22" rx="11" class="public-fill"/>
-    <text x="109" y="31" text-anchor="middle" class="label public-text">IDENTITY CONVENIENCES</text>
-    <text x="18" y="60" class="mono-strong ink">build_identity_document(*, schema, schema_version, payload)</text>
-    <text x="18" y="81" class="mono-strong ink">compute_identity_hash(document) → str</text>
-    <text x="18" y="102" class="mono-strong ink">identity_hash_prefix(hash_hex, length) → str</text>
-    <text x="18" y="122" class="tiny muted">Construction · one-shot validation+hash · display-only prefix; none select identity fields.</text>
+    <rect x="18" y="16" width="202" height="22" rx="11" class="public-fill"/>
+    <text x="119" y="31" text-anchor="middle" class="label public-text">SELECTED IDENTITY HELPERS</text>
+    <text x="18" y="58" class="mono-small ink">canonical_identity_json_bytes(doc) → bytes</text>
+    <text x="18" y="79" class="mono-small ink">identity_document_hash(doc) → Sha256Digest</text>
+    <text x="18" y="100" class="mono-small ink">compute_identity_hash(raw) → Sha256Digest</text>
+    <text x="18" y="121" class="mono-small ink">identity_hash_prefix(Sha256Digest | str, length) → str</text>
+  </g>
+
+  <g transform="translate(70 1096)">
+    <rect width="1095" height="148" rx="12" class="surface-strong"/>
+    <rect x="18" y="16" width="246" height="22" rx="11" class="public-fill"/>
+    <text x="141" y="31" text-anchor="middle" class="label public-text">STRICT JSON BYTE BOUNDARY</text>
+    <text x="18" y="61" class="mono-strong ink">decode_strict_json_bytes(data: bytes, *, max_bytes: int, max_depth: int) → Jsonable</text>
+    <text x="18" y="86" class="small muted">Bounds bytes before UTF-8 decoding and bounds structural depth during iterative parsing; no coercion.</text>
+    <text x="18" y="111" class="mono-small ink">StrictJsonDecodeError · JsonByteLimitError · JsonDepthLimitError · InvalidUtf8Error</text>
+    <text x="18" y="132" class="mono-small ink">JsonSyntaxError · DuplicateJsonKeyError · NonFiniteJsonNumberError</text>
+  </g>
+
+  <g transform="translate(1200 1096)">
+    <rect width="530" height="148" rx="12" class="surface-strong"/>
+    <rect x="18" y="16" width="190" height="22" rx="11" class="public-fill"/>
+    <text x="113" y="31" text-anchor="middle" class="label public-text">FULL DIGEST CONTRACT</text>
+    <text x="18" y="61" class="mono-strong ink">Sha256Digest</text>
+    <text x="18" y="84" class="small muted">Full 64-character lowercase hexadecimal SHA-256 value.</text>
+    <text x="18" y="108" class="mono-small ink">Sha256Digest.parse(value) → Sha256Digest</text>
+    <text x="18" y="132" class="mono-small ink">invalid value → Sha256DigestError</text>
   </g>
 
   <!-- API horizon -->
-  <rect x="60" y="1120" width="1680" height="300" rx="14" class="surface"/>
-  <text x="90" y="1160" class="section ink">What might plausibly surface later—and what should stay hidden?</text>
-  <text x="90" y="1186" class="small muted">Promotion requires a stable consumer need and a contract worth freezing; internal reuse alone is insufficient.</text>
+  <rect x="60" y="1280" width="1680" height="300" rx="14" class="surface"/>
+  <text x="90" y="1320" class="section ink">What remains internal—and what might plausibly surface later?</text>
+  <text x="90" y="1346" class="small muted">Promotion requires a stable consumer need and a contract worth freezing; internal reuse alone is insufficient.</text>
 
-  <g transform="translate(90 1210)">
+  <g transform="translate(90 1370)">
     <rect width="510" height="170" rx="11" class="candidate-fill candidate-stroke" stroke-width="1.5" stroke-dasharray="6 5"/>
     <text x="20" y="29" class="label candidate-text">PLAUSIBLE ONLY IF A CONSUMER NEED EMERGES</text>
     <text x="20" y="59" class="mono-strong ink">find_json_failure(...) → (JsonPath, Any) | None</text>
@@ -271,30 +292,30 @@
     <text x="20" y="128" class="small muted">and non-finite policy. Its public-ish name does not yet make it package API.</text>
   </g>
 
-  <g transform="translate(620 1210)">
-    <rect width="510" height="170" rx="11" class="candidate-fill candidate-stroke" stroke-width="1.5" stroke-dasharray="6 5"/>
-    <text x="20" y="29" class="label candidate-text">NARROW CONSTANT CANDIDATE</text>
+  <g transform="translate(620 1370)">
+    <rect width="510" height="170" rx="11" class="foundation-fill foundation-stroke" stroke-width="1.5"/>
+    <text x="20" y="29" class="label foundation-text">FOUNDATIONAL INTERNAL — KEEP UNEXPORTED</text>
     <text x="20" y="59" class="mono-strong ink">SHA256_HEX_LENGTH = 64</text>
-    <text x="20" y="82" class="small muted">Could support repeated external validation of full hashes.</text>
-    <text x="20" y="106" class="small ink">Judgment:</text>
-    <text x="96" y="106" class="small muted">do not export pre-emptively. A validator or nominal hash</text>
-    <text x="20" y="128" class="small muted">type may be the better eventual contract than exposing an arithmetic constant.</text>
+    <text x="20" y="82" class="small muted">Internal bound shared by full-hash and prefix validation.</text>
+    <text x="20" y="106" class="small ink">Public contract:</text>
+    <text x="123" y="106" class="small muted">Sha256Digest owns full-value validation;</text>
+    <text x="20" y="128" class="small muted">json_hash and identity_hash_prefix own explicit truncation.</text>
   </g>
 
-  <g transform="translate(1150 1210)">
+  <g transform="translate(1150 1370)">
     <rect width="560" height="176" rx="11" class="private-fill private-stroke" stroke-width="1.5"/>
     <text x="20" y="27" class="label foundation-text">FOUNDATIONAL INTERNAL — KEEP UNEXPORTED</text>
     <text x="20" y="53" class="mono-small ink">TEXT_ENCODING · _convert_node · primary/fallback tables</text>
     <text x="20" y="81" class="label private-text">PRIVATE MECHANISMS</text>
-    <text x="20" y="107" class="mono-small ink">_find_json_failure · _validate_strict_json</text>
+    <text x="20" y="107" class="mono-small ink">find_json_failure · _validate_strict_json</text>
     <text x="20" y="129" class="mono-small ink">_encoded_preview_slices · _top_level_key_sizes</text>
     <text x="20" y="151" class="mono-small ink">_format_top_level_sizes</text>
     <text x="20" y="166" class="tiny muted">Invariant ownership and implementation detail—not consumer capability.</text>
   </g>
 
   <!-- Bottom thesis and provenance -->
-  <rect x="70" y="1440" width="1660" height="2" class="anchor-fill"/>
-  <line x1="70" y1="1415" x2="70" y2="1468" class="anchor" stroke-width="5"/>
-  <text x="88" y="1442" class="card-title ink">Decision rule: expose capabilities; hide mechanisms and invariants until an external contract is demonstrably needed.</text>
-  <text x="88" y="1466" class="tiny muted">Source: src/dr_serialize/__init__.py:30–102 · jsonable.py:18–89 · errors.py:14–181 · limits.py:28–57 · serialization.py:39–252 · canonical.py:23–67 · identity.py:44–388</text>
+  <rect x="70" y="1600" width="1660" height="2" class="anchor-fill"/>
+  <line x1="70" y1="1575" x2="70" y2="1628" class="anchor" stroke-width="5"/>
+  <text x="88" y="1602" class="card-title ink">Decision rule: expose capabilities; hide mechanisms and invariants until an external contract is demonstrably needed.</text>
+  <text x="88" y="1626" class="tiny muted">Source: src/dr_serialize/__init__.py, canonical.py, decoding.py, digests.py, errors.py, identity.py, jsonable.py, limits.py, serialization.py</text>
 </svg>

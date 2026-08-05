@@ -256,7 +256,7 @@
   <text x="1260" y="1603" class="small">Normalization is handler-policy-dependent and may coerce, redact, or reorder.</text>
   <text x="1260" y="1625" class="small">It is not deterministic normalization and must not establish strict identity.</text>
 
-  <text x="72" y="1667" class="micro">Source: src/dr_serialize/serialization.py, limits.py, jsonable.py, README.md · commit ef3baeb874d1cc735b306d964028c70bbc954d6f</text>
+  <text x="72" y="1667" class="micro">Source: src/dr_serialize/serialization.py, limits.py, jsonable.py, README.md</text>
   <text x="1848" y="1649" text-anchor="end" class="micro">json.dumps ValueError passes through; arbitrary handler exceptions usually pass through.</text>
   <text x="1848" y="1667" text-anchor="end" class="micro">An enclosing __dict__ fallback wraps non-SerializationError exceptions.</text>
 </svg>

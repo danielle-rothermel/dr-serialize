@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" role="img" aria-labelledby="title desc">
   <title id="title">dr-serialize identity control flow</title>
-  <desc id="desc">A left-to-right diagram showing raw-mapping and separate-parts entry points converging on exact identity-document shape validation and the IdentityDocument constructor, which owns recursive Strict JSON Value validation and frozen snapshot semantics. A validated document becomes Canonical Identity JSON Text, then a full SHA-256 identity hash, with a separate display-only prefix. Supporting panels enumerate accepted and rejected Python shapes, JsonPath errors, caller-owned decisions, and prohibited normalization or coercion.</desc>
+  <desc id="desc">A left-to-right diagram showing raw-mapping and separate-parts entry points converging on exact identity-document shape validation and the IdentityDocument constructor, which owns recursive Strict JSON Value validation and external-alias isolation. A validated document becomes Canonical Identity JSON Text and its exact UTF-8 bytes, then a full Sha256Digest identity hash, with a separate display-only prefix. Supporting panels enumerate accepted and rejected Python shapes, JsonPath errors, caller-owned decisions, and prohibited normalization or coercion.</desc>
 
   <defs>
     <filter id="shadow" x="-15%" y="-15%" width="130%" height="140%">
@@ -45,7 +45,7 @@
 
   <!-- Heading -->
   <text x="60" y="63" class="title ink">What is the identity control flow?</text>
-  <text x="60" y="94" class="dek muted">Validate once, freeze the complete document, then hash exactly one canonical byte sequence.</text>
+  <text x="60" y="94" class="dek muted">Validate once, isolate the complete document, then hash exactly one canonical byte sequence.</text>
   <g transform="translate(1190 45)">
     <rect width="350" height="42" rx="21" fill="#e8f5ec" stroke="#2b8a3e"/>
     <circle cx="23" cy="21" r="6" fill="#2b8a3e"/>
@@ -140,23 +140,24 @@
   <path d="M1180 382 H1220" class="arrow-green"/>
   <text x="1380" y="269" text-anchor="middle" class="small muted strong" style="font-size:11px;letter-spacing:.4px">4 · CANONICAL IDENTITY JSON TEXT → HASH</text>
   <g filter="url(#shadow)">
-    <rect x="1220" y="286" width="320" height="150" rx="12" fill="#e8f5ec" stroke="#2b8a3e" stroke-width="1.5"/>
+    <rect x="1220" y="286" width="320" height="166" rx="12" fill="#e8f5ec" stroke="#2b8a3e" stroke-width="1.5"/>
   </g>
   <text x="1244" y="318" class="section ink">Canonical Identity JSON Text</text>
   <text x="1244" y="346" class="mono green">canonical_identity_json(</text>
   <text x="1264" y="368" class="mono green">document: IdentityDocument</text>
   <text x="1244" y="390" class="mono green">) -&gt; str</text>
-  <text x="1244" y="416" class="small muted">complete doc · sorted keys · compact · ASCII-escaped</text>
+  <text x="1244" y="416" class="mono-small green">canonical_identity_json_bytes(document) -&gt; bytes</text>
+  <text x="1244" y="440" class="small muted">complete doc · sorted keys · compact · ASCII-escaped</text>
 
-  <path d="M1380 436 V462" class="arrow-green"/>
+  <path d="M1380 452 V478" class="arrow-green"/>
   <g filter="url(#shadow)">
-    <rect x="1220" y="462" width="320" height="144" rx="12" fill="#e8f5ec" stroke="#2b8a3e" stroke-width="1.8"/>
+    <rect x="1220" y="478" width="320" height="128" rx="12" fill="#e8f5ec" stroke="#2b8a3e" stroke-width="1.8"/>
   </g>
-  <text x="1244" y="494" class="section ink">Full Identity Hash</text>
-  <text x="1244" y="522" class="mono green">identity_document_hash(</text>
-  <text x="1264" y="544" class="mono green">document: IdentityDocument</text>
-  <text x="1244" y="566" class="mono green">) -&gt; str</text>
-  <text x="1244" y="591" class="small green strong">SHA-256 · 64 lowercase hex · never truncated</text>
+  <text x="1244" y="506" class="section ink">Full Identity Hash</text>
+  <text x="1244" y="534" class="mono green">identity_document_hash(</text>
+  <text x="1264" y="556" class="mono green">document: IdentityDocument</text>
+  <text x="1244" y="578" class="mono green">) -&gt; Sha256Digest</text>
+  <text x="1244" y="599" class="small green strong">SHA-256 · 64 lowercase hex · never truncated</text>
 
   <!-- Strict JSON Value panel -->
   <g filter="url(#shadow)">
@@ -186,7 +187,7 @@
   <g filter="url(#shadow)">
     <rect x="778" y="646" width="376" height="302" rx="14" class="surface"/>
   </g>
-  <text x="802" y="680" class="label purple">FROZEN SNAPSHOT · NO MUTATION DRIFT</text>
+  <text x="802" y="680" class="label purple">ISOLATED SNAPSHOT · NO ALIAS DRIFT</text>
   <rect x="802" y="704" width="328" height="56" rx="9" fill="#f4eefb" stroke="#6f42c1"/>
   <text x="966" y="728" text-anchor="middle" class="mono-small purple">caller payload</text>
   <text x="966" y="748" text-anchor="middle" class="small muted">validated first</text>
@@ -194,9 +195,9 @@
   <rect x="802" y="790" width="328" height="62" rx="9" fill="#e9f2fb" stroke="#1866b4"/>
   <text x="966" y="815" text-anchor="middle" class="mono-small blue">copy.deepcopy(payload)</text>
   <text x="966" y="837" text-anchor="middle" class="small ink strong">document owns an independent snapshot</text>
-  <text x="802" y="880" class="small red strong">✕ Later caller mutation cannot change the hash.</text>
+  <text x="802" y="880" class="small red strong">✕ Later input mutation cannot change the hash.</text>
   <text x="802" y="906" class="small green strong">✓ to_json_dict() returns another fresh deep copy.</text>
-  <text x="802" y="930" class="small muted">Frozen fields + isolated nested containers preserve identity.</text>
+  <text x="802" y="930" class="small muted">Deep copies isolate inputs and exported mappings.</text>
 
   <!-- One-shot and prefix -->
   <g filter="url(#shadow)">
@@ -205,18 +206,19 @@
   <text x="1206" y="677" class="label blue">ONE-SHOT, SAME PATH</text>
   <text x="1206" y="706" class="mono blue">compute_identity_hash(</text>
   <text x="1226" y="728" class="mono blue">document: dict[Any, Any]</text>
-  <text x="1206" y="750" class="mono blue">) -&gt; str</text>
+  <text x="1206" y="750" class="mono blue">) -&gt; Sha256Digest</text>
   <text x="1206" y="770" class="small muted">validate_identity_document → full hash</text>
 
   <path d="M1380 606 V806" class="arrow-amber"/>
   <g filter="url(#shadow)">
-    <rect x="1182" y="806" width="358" height="142" rx="14" fill="#fff6e0" stroke="#9a6700" stroke-width="1.5"/>
+    <rect x="1182" y="806" width="358" height="159" rx="14" fill="#fff6e0" stroke="#9a6700" stroke-width="1.5"/>
   </g>
   <text x="1206" y="837" class="label amber">DISPLAY-ONLY PROJECTION</text>
   <text x="1206" y="866" class="mono amber">identity_hash_prefix(</text>
-  <text x="1226" y="888" class="mono amber">hash_hex: str, length: int</text>
-  <text x="1206" y="910" class="mono amber">) -&gt; str</text>
-  <text x="1206" y="934" class="small ink strong">Never identity, equality, a key, or a reference.</text>
+  <text x="1226" y="888" class="mono amber">hash_hex: Sha256Digest | str,</text>
+  <text x="1226" y="910" class="mono amber">length: int</text>
+  <text x="1206" y="932" class="mono amber">) -&gt; str</text>
+  <text x="1206" y="954" class="small ink strong">Never identity, equality, a key, or a reference.</text>
 
   <!-- Prohibited paths -->
   <rect x="60" y="982" width="1480" height="70" rx="12" fill="#1b2333"/>
@@ -224,5 +226,5 @@
   <text x="84" y="1038" class="mono" fill="#ffffff">NO coercion   ·   NO Serializer.to_jsonable   ·   NO handlers   ·   NO normalization   ·   NO truncation in the hash path</text>
   <text x="1516" y="1038" text-anchor="end" class="small" fill="#c9d1dc">Validated document → exact bytes → full identity</text>
 
-  <text x="60" y="1080" class="small muted">Contract rendered from dr_serialize.identity at commit ef3baeb · blue = API flow · purple = invariant boundary · green = identity output · red = rejection · amber = display only</text>
+  <text x="60" y="1080" class="small muted">Source: dr_serialize.identity, canonical, digests · blue = API flow · purple = invariant boundary · green = identity output · red = rejection · amber = display only</text>
 </svg>
