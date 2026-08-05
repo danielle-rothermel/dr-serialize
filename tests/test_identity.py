@@ -32,9 +32,7 @@ from dr_serialize import (
 )
 from dr_serialize.canonical import SHA256_HEX_LENGTH
 
-GOLDEN_FIXTURE = (
-    Path(__file__).parent / "fixtures" / "identity_golden.json"
-)
+GOLDEN_FIXTURE = Path(__file__).parent / "fixtures" / "identity_golden.json"
 
 
 # --------------------------------------------------------------------------
@@ -379,15 +377,11 @@ def test_direct_construction_rejects_non_json_payload() -> None:
 
 def test_direct_construction_rejects_bad_schema_types() -> None:
     with pytest.raises(IdentityDocumentError) as exc_info:
-        IdentityDocument(
-            schema=cast("Any", 1), schema_version=1, payload={}
-        )
+        IdentityDocument(schema=cast("Any", 1), schema_version=1, payload={})
     assert exc_info.value.path == ("schema",)
     bool_version: Any = True
     with pytest.raises(IdentityDocumentError) as version_info:
-        IdentityDocument(
-            schema="s", schema_version=bool_version, payload={}
-        )
+        IdentityDocument(schema="s", schema_version=bool_version, payload={})
     assert version_info.value.path == ("schema_version",)
 
 
@@ -495,9 +489,7 @@ def test_key_order_does_not_affect_canonical_json_or_hash() -> None:
         ("beta", 2),
     ]
     docs = [
-        build_identity_document(
-            schema="s", schema_version=1, payload=payload
-        )
+        build_identity_document(schema="s", schema_version=1, payload=payload)
         for payload in _permuted_dicts(pairs)
     ]
     canonical_values = {canonical_identity_json(d) for d in docs}
@@ -533,12 +525,8 @@ def test_list_order_is_significant_for_identity() -> None:
 
 def test_schema_version_bump_changes_identity() -> None:
     payload = {"identity_field": "value"}
-    v1 = build_identity_document(
-        schema="s", schema_version=1, payload=payload
-    )
-    v2 = build_identity_document(
-        schema="s", schema_version=2, payload=payload
-    )
+    v1 = build_identity_document(schema="s", schema_version=1, payload=payload)
+    v2 = build_identity_document(schema="s", schema_version=2, payload=payload)
     assert identity_document_hash(v1) != identity_document_hash(v2)
 
 
