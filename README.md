@@ -3,8 +3,8 @@
 [![CI](https://github.com/danielle-rothermel/dr-serialize/actions/workflows/ci.yml/badge.svg)](https://github.com/danielle-rothermel/dr-serialize/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/dr-serialize.svg)](https://pypi.org/project/dr-serialize/)
 
-| [Repo Definitions](https://danielle-rothermel.github.io/dr-serialize/) |
-| --- |
+| [Repo Definitions](https://danielle-rothermel.github.io/dr-serialize/) | [Terms TOML](https://github.com/danielle-rothermel/dr-serialize/blob/main/.defs/terms.toml) | [Contracts TOML](https://github.com/danielle-rothermel/dr-serialize/blob/main/.defs/contracts.toml) |
+| --- | --- | --- |
 
 **dr-serialize normalizes Python values into JSON-encodable data and produces
 deterministic JSON text, bytes, hashes, and identities.** Its functionality is

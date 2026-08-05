@@ -17,9 +17,11 @@ terms = ["identity", "identity payload", "identity document"]
 [[contracts]]
 title = "Identity hashing never normalizes or coerces"
 statement = """
-Identity hashing accepts only a validated IdentityDocument with a Strict JSON \
-Value payload. It never uses Serializer, consumer handlers, truncation, or \
-coercion, and a Diagnostic Normalized JSON Value is never identity input."""
+Identity hashing consumes the mapping returned by its document argument as a \
+Strict JSON Value. It never uses Serializer, consumer handlers, truncation, or \
+coercion, and a Diagnostic Normalized JSON Value is never identity input. The \
+supported argument type is IdentityDocument; the runtime path relies on its \
+to_json_dict() protocol rather than enforcing that concrete type."""
 rationale = """
 Keeping policy-driven or lossy conversion out of the identity path ensures \
 that normalization choices cannot redefine caller-owned identity facts."""
@@ -89,12 +91,15 @@ terms = ["hash", "identity hash", "identity hash prefix"]
 [[contracts]]
 title = "Normalization policy is instance-scoped and library-guarded"
 statement = """
-Each Serializer owns immutable ordered handlers and validated limits; there is \
-no global registry or implicit policy. max_depth, max_bytes, and \
-hard_max_bytes are non-negative when present, zero is valid, and max_bytes \
-cannot exceed hard_max_bytes when the latter is present. The library owns path \
-and depth bookkeeping, validates consumer-handled results as normalization \
-Jsonable under the depth limit, and enforces encoded size on the final result."""
+The supported Serializer configuration supplies a validated \
+SerializationLimits instance and an ordered tuple of handlers; there is no \
+global registry or implicit policy. Serializer uses those objects without \
+copying or runtime type enforcement, so callers must not mutate aliased \
+configuration. max_depth, max_bytes, and hard_max_bytes are non-negative when \
+present, zero is valid, and max_bytes cannot exceed hard_max_bytes when the \
+latter is present. The library owns path and depth bookkeeping, validates \
+consumer-handled results as normalization Jsonable under the depth limit, and \
+enforces encoded size on the final result."""
 rationale = """
 Instance-scoped policy keeps conversion choices explicit, while library-owned \
 validation and bookkeeping apply the declared limits consistently across \
